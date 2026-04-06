@@ -1,0 +1,15 @@
+{
+  "name": "bespoke-agentics",
+  "version": "1.0.0",
+  "description": "AI transparency auditing, agent architecture generation, UX evaluation, video-to-deliverables pipelines, and workflow analysis for Claude Code",
+  "author": {
+    "name": "Bespoke Agentics"
+  },
+  "keywords": [
+    "ai-transparency",
+    "ux-audit",
+    "video-analysis",
+    "agent-architecture",
+    "workflow-analysis"
+  ]
+}
