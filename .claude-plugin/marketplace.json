@@ -8,7 +8,7 @@
   "plugins": [
     {
       "name": "bespoke-agentics",
-      "version": "1.0.0",
+      "version": "1.0.1",
       "description": "AI transparency auditing, agent architecture generation, UX evaluation, video-to-deliverables pipelines, and workflow analysis for Claude Code",
       "source": "./"
     }
