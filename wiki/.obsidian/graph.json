@@ -1,0 +1,27 @@
+{
+  "collapse-filter": false,
+  "search": "",
+  "showTags": true,
+  "showAttachments": false,
+  "hideUnresolved": false,
+  "showOrphans": true,
+  "collapse-color-groups": false,
+  "colorGroups": [
+    { "query": "path:clients/boston-beer-company", "color": { "a": 1, "rgb": 16744448 } },
+    { "query": "path:platforms", "color": { "a": 1, "rgb": 3381708 } },
+    { "query": "path:verndale", "color": { "a": 1, "rgb": 10066329 } },
+    { "query": "tag:#gap", "color": { "a": 1, "rgb": 16711680 } },
+    { "query": "tag:#decision", "color": { "a": 1, "rgb": 16776960 } },
+    { "query": "tag:#question", "color": { "a": 1, "rgb": 255 } }
+  ],
+  "collapse-display": false,
+  "showArrow": true,
+  "textFadeMultiplier": 0,
+  "nodeSizeMultiplier": 1,
+  "lineSizeMultiplier": 1,
+  "collapse-forces": false,
+  "centerStrength": 0.5,
+  "repelStrength": 10,
+  "linkStrength": 1,
+  "linkDistance": 250
+}
