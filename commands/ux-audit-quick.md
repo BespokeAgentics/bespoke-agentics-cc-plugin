@@ -1,5 +1,6 @@
 ---
-description: Quick heuristic spot-check on a single component or screen — no full report
+name: bespokeagentics:ux-audit-quick
+description: Spot-check a single component or screen against top-priority UX heuristics — no full report
 argument-hint: <component-path-or-screenshot>
 allowed-tools: Skill(ux-audit), Read, Glob, Grep, Bash
 ---

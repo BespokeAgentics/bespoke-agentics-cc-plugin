@@ -1,5 +1,6 @@
 ---
-description: Accessibility-focused audit checking ARIA roles, labels, keyboard navigation, and color usage
+name: bespokeagentics:ux-audit-a11y
+description: Audit accessibility patterns including ARIA roles, labels, keyboard navigation, and color usage
 argument-hint: <path-to-components>
 allowed-tools: Skill(ux-audit), Read, Glob, Grep, Bash, Write, Agent
 ---

@@ -1,4 +1,5 @@
 ---
+name: bespokeagentics:ux-audit
 description: Run a full UX audit on code, screenshots, or video using Nielsen heuristics and Norman principles
 argument-hint: <path-or-description>
 allowed-tools: Skill(ux-audit), Read, Glob, Grep, Bash, Write, Agent

@@ -25,6 +25,7 @@ claude --plugin-dir ./bespoke-agentics-plugin
 | **UX Audit** | `/bespoke-agentics:ux-audit` | Comprehensive UX evaluation using Nielsen's 10 Heuristics and Norman's 6 Design Principles. |
 | **Video to Deliverables** | `/bespoke-agentics:video-to-deliverables` | End-to-end video analysis pipeline. Transforms recordings into workflow docs, migration analysis, meeting summaries, or training guides. |
 | **Workflow Analyzer** | `/bespoke-agentics:workflow-analyzer` | Client workflow analysis from video recordings. Produces application inventory, challenge mapping, and AI automation recommendations. |
+| **Setup Plugin** | `/bespoke-agentics:setup-plugin` | Scaffold, optimize, and package a folder as a well-formed Claude Code plugin. Converts `.claude/` directories into distributable plugins. |
 
 ### UX Audit Variants
 
