@@ -1,8 +1,8 @@
 ---
 name: "wiki:init"
-description: "Initialize a brand-new Karpathy-style LLM wiki vault. Scans the repo, interviews the user, then creates an Obsidian vault tailored to the project."
-argument-hint: "[--wiki-dir '<path>']"
-allowed-tools: Agent, Bash, Read, Write, Edit, Glob, Grep
+description: "Initialize a Karpathy-style LLM wiki vault — scans the repo, interviews the user, and creates an Obsidian vault tailored to the project."
+argument-hint: "[--wiki-dir <path>]"
+allowed-tools: Agent, AskUserQuestion, Bash, Read, Write, Edit, Glob, Grep
 ---
 
 # Wiki Init
@@ -30,8 +30,8 @@ Usage:
 ## Derived Variables
 
 ```
-WIKI_DIR            = --wiki-dir value or ./wiki
-TODAY               = current date (YYYY-MM-DD)
+WIKI_DIR            = --wiki-dir value, or value from interview prompt, or ./wiki
+TODAY               = !`date +%Y-%m-%d`
 ```
 
 ## Process
@@ -51,7 +51,14 @@ Build a mental model of what this project is about — domains, platforms, conte
 
 ### Phase 2: Interview the User
 
-Using AskUserQuestion, ask 5 targeted questions based on what you discovered:
+Using AskUserQuestion, ask 6 targeted questions based on what you discovered:
+
+0. **Wiki Directory** — If `--wiki-dir` was NOT provided in `$ARGUMENTS`, ask:
+   ```
+   Where should the wiki vault be created?
+   ```
+   Present the default `./wiki` as the pre-selected option. Offer alternatives based on the repo structure (e.g., `./docs/wiki`, `./knowledge-base`). Include "Other: {let me specify}".
+   Assign the user's answer to `WIKI_DIR`. If `--wiki-dir` was provided via arguments, skip this question and use that value.
 
 1. **Project Context** — Present findings, ask user to confirm or correct
 2. **Wiki Scope** — What should the wiki track? (adapt options to repo)
@@ -59,7 +66,7 @@ Using AskUserQuestion, ask 5 targeted questions based on what you discovered:
 4. **Platforms/Technologies** — Which deserve shared knowledge pages? (only list what's in the repo)
 5. **Organization Name** — What to call the internal/team section? (derive from repo, or skip)
 
-See the wiki-init skill (`skills/wiki-init/SKILL.md`) for the full interview question templates.
+The wiki-init skill contains full interview question templates for Questions 1-5. The skill is invoked in Phase 4 — you only need to collect the answers here.
 
 ### Phase 3: Pre-flight Validation
 
@@ -82,7 +89,21 @@ Status:            ✓ Ready to initialize
 
 ### Phase 4: Invoke wiki-init Skill
 
-Launch the skill with the interview answers as context. The skill handles:
+Launch the skill:
+
+```
+Skill: wiki-init
+Parameters:
+  wiki_dir: {WIKI_DIR}
+  today: {TODAY}
+  project_description: {description from Question 1}
+  wiki_scope: {selected items from Question 2}
+  org_structure: {structure from Question 3}
+  platforms: {confirmed platforms from Question 4, or "none"}
+  org_name: {org name from Question 5, or "skipped"}
+```
+
+The skill handles:
 
 - Creating the vault directory structure (adapted to org model)
 - Writing all 5 `.obsidian/` config files (graph colors match actual folders)
@@ -94,7 +115,48 @@ Launch the skill with the interview answers as context. The skill handles:
 
 Wait for skill completion.
 
-### Phase 5: Report Summary
+### Phase 5: Update Project CLAUDE.md
+
+After the wiki vault is created, ensure the project's `CLAUDE.md` includes instructions for agents to use the wiki as the primary knowledge layer.
+
+1. **Check if `CLAUDE.md` exists** at the project root.
+   - If it does not exist, create it.
+
+2. **Check if wiki instructions already exist** by searching for the string `wiki` (case-insensitive) in the file. Look for existing wiki-related sections such as "Wiki-First Mandate", "Wiki Usage", or references to `/wiki:query`.
+   - If wiki instructions already exist, skip this phase and report: `CLAUDE.md: Already configured — no changes made.`
+
+3. **Append the wiki-first mandate block** to the end of `CLAUDE.md`:
+
+   ````markdown
+
+   ## Wiki Knowledge System
+
+   This project uses a Karpathy-style LLM wiki at `{WIKI_DIR}/` as the single source of truth for project intelligence, technical decisions, and business capabilities.
+
+   ### Core Rules
+
+   1. **Query the wiki before answering project questions.** Run `/wiki:query '<question>'` or read wiki pages directly before relying on general knowledge.
+   2. **Update the wiki after content-producing operations.** When meetings are analyzed, documents ingested, or decisions made, route results into the wiki via `/wiki:ingest-meeting` or `/wiki:ingest-document`.
+   3. **Never modify raw sources.** Raw pipeline outputs and transcripts are immutable. The wiki references them but never edits them.
+   4. **Maintain cross-references.** Every wiki page links to related pages via `[[wiki-links]]` and `related:` frontmatter.
+
+   ### Quick Reference
+
+   | Task | Command |
+   |------|---------|
+   | Search wiki knowledge | `/wiki:query '<question>'` |
+   | Ingest a meeting | `/wiki:ingest-meeting '<name>' '<dir>' '<label>'` |
+   | Ingest a document | `/wiki:ingest-document '<name>' '<path>' '<type>'` |
+   | Check wiki health | `/wiki:lint --scope full` |
+   | View wiki status | `/wiki:status` |
+   ````
+
+4. **Report the result**:
+   - If created: `CLAUDE.md: Created with wiki-first mandate.`
+   - If appended: `CLAUDE.md: Updated with wiki-first mandate.`
+   - If already configured: `CLAUDE.md: Already configured — no changes made.`
+
+### Phase 6: Report Summary
 
 After skill completes, print a summary tailored to what was actually created:
 
@@ -111,6 +173,8 @@ Global files:     _index.md, _log.md
 Structure:        {actual folders created}
 Platform stubs:   {list, or "none"}
 Process stubs:    {list, or "none"}
+
+CLAUDE.md:        {Created with wiki-first mandate / Updated with wiki-first mandate / Already configured}
 
 Total files created: {count}
 
@@ -136,11 +200,14 @@ Next Steps:
 ## Success Criteria
 
 - Repo was scanned before any questions were asked
+- User was prompted for wiki directory name (unless `--wiki-dir` was provided)
 - User was interviewed with project-specific questions
 - No hardcoded platform or company names in the output
+- Skill received structured parameters (not prose context)
 - All `.obsidian/` config files present and valid JSON
 - `_schema/SCHEMA.md` reflects this specific project
 - All 7 templates created
 - `_index.md` and `_log.md` initialized
 - Only user-confirmed platform stubs created
-- Summary printed with actual file counts and next steps
+- Project `CLAUDE.md` checked and updated with wiki-first mandate if needed
+- Summary printed with actual file counts, CLAUDE.md status, and next steps
