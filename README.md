@@ -8,7 +8,7 @@ Add this repository as a marketplace, then install the plugin:
 
 ```bash
 # Add the marketplace
-claude plugin install bespoke-agentics@<your-github-url>
+claude plugin install bespoke-agentics@https://github.com/BespokeAgentics/bespoke-agentics-cc-plugin
 
 # Or test locally during development
 claude --plugin-dir ./bespoke-agentics-plugin
