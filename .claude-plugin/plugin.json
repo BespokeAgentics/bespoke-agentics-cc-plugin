@@ -1,11 +1,16 @@
 {
   "name": "bespoke-agentics",
-  "version": "1.0.1",
-  "description": "AI transparency auditing, agent architecture generation, UX evaluation, video-to-deliverables pipelines, workflow analysis, and Biome AI guardrails for Claude Code",
+  "version": "1.0.2",
+  "description": "AI transparency auditing, agent architecture generation, UX evaluation, Pi harness customization, video-to-deliverables pipelines, workflow analysis, and Biome AI guardrails for Claude Code",
   "author": {
     "name": "Bespoke Agentics"
   },
   "keywords": [
+    "pi",
+    "pi.dev",
+    "pi-package",
+    "coding-agent",
+    "harness-customization",
     "ai-transparency",
     "ux-audit",
     "video-analysis",

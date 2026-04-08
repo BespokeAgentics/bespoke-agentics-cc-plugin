@@ -1,6 +1,6 @@
 {
   "name": "bespoke-agentics-marketplace",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "description": "Bespoke Agentics plugin marketplace",
   "owner": {
     "name": "Bespoke Agentics"
@@ -8,7 +8,7 @@
   "plugins": [
     {
       "name": "bespoke-agentics",
-      "version": "1.0.1",
+      "version": "1.0.2",
       "description": "AI transparency auditing, agent architecture generation, UX evaluation, video-to-deliverables pipelines, workflow analysis, and Biome AI guardrails for Claude Code",
       "source": "./"
     }

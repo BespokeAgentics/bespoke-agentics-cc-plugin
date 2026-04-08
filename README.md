@@ -1,6 +1,6 @@
 # bespoke-agentics
 
-A Claude Code plugin with AI transparency auditing, agent architecture generation, UX evaluation, video-to-deliverables pipelines, workflow analysis, and a Karpathy-style LLM wiki knowledge system.
+A Claude Code plugin with AI transparency auditing, agent architecture generation, Pi harness customization, UX evaluation, video-to-deliverables pipelines, workflow analysis, and a Karpathy-style LLM wiki knowledge system.
 
 ## Installation
 
@@ -20,21 +20,35 @@ claude --plugin-dir ./bespoke-agentics-plugin
 
 | Skill | Command | Description |
 |-------|---------|-------------|
-| **AI Transparency** | `/bespoke-agentics:ai-transparency` | Audit and fix AI operations lacking UI state coverage (loading, streaming, logs, errors). Enforces the "No Black Boxes" policy. |
-| **Architect Agents** | `/bespoke-agentics:architect-agents` | Analyze a project and generate a complete `.claude/agents/` and `.claude/commands/` architecture with documentation. |
-| **UX Audit** | `/bespoke-agentics:ux-audit` | Comprehensive UX evaluation using Nielsen's 10 Heuristics and Norman's 6 Design Principles. |
-| **Video to Deliverables** | `/bespoke-agentics:video-to-deliverables` | End-to-end video analysis pipeline. Transforms recordings into workflow docs, migration analysis, meeting summaries, or training guides. |
-| **Workflow Analyzer** | `/bespoke-agentics:workflow-analyzer` | Client workflow analysis from video recordings. Produces application inventory, challenge mapping, and AI automation recommendations. |
-| **Setup Plugin** | `/bespoke-agentics:setup-plugin` | Scaffold, optimize, and package a folder as a well-formed Claude Code plugin. Converts `.claude/` directories into distributable plugins. |
+| **AI Transparency** | `/bespokeagentics:ai-transparency` | Audit and fix AI operations lacking UI state coverage (loading, streaming, logs, errors). Enforces the "No Black Boxes" policy. |
+| **Architect Agents** | `/bespokeagentics:architect-agents` | Analyze a project and generate a complete `.claude/agents/` and `.claude/commands/` architecture with documentation. |
+| **UX Audit** | `/bespokeagentics:ux-audit` | Comprehensive UX evaluation using Nielsen's 10 Heuristics and Norman's 6 Design Principles. |
+| **Video to Deliverables** | `/bespokeagentics:video-to-deliverables` | End-to-end video analysis pipeline. Transforms recordings into workflow docs, migration analysis, meeting summaries, or training guides. |
+| **Workflow Analyzer** | `/bespokeagentics:workflow-analyzer` | Client workflow analysis from video recordings. Produces application inventory, challenge mapping, and AI automation recommendations. |
+| **Setup Plugin** | `/bespokeagentics:setup-plugin` | Scaffold, optimize, and package a folder as a well-formed Claude Code plugin. Converts `.claude/` directories into distributable plugins. |
+| **Pi Assistant** | `/bespokeagentics:pi-assistant` | Understand the pi.dev coding agent, customize its harness, build Pi skills/extensions/packages, and search for or install Pi packages. |
+
+### Pi Assistant Commands
+
+| Command | Description |
+|---------|-------------|
+| `/bespokeagentics:pi-assistant` | General Pi harness and package workflow entry point |
+| `/bespokeagentics:pi-customize-harness` | Customize settings, context files, skills, prompt templates, extensions, or packages |
+| `/bespokeagentics:pi-build-extension` | Build or update a Pi TypeScript extension and its slash commands |
+| `/bespokeagentics:pi-build-skill` | Build or update a Pi skill with bundled references or helper scripts |
+| `/bespokeagentics:pi-build-package` | Build or update a shareable Pi package using conventional resource directories |
+| `/bespokeagentics:pi-search-packages` | Search npm packages tagged `pi-package` and recommend the best matches |
+| `/bespokeagentics:pi-install-package` | Install a Pi package with the correct source syntax and scope |
+| `/bespokeagentics:pi-review-setup` | Audit a local Pi setup and recommend targeted improvements |
 
 ### UX Audit Variants
 
 | Command | Description |
 |---------|-------------|
-| `/bespoke-agentics:ux-audit-code` | Code-only audit against UX anti-pattern library |
-| `/bespoke-agentics:ux-audit-visual` | Visual analysis of screenshots, GIFs, or video |
-| `/bespoke-agentics:ux-audit-quick` | Quick heuristic spot-check on a single component |
-| `/bespoke-agentics:ux-audit-a11y` | Accessibility-focused audit (ARIA, keyboard nav, color) |
+| `/bespokeagentics:ux-audit-code` | Code-only audit against UX anti-pattern library |
+| `/bespokeagentics:ux-audit-visual` | Visual analysis of screenshots, GIFs, or video |
+| `/bespokeagentics:ux-audit-quick` | Quick heuristic spot-check on a single component |
+| `/bespokeagentics:ux-audit-a11y` | Accessibility-focused audit (ARIA, keyboard nav, color) |
 
 ### Wiki Skills
 
@@ -42,13 +56,13 @@ A Karpathy-style LLM wiki system that serves as the single source of truth for p
 
 | Skill | Command | Description |
 |-------|---------|-------------|
-| **Wiki Init** | `/bespoke-agentics:wiki-init` | Initialize a new Obsidian wiki vault. Scans the repo for context, asks clarifying questions, then creates the vault structure, schema, page templates, and global indexes. |
-| **Wiki Scaffold Client** | `/bespoke-agentics:wiki-scaffold-client` | Create a new client workspace from a template. Derives folder structure, creates entity pages, ingests initial context documents, and populates a README with project overview. |
-| **Wiki Ingest Meeting** | `/bespoke-agentics:wiki-ingest-meeting` | Ingest a meeting transcript or analysis pipeline output. Creates or updates feature, gap, question, and decision pages, then links all entities to the new meeting summary. |
-| **Wiki Ingest Document** | `/bespoke-agentics:wiki-ingest-document` | Ingest a lightweight document (email, PDF, spec, Slack message). Updates affected feature, gap, decision, and question pages with new information. |
-| **Wiki Query** | `/bespoke-agentics:wiki-query` | Natural language search across wiki pages. Synthesizes answers with citations and optionally promotes substantive answers to new wiki pages. |
-| **Wiki Lint** | `/bespoke-agentics:wiki-lint` | Run a 7-dimension health check: broken links, orphaned pages, contradictions, stale content, missing cross-references, schema violations, and frontmatter errors. Optionally auto-fixes. |
-| **Wiki Confluence Reconcile** | `/bespoke-agentics:wiki-confluence-reconcile` | Detect drift between the wiki and Confluence exports, generate reconciliation reports, and optionally sync changes bidirectionally. |
+| **Wiki Init** | `/wiki:init` | Initialize a new Obsidian wiki vault. Scans the repo for context, asks clarifying questions, then creates the vault structure, schema, page templates, and global indexes. |
+| **Wiki Scaffold Client** | `/wiki:new-client` | Create a new client workspace from a template. Derives folder structure, creates entity pages, ingests initial context documents, and populates a README with project overview. |
+| **Wiki Ingest Meeting** | `/wiki:ingest-meeting` | Ingest a meeting transcript or analysis pipeline output. Creates or updates feature, gap, question, and decision pages, then links all entities to the new meeting summary. |
+| **Wiki Ingest Document** | `/wiki:ingest-document` | Ingest a lightweight document (email, PDF, spec, Slack message). Updates affected feature, gap, decision, and question pages with new information. |
+| **Wiki Query** | `/wiki:query` | Natural language search across wiki pages. Synthesizes answers with citations and optionally promotes substantive answers to new wiki pages. |
+| **Wiki Lint** | `/wiki:lint` | Run a 7-dimension health check: broken links, orphaned pages, contradictions, stale content, missing cross-references, schema violations, and frontmatter errors. Optionally auto-fixes. |
+| **Wiki Confluence Reconcile** | Skill only | Detect drift between the wiki and Confluence exports, generate reconciliation reports, and optionally sync changes bidirectionally. |
 
 **Wiki slash commands** provide quick access to common operations:
 

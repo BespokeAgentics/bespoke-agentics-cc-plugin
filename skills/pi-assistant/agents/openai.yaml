@@ -1,0 +1,4 @@
+interface:
+  display_name: "Pi Assistant"
+  short_description: "Customize pi.dev harnesses and packages"
+  default_prompt: "Use $pi-assistant to customize a pi.dev harness, build Pi resources, and find or install Pi packages."
