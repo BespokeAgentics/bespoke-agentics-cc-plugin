@@ -1,0 +1,58 @@
+{
+  "name": "bespoke-agentics-plugin",
+  "version": "1.0.2",
+  "description": "AI transparency auditing, agent architecture generation, UX evaluation, Pi harness customization, video-to-deliverables pipelines, workflow analysis, and Biome AI guardrails for Codex.",
+  "author": {
+    "name": "Bespoke Agentics",
+    "url": "https://github.com/BespokeAgentics"
+  },
+  "homepage": "https://github.com/BespokeAgentics/bespoke-agentics-cc-plugin#readme",
+  "repository": "https://github.com/BespokeAgentics/bespoke-agentics-cc-plugin",
+  "license": "MIT",
+  "keywords": [
+    "pi",
+    "pi.dev",
+    "pi-package",
+    "coding-agent",
+    "harness-customization",
+    "ai-transparency",
+    "ux-audit",
+    "video-analysis",
+    "agent-architecture",
+    "workflow-analysis",
+    "codex",
+    "prompt-builder",
+    "handoff",
+    "biome",
+    "linting",
+    "ai-guardrails"
+  ],
+  "skills": "./skills/",
+  "hooks": "./hooks.json",
+  "mcpServers": "./.mcp.json",
+  "apps": "./.app.json",
+  "interface": {
+    "displayName": "Bespoke Agentics",
+    "shortDescription": "AI transparency, UX, video workflow, wiki, and Pi assistant skills",
+    "longDescription": "Use Bespoke Agentics to audit AI operations for transparent user states, generate agent architecture, evaluate UX, transform videos into structured deliverables, analyze workflows, manage Karpathy-style project wikis, and work with Pi harness customization.",
+    "developerName": "Bespoke Agentics",
+    "category": "Coding",
+    "capabilities": [
+      "Interactive",
+      "Read",
+      "Write"
+    ],
+    "websiteURL": "https://github.com/BespokeAgentics/bespoke-agentics-cc-plugin",
+    "privacyPolicyURL": "[TODO: https://example.com/privacy]",
+    "termsOfServiceURL": "[TODO: https://example.com/terms]",
+    "defaultPrompt": [
+      "Audit this app for AI transparency gaps",
+      "Turn this workflow video into deliverables",
+      "Set up a project wiki for this repo"
+    ],
+    "brandColor": "#2563EB",
+    "composerIcon": "./assets/bespoke-agentics.svg",
+    "logo": "./assets/bespoke-agentics.svg",
+    "screenshots": []
+  }
+}

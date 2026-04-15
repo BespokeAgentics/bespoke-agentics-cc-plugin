@@ -100,7 +100,7 @@ if [ -n "$WARNINGS" ]; then
   MESSAGE="[AI Transparency] \"No Black Boxes\" policy violations in $(basename "$FILE_PATH"):
 ${WARNINGS}
 
-Run /bespoke-agentics:ai-transparency $(basename "$FILE_PATH") for detailed audit and fixes."
+Run /bespokeagentics:ai-transparency $(basename "$FILE_PATH") for detailed audit and fixes."
   jq -n --arg msg "$MESSAGE" '{"systemMessage": $msg}'
 fi
 
