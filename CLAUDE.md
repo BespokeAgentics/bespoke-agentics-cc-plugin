@@ -31,6 +31,15 @@ When a project has a wiki (at `wiki/` or configured via `/wiki:init`), the wiki 
 | Checking wiki statistics | `/wiki:status` |
 | Syncing with Confluence | Use the `wiki-confluence-reconcile` skill |
 
+### When to Use Each Glean Command
+
+| Situation | Command |
+|-----------|---------|
+| Bootstrap a new Glean Agent Toolkit project (Python) | `/glean:init` |
+| Add a custom `@tool_spec` tool to an existing project | `/glean:add-tool '<name>' --description '<text>' --params '<n:t,...>'` |
+| Wire an additional framework adapter (OpenAI / LangChain / ADK) | `/glean:add-adapter --framework <name>` |
+| Diagnose a broken Glean agent setup | `/glean:doctor` (add `--probe` for a live API ping) |
+
 ### Agent Workflow Integration
 
 **Before starting any analysis task:**
@@ -74,7 +83,8 @@ When assessing features or making decisions, use the standard color system:
     │  ├─ wiki-ingest-document/       # Ingest emails, specs, PDFs
     │  ├─ wiki-confluence-reconcile/  # Bidirectional Confluence sync
     │  ├─ wiki-lint/                  # 7-dimension health check
-    │  └─ wiki-query/                 # Natural language search + synthesis
+    │  ├─ wiki-query/                 # Natural language search + synthesis
+    │  └─ glean-agent-toolkit/        # Scaffold, extend, and triage Glean agents
     ├─ commands/                      # Slash commands
     │  ├─ wiki/                       # Wiki commands (namespaced)
     │  │  ├─ init.md                  # /wiki:init
@@ -84,6 +94,11 @@ When assessing features or making decisions, use the standard color system:
     │  │  ├─ lint.md                  # /wiki:lint
     │  │  ├─ query.md                 # /wiki:query
     │  │  └─ status.md                # /wiki:status
+    │  ├─ glean/                      # Glean commands (namespaced)
+    │  │  ├─ init.md                  # /glean:init
+    │  │  ├─ add-tool.md              # /glean:add-tool
+    │  │  ├─ add-adapter.md           # /glean:add-adapter
+    │  │  └─ doctor.md                # /glean:doctor
     │  └─ wiki-*.md                   # Flat command aliases
     ├─ agents/
     │  └─ wiki-pipeline.md            # Wiki orchestration agent (3 workflows)
@@ -96,6 +111,7 @@ When assessing features or making decisions, use the standard color system:
 3. **Ingest content**: Use `/wiki:ingest-meeting` or `/wiki:ingest-document`
 4. **Check health**: Run `/wiki:lint --scope full`
 5. **Search knowledge**: Run `/wiki:query '<question>'`
+6. **Build a Glean agent**: Run `/glean:init` — interviews for framework choice, scaffolds a runnable Python project, and offers to install the upstream Glean SDK skills
 
 ## Quality Standards
 

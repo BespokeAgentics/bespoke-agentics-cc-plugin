@@ -1,0 +1,36 @@
+[build-system]
+requires = ["hatchling>=1.18.0"]
+build-backend = "hatchling.build"
+
+[project]
+name = "{PROJECT_NAME}"
+version = "0.1.0"
+description = "Glean agent for {PROJECT_NAME}"
+readme = "README.md"
+requires-python = ">=3.10,<4.0"
+dependencies = [
+  "glean-agent-toolkit[{FRAMEWORK_EXTRA}]>=0.5.0,<1.0",
+  "python-dotenv>=1.0.0,<2.0",
+]
+
+[project.optional-dependencies]
+openai = ["glean-agent-toolkit[openai]>=0.5.0,<1.0"]
+langchain = [
+  "glean-agent-toolkit[langchain]>=0.5.0,<1.0",
+  "langchain>=0.3,<1.0",
+  "langgraph>=0.2,<1.0",
+  "langchain-openai>=0.2,<1.0",
+]
+adk = ["glean-agent-toolkit[adk]>=0.5.0,<1.0"]
+all = ["glean-agent-toolkit[all]>=0.5.0,<1.0"]
+dev = [
+  "pytest>=7.4.3,<9.0",
+  "ruff>=0.5,<1.0",
+]
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/{PROJECT_MODULE}"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py310"

@@ -1,0 +1,42 @@
+"""OpenAI Agents SDK agent for {PROJECT_NAME}."""
+from __future__ import annotations
+
+import os
+import sys
+
+from dotenv import load_dotenv
+
+load_dotenv()
+
+for var in ("GLEAN_API_TOKEN", "GLEAN_SERVER_URL", "OPENAI_API_KEY"):
+    if not os.getenv(var):
+        sys.exit(f"Missing required env var: {var}")
+
+from agents import Agent, Runner  # noqa: E402
+from glean.agent_toolkit.tools import {ENABLED_TOOLS_IMPORTS}  # noqa: E402
+
+INSTRUCTIONS = (
+    "You are a helpful assistant for {PROJECT_NAME}. "
+    "Use the Glean tools to answer questions about company knowledge, people, and documents. "
+    "Cite sources where possible."
+)
+
+agent = Agent(
+    name="{PROJECT_NAME}",
+    instructions=INSTRUCTIONS,
+    tools=[{ENABLED_TOOLS_AS_OPENAI}],
+)
+
+
+def main() -> None:
+    if len(sys.argv) > 1:
+        prompt = " ".join(sys.argv[1:])
+    else:
+        prompt = "Find recent planning documents."
+
+    result = Runner.run_sync(agent, prompt)
+    print(result.final_output)
+
+
+if __name__ == "__main__":
+    main()

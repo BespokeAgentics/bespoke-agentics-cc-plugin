@@ -1,0 +1,40 @@
+"""Custom @tool_spec tools for {PROJECT_NAME}.
+
+Each tool is framework-agnostic — adapt at the use site with `.as_openai_tool()`,
+`.as_langchain_tool()`, or `.as_adk_tool()`.
+
+Reference: install the upstream `glean-agent-toolkit-builder` Claude Code skill
+for full decorator semantics, schema generation rules, and error-handling helpers.
+"""
+from __future__ import annotations
+
+from typing import Annotated
+
+from pydantic import BaseModel, Field
+
+from glean.agent_toolkit.context import GleanContext
+from glean.agent_toolkit.decorators import tool_spec
+
+
+# === BEGIN TOOL BLOCK ===
+class {TOOL_NAME_PASCAL}Result(BaseModel):
+    """Output schema for the {TOOL_NAME} tool."""
+
+    result: str
+
+
+@tool_spec(
+    name="{TOOL_NAME}",
+    description="{TOOL_DESCRIPTION}",
+    output_model={TOOL_NAME_PASCAL}Result,
+)
+def {TOOL_NAME}(
+    ctx: GleanContext | None = None,
+    *,
+    {TOOL_PARAMS}
+) -> {TOOL_NAME_PASCAL}Result:
+    """{TOOL_DESCRIPTION}"""
+    # TODO: implement {TOOL_NAME}.
+    # `ctx.get_client()` returns an authenticated Glean API client when you need it.
+    return {TOOL_NAME_PASCAL}Result(result="not yet implemented")
+# === END TOOL BLOCK ===

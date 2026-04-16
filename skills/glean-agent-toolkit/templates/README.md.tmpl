@@ -1,0 +1,74 @@
+# {PROJECT_NAME}
+
+A Glean agent built with the [Glean Agent Toolkit](https://github.com/gleanwork/glean-agent-toolkit).
+
+## Setup
+
+```bash
+# Create a virtualenv
+python3 -m venv .venv
+source .venv/bin/activate    # Windows: .venv\Scripts\activate
+
+# Install with your chosen framework's extras
+pip install -e ".[{FRAMEWORK_EXTRA}]"
+
+# Configure credentials
+cp .env.example .env
+# Edit .env and fill in GLEAN_API_TOKEN and GLEAN_SERVER_URL
+# (also fill in OPENAI_API_KEY / GOOGLE_API_KEY as appropriate for your framework)
+set -a; source .env; set +a
+```
+
+## Run
+
+```bash
+python -m {PROJECT_MODULE}.agent_{FRAMEWORK_EXTRA}
+```
+
+Built-in tools enabled in this project: `{ENABLED_TOOLS_CSV}`
+
+## Add a custom tool
+
+```bash
+/glean:add-tool my_tool --description "Does X" --params query:str
+```
+
+Custom tools live at `src/{PROJECT_MODULE}/tools/custom_tools.py`.
+
+## Add another framework
+
+```bash
+/glean:add-adapter --framework langchain
+```
+
+This updates `pyproject.toml` and scaffolds `src/{PROJECT_MODULE}/agent_<framework>.py`.
+
+## Diagnose
+
+```bash
+/glean:doctor              # check env, install, structure
+/glean:doctor --probe      # also pings Glean (consumes API quota)
+```
+
+## Project layout
+
+```
+{PROJECT_NAME}/
+├── pyproject.toml
+├── .env.example
+├── .gitignore
+├── README.md
+└── src/
+    └── {PROJECT_MODULE}/
+        ├── __init__.py
+        ├── agent_{FRAMEWORK_EXTRA}.py
+        └── tools/
+            ├── __init__.py
+            └── custom_tools.py
+```
+
+## Reference
+
+- Toolkit docs: <https://developers.glean.com/guides/agents/toolkit>
+- SDK API: install the upstream `glean-agent-toolkit-guide` Claude Code skill
+- Tool authoring: install the upstream `glean-agent-toolkit-builder` Claude Code skill

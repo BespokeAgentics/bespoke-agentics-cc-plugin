@@ -1,0 +1,40 @@
+"""LangChain / LangGraph agent for {PROJECT_NAME}."""
+from __future__ import annotations
+
+import os
+import sys
+
+from dotenv import load_dotenv
+
+load_dotenv()
+
+for var in ("GLEAN_API_TOKEN", "GLEAN_SERVER_URL", "OPENAI_API_KEY"):
+    if not os.getenv(var):
+        sys.exit(f"Missing required env var: {var}")
+
+from langchain_openai import ChatOpenAI  # noqa: E402
+from langgraph.prebuilt import create_react_agent  # noqa: E402
+from glean.agent_toolkit.tools import {ENABLED_TOOLS_IMPORTS}  # noqa: E402
+
+SYSTEM = (
+    "You are a helpful assistant for {PROJECT_NAME}. "
+    "Use the Glean tools to answer questions about company knowledge, people, and documents."
+)
+
+llm = ChatOpenAI(model="gpt-4o-mini", temperature=0)
+tools = [{ENABLED_TOOLS_AS_LANGCHAIN}]
+agent = create_react_agent(llm, tools=tools, prompt=SYSTEM)
+
+
+def main() -> None:
+    if len(sys.argv) > 1:
+        prompt = " ".join(sys.argv[1:])
+    else:
+        prompt = "Find recent planning documents."
+
+    result = agent.invoke({"messages": [("user", prompt)]})
+    print(result["messages"][-1].content)
+
+
+if __name__ == "__main__":
+    main()
