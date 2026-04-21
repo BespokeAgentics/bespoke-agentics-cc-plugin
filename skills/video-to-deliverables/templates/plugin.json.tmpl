@@ -1,0 +1,28 @@
+{
+  "name": "{{PLUGIN_SLUG}}",
+  "version": "{{VERSION}}",
+  "description": "{{DESCRIPTION}}",
+  "author": {
+    "name": "{{AUTHOR_NAME}}"
+  },
+  "source": {
+    "generated_by": "video-to-deliverables:skill-factory",
+    "source_video": "{{VIDEO_SOURCE}}",
+    "generated_on": "{{GENERATED_DATE}}"
+  },
+  "skills": [
+    {{#each SKILLS}}
+    "./skills/{{this}}"{{#unless @last}},{{/unless}}
+    {{/each}}
+  ],
+  "commands": [
+    {{#each COMMANDS}}
+    "./commands/{{this}}"{{#unless @last}},{{/unless}}
+    {{/each}}
+  ]{{#if INCLUDE_AGENTS}},
+  "agents": [
+    {{#each AGENTS}}
+    "./agents/{{this}}"{{#unless @last}},{{/unless}}
+    {{/each}}
+  ]{{/if}}
+}

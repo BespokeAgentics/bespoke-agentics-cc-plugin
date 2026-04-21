@@ -1,0 +1,51 @@
+# {{PLUGIN_NAME}}
+
+{{PLUGIN_DESCRIPTION}}
+
+## Source
+
+Generated from: **{{VIDEO_SOURCE}}**
+Video mode: `{{VIDEO_MODE}}`
+Generated on: {{GENERATED_DATE}}
+
+This plugin was produced by the `video-to-deliverables:skill-factory` profile. Every claim in every skill is grounded in a frame timestamp or fetched external source — see each skill's `references/sources.md` for the provenance trail.
+
+## Skills
+
+{{#each SKILLS}}
+- **`{{this.name}}`** — {{this.description}}
+{{/each}}
+
+## Commands
+
+{{#each COMMANDS}}
+- `/{{this.slug}}` — {{this.description}}
+{{/each}}
+
+{{#if HAS_AGENTS}}
+## Agents
+
+{{#each AGENTS}}
+- **{{this.name}}** — {{this.role}}
+{{/each}}
+{{/if}}
+
+## Install
+
+Drop this directory into your Claude Code plugins marketplace, or reference it directly in your settings under `plugins`. The skills and commands become available as `/{{PLUGIN_SLUG}}:...`.
+
+## Caveats
+
+- This plugin was generated from a single video. Facts are as accurate as the video + any fetched documentation. Check `skills/*/references/sources.md` before relying on any specific command or configuration value in production.
+- Any claim marked "the video did not show..." is an honest gap. Fill it in yourself before shipping.
+- Scripts marked with transcription-confidence warnings in their source comments should be verified against official documentation before running.
+
+## Regenerating
+
+To re-run the skill-factory with different choices:
+
+```
+/bespoke-agentics:video-to-deliverables '{{VIDEO_SOURCE}}' '{{PROJECT_NAME}}' '{{LABEL}}' --profile skill-factory --from-deliverables {{DELIVERABLES_DIR}}
+```
+
+`--from-deliverables` skips the expensive extraction/analysis phases and re-runs only the interview and generation.
