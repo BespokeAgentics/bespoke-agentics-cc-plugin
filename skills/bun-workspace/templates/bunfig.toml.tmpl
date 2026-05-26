@@ -1,0 +1,22 @@
+# Bun configuration for the workspace root.
+# Only include sections you actually need — Bun's defaults are sensible.
+
+[install]
+# "hoisted" (default): flat node_modules, fast, matches npm intuition.
+# "isolated": pnpm-style isolated layout. Use when packages need strict dep
+#             isolation or you've hit peer-dep conflicts between workspaces.
+linker = "{{LINKER_MODE}}"
+
+# Treat any failing peer dep as a hard error in CI.
+# auto = "fallback" | "force" | "disable"
+# auto = "fallback"
+
+[install.cache]
+# Cache directory (defaults to ~/.bun/install/cache). Override if your CI
+# needs a project-local cache:
+# dir = ".bun-cache"
+disable = false
+
+# [test]
+# coverage = true
+# coverageThreshold = { lines = 0.8, functions = 0.8 }

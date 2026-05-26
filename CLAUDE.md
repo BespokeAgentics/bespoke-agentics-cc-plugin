@@ -40,6 +40,17 @@ When a project has a wiki (at `wiki/` or configured via `/wiki:init`), the wiki 
 | Wire an additional framework adapter (OpenAI / LangChain / ADK) | `/glean:add-adapter --framework <name>` |
 | Diagnose a broken Glean agent setup | `/glean:doctor` (add `--probe` for a live API ping) |
 
+### When to Use Each Bun Workspace Command
+
+| Situation | Command |
+|-----------|---------|
+| Inspect a directory of sibling projects, see what a monorepo migration would look like | `/bun:analyze [<dir>]` |
+| Execute the migration into a Bun workspace (interactive, reversible) | `/bun:convert [<dir>] [--layout flat\|buckets] [--scope @org]` |
+| Health-check an existing Bun workspace for drift, nested lockfiles, missing tsconfig extension | `/bun:audit [<dir>] [--fix]` |
+| Scaffold a new package into an existing Bun workspace | `/bun:add <package-path> [--name <name>] [--kind library\|app]` |
+
+The Bun Workspace skill manages the *workspace/dependency* layer; pair it with `/submodule:*` when you also want to pin children at the git layer.
+
 ### Agent Workflow Integration
 
 **Before starting any analysis task:**
@@ -84,7 +95,8 @@ When assessing features or making decisions, use the standard color system:
     │  ├─ wiki-confluence-reconcile/  # Bidirectional Confluence sync
     │  ├─ wiki-lint/                  # 7-dimension health check
     │  ├─ wiki-query/                 # Natural language search + synthesis
-    │  └─ glean-agent-toolkit/        # Scaffold, extend, and triage Glean agents
+    │  ├─ glean-agent-toolkit/        # Scaffold, extend, and triage Glean agents
+    │  └─ bun-workspace/              # Convert/audit/extend Bun workspace monorepos
     ├─ commands/                      # Slash commands
     │  ├─ wiki/                       # Wiki commands (namespaced)
     │  │  ├─ init.md                  # /wiki:init
@@ -99,6 +111,11 @@ When assessing features or making decisions, use the standard color system:
     │  │  ├─ add-tool.md              # /glean:add-tool
     │  │  ├─ add-adapter.md           # /glean:add-adapter
     │  │  └─ doctor.md                # /glean:doctor
+    │  ├─ bun/                        # Bun Workspace commands (namespaced)
+    │  │  ├─ analyze.md               # /bun:analyze
+    │  │  ├─ convert.md               # /bun:convert
+    │  │  ├─ audit.md                 # /bun:audit
+    │  │  └─ add.md                   # /bun:add
     │  └─ wiki-*.md                   # Flat command aliases
     ├─ agents/
     │  └─ wiki-pipeline.md            # Wiki orchestration agent (3 workflows)
@@ -112,6 +129,7 @@ When assessing features or making decisions, use the standard color system:
 4. **Check health**: Run `/wiki:lint --scope full`
 5. **Search knowledge**: Run `/wiki:query '<question>'`
 6. **Build a Glean agent**: Run `/glean:init` — interviews for framework choice, scaffolds a runnable Python project, and offers to install the upstream Glean SDK skills
+7. **Consolidate sibling projects into a Bun workspace**: Run `/bun:analyze <dir>` for a read-only migration plan, then `/bun:convert <dir>` to execute
 
 ## Quality Standards
 

@@ -1,0 +1,21 @@
+{
+  "name": "{{ROOT_NAME}}",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "workspaces": {{WORKSPACES_JSON}},
+  "scripts": {
+    "install:all": "bun install",
+    "build": "bun run --filter '*' build",
+    "test": "bun run --filter '*' test",
+    "typecheck": "bun run --filter '*' typecheck",
+    "lint": "bun run --filter '*' lint",
+    "clean": "bun run --filter '*' clean && rm -rf node_modules"
+  },
+  "devDependencies": {{HOISTED_DEV_DEPS_JSON}},
+  "dependencies": {{HOISTED_DEPS_JSON}},
+  "overrides": {{HOISTED_OVERRIDES_JSON}},
+  "engines": {
+    "bun": ">=1.1.0"
+  }
+}
