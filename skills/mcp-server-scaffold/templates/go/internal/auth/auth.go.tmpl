@@ -1,0 +1,88 @@
+package auth
+
+import (
+	"encoding/base64"
+	"encoding/json"
+	"strings"
+	"time"
+
+	"{{GO_MODULE}}/internal/config"
+	myerr "{{GO_MODULE}}/internal/errors"
+)
+
+type Principal struct {
+	ID     string
+	Source string // "oidc" | "api-key"
+	Token  string
+}
+
+// Authenticate verifies an Authorization header against the configured mode.
+// The bearer is preserved on the Principal so the backend client forwards it
+// unchanged — the user's identity flows to the system of record.
+func Authenticate(authHeader string, cfg config.Config) (Principal, error) {
+	if !strings.HasPrefix(authHeader, "Bearer ") {
+		return Principal{}, myerr.Unauthorized("Authorization header missing 'Bearer <token>'.")
+	}
+	token := strings.TrimSpace(strings.TrimPrefix(authHeader, "Bearer "))
+	if token == "" {
+		return Principal{}, myerr.Unauthorized("Empty bearer token.")
+	}
+
+	if cfg.AuthMode == "oidc" || cfg.AuthMode == "both" {
+		if p, err := verifyOIDC(token, cfg); err == nil {
+			return p, nil
+		} else if cfg.AuthMode != "both" {
+			return Principal{}, err
+		}
+	}
+	if cfg.AuthMode == "api-key" || cfg.AuthMode == "both" {
+		return verifyAPIKey(token, cfg)
+	}
+	return Principal{}, myerr.Unauthorized("No matching auth method accepted the token.")
+}
+
+func verifyOIDC(token string, cfg config.Config) (Principal, error) {
+	if cfg.OIDCIssuerURL == "" {
+		return Principal{}, myerr.Unauthorized("OIDC mode is on but OIDC_ISSUER_URL is unset.")
+	}
+	// Stub: decode the JWT payload only. Production use must verify the
+	// signature against the issuer's JWKS (golang.org/x/oauth2/jwt, lestrrat-go/jwx, etc.).
+	parts := strings.Split(token, ".")
+	if len(parts) != 3 {
+		return Principal{}, myerr.Unauthorized("Malformed OIDC token.")
+	}
+	raw, err := base64.RawURLEncoding.DecodeString(parts[1])
+	if err != nil {
+		return Principal{}, myerr.Unauthorized("OIDC token payload undecodable.")
+	}
+	var claims struct {
+		Sub string `json:"sub"`
+		Aud string `json:"aud"`
+		Exp int64  `json:"exp"`
+	}
+	if err := json.Unmarshal(raw, &claims); err != nil || claims.Sub == "" {
+		return Principal{}, myerr.Unauthorized("OIDC token missing subject.")
+	}
+	if claims.Exp > 0 && time.Now().Unix() > claims.Exp {
+		return Principal{}, myerr.Unauthorized("OIDC token expired.")
+	}
+	if cfg.OIDCAudience != "" && claims.Aud != cfg.OIDCAudience {
+		return Principal{}, myerr.Unauthorized("OIDC token audience mismatch.")
+	}
+	return Principal{ID: claims.Sub, Source: "oidc", Token: token}, nil
+}
+
+func verifyAPIKey(token string, cfg config.Config) (Principal, error) {
+	for _, k := range strings.Split(cfg.APIKeysCSV, ",") {
+		if strings.TrimSpace(k) == token {
+			return Principal{
+				ID:     "apikey:" + token[:min(6, len(token))] + "…",
+				Source: "api-key",
+				Token:  token,
+			}, nil
+		}
+	}
+	return Principal{}, myerr.Unauthorized("API key not recognized.")
+}
+
+func min(a, b int) int { if a < b { return a }; return b }

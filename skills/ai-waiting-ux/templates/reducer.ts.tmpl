@@ -1,0 +1,207 @@
+import {
+  type AgentEvent,
+  type SessionId,
+  type ToolCall,
+  type Usage,
+  assertNever,
+} from '{{IMPORT_ROOT}}/events';
+
+export type SessionStatus =
+  | 'idle'
+  | 'running'
+  | 'paused'
+  | 'success'
+  | 'error'
+  | 'aborted';
+
+export type DurationSample = {
+  type: AgentEvent['type'];
+  durationMs: number;
+};
+
+export type SessionState = {
+  sessionId: SessionId | null;
+  status: SessionStatus;
+  startedAt: number | null;
+  endedAt: number | null;
+  lastEventAt: number;
+  currentStep: number;
+  activeToolCall: ToolCall | null;
+  completedToolCalls: ToolCall[];
+  textBuffer: string;
+  thinkingBuffer: string;
+  cumulativeUsage: Usage;
+  modelId: string | null;
+  taskType: string | undefined;
+  stepBudget: number | undefined;
+  history: DurationSample[];
+  lastError: { name: string; message: string } | null;
+};
+
+export const initialSessionState: SessionState = {
+  sessionId: null,
+  status: 'idle',
+  startedAt: null,
+  endedAt: null,
+  lastEventAt: 0,
+  currentStep: 0,
+  activeToolCall: null,
+  completedToolCalls: [],
+  textBuffer: '',
+  thinkingBuffer: '',
+  cumulativeUsage: { inputTokens: 0, outputTokens: 0 },
+  modelId: null,
+  taskType: undefined,
+  stepBudget: undefined,
+  history: [],
+  lastError: null,
+};
+
+/**
+ * Pure reducer. Replaying the persisted event log MUST reproduce state
+ * identical to the live session. No clocks, no Math.random, no I/O.
+ */
+export function agentReducer(state: SessionState, event: AgentEvent): SessionState {
+  const next: SessionState = { ...state, lastEventAt: event.timestamp };
+
+  switch (event.type) {
+    case 'session.start':
+      return {
+        ...initialSessionState,
+        sessionId: event.sessionId,
+        status: 'running',
+        startedAt: event.timestamp,
+        lastEventAt: event.timestamp,
+        modelId: event.modelId,
+        taskType: event.taskType,
+        stepBudget: event.stepBudget,
+      };
+
+    case 'message.start':
+      next.textBuffer = '';
+      next.thinkingBuffer = '';
+      return next;
+
+    case 'text.delta':
+      next.textBuffer = state.textBuffer + event.text;
+      return next;
+
+    case 'thinking.delta':
+      next.thinkingBuffer = state.thinkingBuffer + event.text;
+      return next;
+
+    case 'tool.use': {
+      const toolCall: ToolCall = {
+        toolUseId: event.toolUseId,
+        toolName: event.toolName,
+        input: event.input,
+        status: 'running',
+        startedAt: event.timestamp,
+        endedAt: null,
+      };
+      next.activeToolCall = toolCall;
+      next.currentStep = state.currentStep + 1;
+      return next;
+    }
+
+    case 'tool.input.update':
+      if (state.activeToolCall?.toolUseId === event.toolUseId) {
+        next.activeToolCall = { ...state.activeToolCall, input: event.input };
+      }
+      return next;
+
+    case 'tool.result': {
+      const active = state.activeToolCall;
+      const matched =
+        active?.toolUseId === event.toolUseId
+          ? active
+          : state.completedToolCalls.find((c) => c.toolUseId === event.toolUseId) ?? null;
+
+      if (!matched) return next;
+
+      const finalized: ToolCall = {
+        ...matched,
+        status: event.isError ? 'error' : 'complete',
+        endedAt: event.timestamp,
+        outputPreview: event.outputPreview,
+        isError: event.isError,
+      };
+
+      next.completedToolCalls = [...state.completedToolCalls, finalized];
+      next.activeToolCall = null;
+      next.history = [
+        ...state.history,
+        {
+          type: 'tool.use',
+          durationMs: (finalized.endedAt ?? event.timestamp) - finalized.startedAt,
+        },
+      ].slice(-50);
+      return next;
+    }
+
+    case 'message.stop':
+      next.cumulativeUsage = {
+        inputTokens: state.cumulativeUsage.inputTokens + event.usage.inputTokens,
+        outputTokens: state.cumulativeUsage.outputTokens + event.usage.outputTokens,
+      };
+      return next;
+
+    case 'heartbeat':
+      // No state change; presence in the log is the signal.
+      return next;
+
+    case 'control.pause':
+      next.status = 'paused';
+      return next;
+
+    case 'control.resume':
+      next.status = 'running';
+      return next;
+
+    case 'control.abort':
+      // Terminal transition happens on session.stop; this just records intent.
+      return next;
+
+    case 'session.stop':
+      next.status = event.status;
+      next.endedAt = event.timestamp;
+      next.lastError = event.status === 'error' ? event.error ?? null : null;
+      return next;
+
+    default:
+      return assertNever(event);
+  }
+}
+
+/** Replay a persisted event log to reconstruct a SessionState. */
+export function replay(events: AgentEvent[]): SessionState {
+  return events.reduce(agentReducer, initialSessionState);
+}
+
+// --- Selectors -------------------------------------------------------------
+
+export const selectIsRunning = (s: SessionState) =>
+  s.status === 'running' || s.status === 'paused';
+
+export const selectIsTerminal = (s: SessionState) =>
+  s.status === 'success' || s.status === 'error' || s.status === 'aborted';
+
+export const selectElapsedMs = (s: SessionState, nowMs: number): number => {
+  if (!s.startedAt) return 0;
+  const end = s.endedAt ?? nowMs;
+  return Math.max(0, end - s.startedAt);
+};
+
+export const selectActiveToolCall = (s: SessionState) => s.activeToolCall;
+export const selectCompletedToolCalls = (s: SessionState) => s.completedToolCalls;
+export const selectCurrentStep = (s: SessionState) => s.currentStep;
+export const selectStepBudget = (s: SessionState) => s.stepBudget ?? 12;
+export const selectTextBuffer = (s: SessionState) => s.textBuffer;
+export const selectThinkingBuffer = (s: SessionState) => s.thinkingBuffer;
+export const selectCumulativeUsage = (s: SessionState) => s.cumulativeUsage;
+
+export const selectIdleMs = (s: SessionState, nowMs: number): number =>
+  Math.max(0, nowMs - s.lastEventAt);
+
+export const selectIsStalled = (s: SessionState, nowMs: number, thresholdMs = 60_000): boolean =>
+  selectIsRunning(s) && selectIdleMs(s, nowMs) > thresholdMs;

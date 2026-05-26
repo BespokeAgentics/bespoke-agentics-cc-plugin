@@ -1,0 +1,45 @@
+import { z } from "zod";
+import type { Tool } from "../pipeline";
+
+// READ-ONLY tool. No mutation gate import.
+// Natural-language queries are the hardest to predict in scope, so this tool
+// opts into the rate limiter. Ceiling lives in config so ops can tune it
+// per-environment without a code change.
+
+const Input = z.object({
+  q: z.string().min(3).max(280),
+});
+
+const OutputItem = z.object({
+  id: z.string(),
+  name: z.string(),
+  country: z.string(),
+  segment: z.string(),
+  employeeCount: z.number(),
+});
+const Output = z.array(OutputItem);
+
+type In = z.infer<typeof Input>;
+type Out = z.infer<typeof Output>;
+
+export const aiSearchCompanies: Tool<In, Out> = {
+  name: "ai_search_companies",
+  description:
+    "Natural-language company search. Subject to a per-user rate limit (configurable via MCP_RATE_LIMIT_AI_SEARCH_PER_MIN). " +
+    "Prefer search_companies with explicit filters when you know what you want.",
+  inputSchema: Input,
+  outputSchema: Output,
+  mutates: false,
+  // rateLimit is set when the tool is registered, so the per-minute ceiling
+  // can come from config rather than being baked into the file.
+  async execute(ctx, input) {
+    const results = await ctx.backend.aiSearchCompanies(input.q);
+    return results.map((c) => ({
+      id: c.id,
+      name: c.name,
+      country: c.country,
+      segment: c.segment,
+      employeeCount: c.employeeCount,
+    }));
+  },
+};

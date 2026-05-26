@@ -1,0 +1,82 @@
+package tests
+
+import (
+	"context"
+	"encoding/json"
+	"errors"
+	"testing"
+
+	"{{GO_MODULE}}/internal/backends"
+	"{{GO_MODULE}}/internal/config"
+	myerr "{{GO_MODULE}}/internal/errors"
+	"{{GO_MODULE}}/internal/pipeline"
+	"{{GO_MODULE}}/internal/ratelimit"
+	"{{GO_MODULE}}/internal/tools"
+)
+
+// TDD-style. Written first. Asserts the backend is NEVER called when the
+// gate is closed. Implement the guard until this passes — and never let
+// it regress.
+func TestMutationGate_GateClosed_BackendNotCalled(t *testing.T) {
+	fake := &backends.Fake{}
+	tctx := &pipeline.ToolContext{
+		Config:  config.Config{MutationsEnabled: false, AuthMode: "oidc"},
+		Backend: fake,
+		Limiter: ratelimit.New(),
+	}
+	raw, _ := json.Marshal(map[string]any{
+		"subject":  "test",
+		"body":     "a sufficiently long body for validation to pass",
+		"priority": "normal",
+	})
+	_, err := pipeline.Run[*tools.CreateTicketArgs, tools.TicketDTO](
+		context.Background(), tctx, "create_ticket", true, nil, raw, tools.CreateTicket,
+	)
+	var te *myerr.ToolError
+	if !errors.As(err, &te) || te.Code != myerr.CodeMutationDisabled {
+		t.Fatalf("expected MUTATION_DISABLED, got: %v", err)
+	}
+	if len(fake.CreateTicketCalls) != 0 {
+		t.Fatalf("backend was called %d times with the gate closed", len(fake.CreateTicketCalls))
+	}
+}
+
+func TestMutationGate_ErrorMessageNamesTheFix(t *testing.T) {
+	fake := &backends.Fake{}
+	tctx := &pipeline.ToolContext{
+		Config: config.Config{MutationsEnabled: false}, Backend: fake, Limiter: ratelimit.New(),
+	}
+	raw, _ := json.Marshal(map[string]any{
+		"subject": "x", "body": "longer than ten chars please", "priority": "normal",
+	})
+	_, err := pipeline.Run[*tools.CreateTicketArgs, tools.TicketDTO](
+		context.Background(), tctx, "create_ticket", true, nil, raw, tools.CreateTicket,
+	)
+	if err == nil || !contains(err.Error(), "MCP_MUTATIONS_ENABLED") {
+		t.Fatalf("error must name the env var to flip; got: %v", err)
+	}
+}
+
+func TestMutationGate_GateOpen_BackendCalled(t *testing.T) {
+	fake := &backends.Fake{CreateResult: backends.Ticket{ID: "t1", Subject: "x", Status: "open", CreatedAt: "now"}}
+	tctx := &pipeline.ToolContext{
+		Config: config.Config{MutationsEnabled: true}, Backend: fake, Limiter: ratelimit.New(),
+	}
+	raw, _ := json.Marshal(map[string]any{
+		"subject": "test", "body": "a sufficiently long body for validation", "priority": "normal",
+	})
+	out, err := pipeline.Run[*tools.CreateTicketArgs, tools.TicketDTO](
+		context.Background(), tctx, "create_ticket", true, nil, raw, tools.CreateTicket,
+	)
+	if err != nil { t.Fatalf("unexpected error: %v", err) }
+	if out.ID != "t1" || len(fake.CreateTicketCalls) != 1 {
+		t.Fatalf("backend not called or wrong output: %+v / %+v", out, fake.CreateTicketCalls)
+	}
+}
+
+func contains(s, sub string) bool {
+	for i := 0; i+len(sub) <= len(s); i++ {
+		if s[i:i+len(sub)] == sub { return true }
+	}
+	return false
+}

@@ -1,0 +1,12 @@
+  server.tool(
+    "wiki_read_page",
+    "Return the full markdown content of one wiki page, with parsed frontmatter.",
+    {
+      path: z.string().describe("Path relative to the wiki root, ending in '.md'."),
+    },
+    async ({ path }) => {
+      repo.resolveWikiPath(path);
+      const page = await repo.readPage(path);
+      return jsonResult(page);
+    }
+  );

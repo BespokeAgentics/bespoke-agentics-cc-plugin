@@ -1,0 +1,34 @@
+import type { AgentEvent, SessionId } from '{{IMPORT_ROOT}}/events';
+
+/**
+ * Transport — moves AgentEvents from the Node backend to the browser, and
+ * control messages back. Three implementations:
+ *   - sse-route / sse-client  (default; one-way + auto-reconnect)
+ *   - websocket-server / websocket-client  (bidirectional)
+ *   - server-action  (async-iterator Server Action)
+ *
+ * The rest of the system never imports a specific transport — it imports
+ * this interface and the runtime wires the chosen implementation.
+ */
+export type ControlMessage =
+  | { type: 'control.abort'; sessionId: SessionId; reason?: string }
+  | { type: 'control.pause'; sessionId: SessionId }
+  | { type: 'control.resume'; sessionId: SessionId };
+
+/** Server side. */
+export interface ServerTransport {
+  /** Stream AgentEvents to the client. */
+  send(event: AgentEvent): Promise<void>;
+  /** Receive control messages from the client. */
+  onControl(handler: (msg: ControlMessage) => void): void;
+  close(): Promise<void>;
+}
+
+/** Client side. */
+export interface ClientTransport {
+  /** Subscribe to the AgentEvent stream. */
+  subscribe(handler: (event: AgentEvent) => void): () => void;
+  /** Send a control message to the server. */
+  sendControl(msg: ControlMessage): Promise<void>;
+  close(): Promise<void>;
+}

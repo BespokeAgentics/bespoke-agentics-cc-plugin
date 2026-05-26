@@ -1,0 +1,71 @@
+package errors
+
+import "fmt"
+
+type Code string
+
+const (
+	CodeUnauthorized      Code = "UNAUTHORIZED"
+	CodeNotFound          Code = "NOT_FOUND"
+	CodeRateLimited       Code = "RATE_LIMITED"
+	CodeMutationDisabled  Code = "MUTATION_DISABLED"
+	CodeValidationFailed  Code = "VALIDATION_FAILED"
+	CodeBackendError      Code = "BACKEND_ERROR"
+)
+
+type ToolError struct {
+	Code    Code
+	Message string
+	Fields  map[string]any
+}
+
+func (e *ToolError) Error() string { return fmt.Sprintf("[%s] %s", e.Code, e.Message) }
+
+func Unauthorized(msg string) *ToolError {
+	if msg == "" {
+		msg = "Missing or invalid auth token."
+	}
+	return &ToolError{Code: CodeUnauthorized, Message: msg, Fields: map[string]any{
+		"fix": "Refresh your OIDC bearer or set MCP_API_KEYS.",
+	}}
+}
+
+func NotFound(resource, id string) *ToolError {
+	return &ToolError{
+		Code:    CodeNotFound,
+		Message: fmt.Sprintf("%s '%s' was not found.", resource, id),
+		Fields:  map[string]any{"resource": resource, "id": id},
+	}
+}
+
+func RateLimited(tool string, perMinute int) *ToolError {
+	return &ToolError{
+		Code: CodeRateLimited,
+		Message: fmt.Sprintf(
+			"Rate limit hit for %s: ceiling is %d/min per user. "+
+				"Reduce frequency or raise via MCP_RATE_LIMIT_*_PER_MIN.",
+			tool, perMinute,
+		),
+		Fields: map[string]any{"tool": tool, "perMinute": perMinute},
+	}
+}
+
+func MutationDisabled(tool string) *ToolError {
+	return &ToolError{
+		Code: CodeMutationDisabled,
+		Message: fmt.Sprintf(
+			"Mutations are disabled. Tool %q was blocked. "+
+				"Set MCP_MUTATIONS_ENABLED=true to allow writes (default is false for safety).",
+			tool,
+		),
+		Fields: map[string]any{"tool": tool, "envVar": "MCP_MUTATIONS_ENABLED"},
+	}
+}
+
+func Validation(msg string, details any) *ToolError {
+	return &ToolError{Code: CodeValidationFailed, Message: msg, Fields: map[string]any{"details": details}}
+}
+
+func Backend(msg string, status int) *ToolError {
+	return &ToolError{Code: CodeBackendError, Message: msg, Fields: map[string]any{"status": status}}
+}

@@ -1,0 +1,37 @@
+import type { AgentEvent, SessionId } from '{{IMPORT_ROOT}}/events';
+
+/**
+ * SdkAdapter — wraps a model SDK so the rest of the system never imports
+ * the SDK directly. The Claude Agent SDK adapter is the default; stubs for
+ * @anthropic-ai/sdk and Vercel `ai` can implement this interface.
+ */
+export interface SdkAdapter {
+  /**
+   * Start a session. Returns an async iterable of normalized AgentEvents.
+   * The adapter is responsible for:
+   *  - emitting `session.start` first
+   *  - normalizing SDK-native events into AgentEvents
+   *  - emitting `heartbeat` events when idle > idleThresholdMs
+   *  - emitting `session.stop` exactly once (success | error | aborted)
+   */
+  run(input: SessionRunInput): AsyncIterable<AgentEvent>;
+}
+
+export type SessionRunInput = {
+  sessionId: SessionId;
+  prompt: string;
+  modelId?: string;
+  taskType?: string;
+  stepBudget?: number;
+  /** Honored by adapters — abort propagates into the underlying SDK call. */
+  signal: AbortSignal;
+  /** Idle threshold before a synthetic heartbeat is emitted. Default 60_000. */
+  idleThresholdMs?: number;
+  /** Optional pause gate. Adapter checks `await pauseGate?.wait()` between events. */
+  pauseGate?: PauseGate;
+};
+
+export interface PauseGate {
+  isPaused(): boolean;
+  wait(): Promise<void>;
+}

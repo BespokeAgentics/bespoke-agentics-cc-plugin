@@ -1,0 +1,106 @@
+/**
+ * Next.js App Router SSE route handler. Mount at:
+ *   {{ROUTE_BASE}}/stream/route.ts
+ *
+ * GET /api/agent/stream?sessionId=...&prompt=...
+ *   → text/event-stream of AgentEvents
+ *
+ * Notes:
+ *  - Use `runtime = 'nodejs'` if you're writing to JsonlLogSink in the same
+ *    handler. The Edge runtime can stream but cannot use Node fs.
+ *  - Heartbeats are emitted by the SdkAdapter, not by this transport.
+ *  - Keep the connection alive with a `: ping\n\n` comment every 15 s in
+ *    addition to AgentEvent heartbeats (some proxies close idle connections).
+ */
+import type { AgentEvent } from '{{IMPORT_ROOT}}/events';
+import { ClaudeAgentSdkAdapter } from '{{IMPORT_ROOT}}/adapters/claude-agent-sdk';
+import { ControlPlane } from '{{IMPORT_ROOT}}/control-plane';
+import { JsonlLogSink } from '{{IMPORT_ROOT}}/log-sink/jsonl';
+
+export const runtime = 'nodejs';
+export const dynamic = 'force-dynamic';
+
+const sink = new JsonlLogSink();
+const adapter = new ClaudeAgentSdkAdapter();
+const controlPlanes = new Map<string, ControlPlane>();
+
+export async function GET(req: Request): Promise<Response> {
+  const url = new URL(req.url);
+  const sessionId = url.searchParams.get('sessionId') ?? crypto.randomUUID();
+  const prompt = url.searchParams.get('prompt') ?? '';
+  const taskType = url.searchParams.get('taskType') ?? undefined;
+
+  if (!prompt) {
+    return new Response('Missing prompt', { status: 400 });
+  }
+
+  const encoder = new TextEncoder();
+
+  const stream = new ReadableStream<Uint8Array>({
+    async start(controller) {
+      let closed = false;
+      const send = (event: AgentEvent) => {
+        if (closed) return;
+        const payload = `event: ${event.type}\ndata: ${JSON.stringify(event)}\n\n`;
+        controller.enqueue(encoder.encode(payload));
+        // Persist every event, full fidelity.
+        sink.append(event).catch((err) => {
+          console.error('[ai-waiting-ux] log append failed', err);
+        });
+      };
+
+      const cp = new ControlPlane(sessionId, send);
+      controlPlanes.set(sessionId, cp);
+
+      // Heartbeat to keep proxies happy.
+      const pingInterval = setInterval(() => {
+        if (closed) return;
+        controller.enqueue(encoder.encode(': ping\n\n'));
+      }, 15_000);
+
+      // Abort on client disconnect.
+      req.signal.addEventListener('abort', () => {
+        cp.abort('client-disconnect');
+      });
+
+      try {
+        for await (const ev of adapter.run({
+          sessionId,
+          prompt,
+          taskType,
+          signal: cp.signal,
+          pauseGate: cp,
+        })) {
+          send(ev);
+        }
+      } catch (err) {
+        send({
+          type: 'session.stop',
+          sessionId,
+          timestamp: Date.now(),
+          status: 'error',
+          error: { name: 'TransportError', message: String(err) },
+        });
+      } finally {
+        clearInterval(pingInterval);
+        controlPlanes.delete(sessionId);
+        closed = true;
+        controller.close();
+      }
+    },
+  });
+
+  return new Response(stream, {
+    headers: {
+      'Content-Type': 'text/event-stream; charset=utf-8',
+      'Cache-Control': 'no-cache, no-transform',
+      Connection: 'keep-alive',
+      'X-Accel-Buffering': 'no',
+    },
+  });
+}
+
+/** Exposed for the sibling control route to dispatch into the right plane. */
+export function getControlPlane(sessionId: string): ControlPlane | undefined {
+  return controlPlanes.get(sessionId);
+}

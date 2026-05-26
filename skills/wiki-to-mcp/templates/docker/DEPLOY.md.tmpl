@@ -1,0 +1,53 @@
+# Deploy — Docker
+
+This project is configured for self-hosted Docker.
+
+## Prerequisites
+
+- Docker 24+ and Docker Compose v2.
+- A GitHub Personal Access Token (fine-grained) with `Contents: Read/Write` on the wiki repo.
+
+## Steps
+
+```bash
+# 1. From the wiki-mcp-{{SLUG}}/ directory:
+cp .env.example .env
+
+# 2. Fill in .env:
+#    - MCP_BEARER_TOKENS  (run: openssl rand -hex 32)
+#    - WIKI_REPO_URL      (https://github.com/<owner>/<repo>.git)
+#    - WIKI_GIT_TOKEN     (the PAT)
+
+# 3. Start:
+docker compose up -d --build
+
+# 4. Watch logs until you see "Listening on :10000" and "Wiki repo already cloned, syncing":
+docker compose logs -f
+
+# 5. Health check:
+curl http://localhost:10000/health
+```
+
+## Verify
+
+Run the smoke test (see `SMOKE-TEST.md`) against `http://localhost:10000`.
+
+## Operate
+
+- **Restart**: `docker compose restart`
+- **Update image after code change**: `docker compose up -d --build`
+- **Tail logs**: `docker compose logs -f`
+- **Stop**: `docker compose down`
+- **Wipe local clone cache** (forces a fresh clone on next start): `docker volume rm wiki-mcp-{{SLUG}}-data`
+
+## Production
+
+Behind a reverse proxy (Caddy / Nginx / Traefik), terminate TLS in front. Example Caddy snippet:
+
+```
+wiki-mcp.example.com {
+  reverse_proxy localhost:10000
+}
+```
+
+Don't expose port 10000 directly without TLS — bearer tokens travel in headers.

@@ -1,0 +1,114 @@
+import type { SessionState } from '{{IMPORT_ROOT}}/reducer';
+import { selectElapsedMs } from '{{IMPORT_ROOT}}/reducer';
+
+export type EtaConfidence = 'cold' | 'warming' | 'stable';
+
+export type EtaReport = {
+  etaMs: number | null;
+  elapsedMs: number;
+  confidence: EtaConfidence;
+  lastUpdatedAt: number;
+  breakdown: {
+    toolPhaseMs: number;
+    textPhaseMs: number;
+    avgToolDurationMs: number | null;
+    estimatedRemainingTools: number;
+    observedTokensPerSec: number | null;
+  };
+};
+
+const DEFAULT_STEP_BUDGET = 12;
+const DEFAULT_EXPECTED_OUTPUT_TOKENS = 800;
+const TOKENS_PER_CHAR = 0.25; // 4-char heuristic
+
+/**
+ * Compute ETA on every event. See references/eta-derivation.md for the formula.
+ * Cheap enough to call from inside a render — no caching needed.
+ */
+export function computeETA(
+  state: SessionState,
+  nowMs: number,
+  recentTextDeltas: { timestamp: number; text: string }[],
+): EtaReport {
+  const elapsedMs = selectElapsedMs(state, nowMs);
+
+  // ---- Tool phase --------------------------------------------------------
+  const completed = state.completedToolCalls.filter((c) => c.endedAt != null);
+  const durations = completed.map((c) => (c.endedAt ?? 0) - c.startedAt);
+
+  const median = (xs: number[]): number => {
+    if (xs.length === 0) return 0;
+    const sorted = [...xs].sort((a, b) => a - b);
+    const mid = Math.floor(sorted.length / 2);
+    return sorted.length % 2 === 0 ? (sorted[mid - 1] + sorted[mid]) / 2 : sorted[mid];
+  };
+
+  const filteredDurations =
+    durations.length >= 4
+      ? (() => {
+          const m = median(durations);
+          return durations.filter((d) => d <= 3 * m);
+        })()
+      : durations;
+
+  const avgToolDurationMs =
+    filteredDurations.length >= 2
+      ? filteredDurations.reduce((a, b) => a + b, 0) / filteredDurations.length
+      : null;
+
+  const budget = state.stepBudget ?? DEFAULT_STEP_BUDGET;
+  const estimatedRemainingTools = Math.max(0, budget - state.currentStep);
+  const toolPhaseMs = avgToolDurationMs != null ? avgToolDurationMs * estimatedRemainingTools : 0;
+
+  // ---- Text phase --------------------------------------------------------
+  const windowMs = 5000;
+  const recent = recentTextDeltas.filter((d) => nowMs - d.timestamp < windowMs);
+  const tokensInWindow = recent.reduce((sum, d) => sum + estimateTokens(d.text), 0);
+  const observedTokensPerSec = tokensInWindow > 0 ? (tokensInWindow / windowMs) * 1000 : null;
+
+  const producedTokens = state.cumulativeUsage.outputTokens;
+  const projectedRemainingTokens = Math.max(
+    0,
+    DEFAULT_EXPECTED_OUTPUT_TOKENS - producedTokens,
+  );
+  const textPhaseMs =
+    observedTokensPerSec != null && observedTokensPerSec >= 1
+      ? (projectedRemainingTokens / observedTokensPerSec) * 1000
+      : 0;
+
+  // ---- Combine -----------------------------------------------------------
+  const total = toolPhaseMs + textPhaseMs;
+  const etaMs = total > 0 ? Math.round(total) : null;
+
+  let confidence: EtaConfidence;
+  if (avgToolDurationMs == null && observedTokensPerSec == null) confidence = 'cold';
+  else if (filteredDurations.length < 4 || (observedTokensPerSec ?? 0) < 5) confidence = 'warming';
+  else confidence = 'stable';
+
+  return {
+    etaMs,
+    elapsedMs,
+    confidence,
+    lastUpdatedAt: nowMs,
+    breakdown: {
+      toolPhaseMs,
+      textPhaseMs,
+      avgToolDurationMs,
+      estimatedRemainingTools,
+      observedTokensPerSec,
+    },
+  };
+}
+
+export function estimateTokens(text: string): number {
+  return Math.ceil(text.length * TOKENS_PER_CHAR);
+}
+
+export function formatEta(ms: number | null): string {
+  if (ms == null) return 'estimating…';
+  if (ms < 1000) return '<1s';
+  if (ms < 60_000) return `${Math.round(ms / 1000)}s`;
+  const minutes = Math.floor(ms / 60_000);
+  const seconds = Math.round((ms % 60_000) / 1000);
+  return `${minutes}m ${seconds}s`;
+}

@@ -1,0 +1,106 @@
+'use client';
+
+import type { AgentEvent, SessionId } from '{{IMPORT_ROOT}}/events';
+import type { ClientTransport, ControlMessage } from '{{IMPORT_ROOT}}/transport';
+
+/**
+ * SSE client transport. Subscribes to {{ROUTE_BASE}}/stream and sends
+ * control messages via POST to {{ROUTE_BASE}}/control.
+ *
+ * Auto-reconnects on transient errors using the browser's built-in
+ * EventSource reconnect, with an exponential backoff for hard failures.
+ */
+export type SseClientTransportOptions = {
+  sessionId: SessionId;
+  prompt: string;
+  taskType?: string;
+  baseUrl?: string;
+};
+
+export function sseClientTransport(opts: SseClientTransportOptions): ClientTransport {
+  const baseUrl = opts.baseUrl ?? '{{ROUTE_BASE}}';
+  let eventSource: EventSource | null = null;
+  let handlers = new Set<(event: AgentEvent) => void>();
+  let attempt = 0;
+  let closed = false;
+
+  const params = new URLSearchParams({
+    sessionId: opts.sessionId,
+    prompt: opts.prompt,
+    ...(opts.taskType ? { taskType: opts.taskType } : {}),
+  });
+
+  const connect = () => {
+    if (closed) return;
+    eventSource = new EventSource(`${baseUrl}/stream?${params.toString()}`);
+
+    eventSource.onmessage = (ev) => {
+      try {
+        const parsed = JSON.parse(ev.data) as AgentEvent;
+        for (const h of handlers) h(parsed);
+      } catch (err) {
+        console.error('[ai-waiting-ux] parse error', err, ev.data);
+      }
+    };
+
+    // Some servers send typed events; route them the same way.
+    const typedHandler = (ev: MessageEvent) => {
+      try {
+        const parsed = JSON.parse(ev.data) as AgentEvent;
+        for (const h of handlers) h(parsed);
+      } catch {}
+    };
+    [
+      'session.start',
+      'message.start',
+      'text.delta',
+      'thinking.delta',
+      'tool.use',
+      'tool.input.update',
+      'tool.result',
+      'message.stop',
+      'heartbeat',
+      'control.abort',
+      'control.pause',
+      'control.resume',
+      'session.stop',
+    ].forEach((t) => eventSource?.addEventListener(t, typedHandler as EventListener));
+
+    eventSource.onerror = () => {
+      if (closed) return;
+      attempt += 1;
+      const backoffMs = Math.min(30_000, 500 * 2 ** attempt);
+      eventSource?.close();
+      setTimeout(connect, backoffMs);
+    };
+
+    eventSource.onopen = () => {
+      attempt = 0;
+    };
+  };
+
+  connect();
+
+  return {
+    subscribe(handler) {
+      handlers.add(handler);
+      return () => {
+        handlers.delete(handler);
+      };
+    },
+
+    async sendControl(msg: ControlMessage): Promise<void> {
+      await fetch(`${baseUrl}/control`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(msg),
+      });
+    },
+
+    async close(): Promise<void> {
+      closed = true;
+      eventSource?.close();
+      handlers.clear();
+    },
+  };
+}

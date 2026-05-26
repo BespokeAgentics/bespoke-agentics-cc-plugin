@@ -1,0 +1,23 @@
+import { describe, expect, it } from "bun:test";
+import { log } from "../src/logger";
+
+// When MCP is on stdio, stdout is reserved for JSON-RPC. Any stray
+// console.log will corrupt the handshake. This test fails loudly if any
+// logger output lands on stdout.
+describe("stdout discipline", () => {
+  it("logger never writes to stdout", () => {
+    const writes: string[] = [];
+    const origStdoutWrite = process.stdout.write.bind(process.stdout);
+    (process.stdout.write as any) = (chunk: any) => {
+      writes.push(String(chunk));
+      return true;
+    };
+    try {
+      log.info("test", { ok: true });
+      log.error("test", { failed: false });
+    } finally {
+      process.stdout.write = origStdoutWrite as any;
+    }
+    expect(writes).toHaveLength(0);
+  });
+});

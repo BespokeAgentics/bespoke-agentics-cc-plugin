@@ -1,0 +1,6 @@
+#!/usr/bin/env bash
+set -euo pipefail
+# Boot the server over stdio and pipe to the MCP inspector for manual
+# tool-call validation. This is the canonical release-gate workflow.
+exec npx -y @modelcontextprotocol/inspector \
+  bun run src/server.ts --stdio

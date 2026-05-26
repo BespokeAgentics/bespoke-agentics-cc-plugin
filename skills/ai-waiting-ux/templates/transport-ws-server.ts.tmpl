@@ -1,0 +1,90 @@
+/**
+ * WebSocket transport — server side. Use when control messages must travel
+ * on the same channel as events (lower latency, fewer round-trips).
+ *
+ * This file expects to be mounted from a custom Next.js server (`server.ts`)
+ * or a separate Node process. App Router route handlers cannot directly
+ * upgrade to WebSocket.
+ *
+ * Requires `ws`:  npm i ws
+ */
+import { WebSocketServer, type WebSocket } from 'ws';
+import type { AgentEvent } from '{{IMPORT_ROOT}}/events';
+import type { ControlMessage } from '{{IMPORT_ROOT}}/transport';
+import { ClaudeAgentSdkAdapter } from '{{IMPORT_ROOT}}/adapters/claude-agent-sdk';
+import { ControlPlane } from '{{IMPORT_ROOT}}/control-plane';
+import { JsonlLogSink } from '{{IMPORT_ROOT}}/log-sink/jsonl';
+
+export type WsServerOptions = {
+  port: number;
+};
+
+const sink = new JsonlLogSink();
+const adapter = new ClaudeAgentSdkAdapter();
+
+export function startWsServer(opts: WsServerOptions): WebSocketServer {
+  const wss = new WebSocketServer({ port: opts.port });
+
+  wss.on('connection', (ws: WebSocket, req) => {
+    const url = new URL(req.url ?? '/', `http://${req.headers.host ?? 'localhost'}`);
+    const sessionId = url.searchParams.get('sessionId') ?? crypto.randomUUID();
+    const prompt = url.searchParams.get('prompt') ?? '';
+    const taskType = url.searchParams.get('taskType') ?? undefined;
+
+    if (!prompt) {
+      ws.close(1008, 'Missing prompt');
+      return;
+    }
+
+    const send = (event: AgentEvent) => {
+      if (ws.readyState === ws.OPEN) {
+        ws.send(JSON.stringify(event));
+      }
+      sink.append(event).catch((err) => {
+        console.error('[ai-waiting-ux] log append failed', err);
+      });
+    };
+
+    const cp = new ControlPlane(sessionId, send);
+
+    ws.on('message', (raw) => {
+      try {
+        const msg = JSON.parse(raw.toString()) as ControlMessage;
+        if (msg.sessionId !== sessionId) return;
+        if (msg.type === 'control.abort') cp.abort(msg.reason);
+        else if (msg.type === 'control.pause') cp.pause();
+        else if (msg.type === 'control.resume') cp.resume();
+      } catch (err) {
+        console.error('[ai-waiting-ux] bad control message', err);
+      }
+    });
+
+    ws.on('close', () => cp.abort('client-disconnect'));
+
+    (async () => {
+      try {
+        for await (const ev of adapter.run({
+          sessionId,
+          prompt,
+          taskType,
+          signal: cp.signal,
+          pauseGate: cp,
+        })) {
+          send(ev);
+        }
+      } catch (err) {
+        send({
+          type: 'session.stop',
+          sessionId,
+          timestamp: Date.now(),
+          status: 'error',
+          error: { name: 'TransportError', message: String(err) },
+        });
+      } finally {
+        ws.close();
+      }
+    })();
+  });
+
+  return wss;
+}

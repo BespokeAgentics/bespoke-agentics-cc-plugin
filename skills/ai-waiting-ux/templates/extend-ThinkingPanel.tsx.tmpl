@@ -1,0 +1,33 @@
+/**
+ * ThinkingPanel — collapsed, dimmed peripheral panel for extended-thinking
+ * blocks. "Calm computing" periphery (Weiser): visible but never dominant.
+ *
+ * Uses shadcn/ui Collapsible by default. Rewrite if detected primitive differs.
+ */
+'use client';
+
+import { useState } from 'react';
+import type { SessionState } from '{{IMPORT_ROOT}}/reducer';
+import {
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
+} from '@/components/ui/collapsible';
+
+export function ThinkingPanel({ state }: { state: SessionState }) {
+  const [open, setOpen] = useState(false);
+  if (!state.thinkingBuffer) return null;
+
+  return (
+    <Collapsible open={open} onOpenChange={setOpen} className="mt-2 rounded-md border border-dashed bg-muted/20 px-2 py-1 opacity-70">
+      <CollapsibleTrigger className="text-xs text-muted-foreground hover:text-foreground">
+        {open ? 'Hide' : 'Show'} reasoning ({state.thinkingBuffer.length} chars)
+      </CollapsibleTrigger>
+      <CollapsibleContent>
+        <pre className="mt-1 whitespace-pre-wrap text-xs text-muted-foreground">
+          {state.thinkingBuffer}
+        </pre>
+      </CollapsibleContent>
+    </Collapsible>
+  );
+}

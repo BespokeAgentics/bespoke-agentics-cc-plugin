@@ -1,0 +1,70 @@
+package tests
+
+import (
+	"context"
+	"encoding/json"
+	"testing"
+
+	"{{GO_MODULE}}/internal/backends"
+	"{{GO_MODULE}}/internal/config"
+	"{{GO_MODULE}}/internal/pipeline"
+	"{{GO_MODULE}}/internal/ratelimit"
+	"{{GO_MODULE}}/internal/tools"
+)
+
+// Section 8: assert on the *variables sent* to the backend, not just the
+// response. Catches normalization bugs an output-shape test would miss.
+func TestSearchCompanies_NormalizesCountryAlias(t *testing.T) {
+	fake := &backends.Fake{}
+	tctx := &pipeline.ToolContext{
+		Config:  config.Config{MaxResultsCap: 100, MutationsEnabled: false},
+		Backend: fake,
+		Limiter: ratelimit.New(),
+	}
+	raw, _ := json.Marshal(map[string]any{"country": "germany", "limit": 25})
+	_, err := pipeline.Run[*tools.SearchCompaniesArgs, tools.SearchCompaniesResult](
+		context.Background(), tctx, "search_companies", false, nil, raw, tools.SearchCompanies,
+	)
+	if err != nil { t.Fatalf("unexpected: %v", err) }
+	if n := len(fake.SearchCalls); n != 1 {
+		t.Fatalf("expected 1 backend call, got %d", n)
+	}
+	got := fake.SearchCalls[0]
+	if got.Country == nil || *got.Country != "DE" {
+		t.Fatalf("country not normalized to DE: %+v", got.Country)
+	}
+}
+
+func TestSearchCompanies_CapsLimitAtMaxResultsCap(t *testing.T) {
+	fake := &backends.Fake{}
+	tctx := &pipeline.ToolContext{
+		Config:  config.Config{MaxResultsCap: 50, MutationsEnabled: false},
+		Backend: fake,
+		Limiter: ratelimit.New(),
+	}
+	raw, _ := json.Marshal(map[string]any{"country": "DE", "limit": 100})
+	_, err := pipeline.Run[*tools.SearchCompaniesArgs, tools.SearchCompaniesResult](
+		context.Background(), tctx, "search_companies", false, nil, raw, tools.SearchCompanies,
+	)
+	if err != nil { t.Fatalf("unexpected: %v", err) }
+	if fake.SearchCalls[0].Limit > 50 {
+		t.Fatalf("limit not capped: %d", fake.SearchCalls[0].Limit)
+	}
+}
+
+func TestSearchCompanies_RequiresAtLeastOneFilter(t *testing.T) {
+	fake := &backends.Fake{}
+	tctx := &pipeline.ToolContext{
+		Config: config.Config{MaxResultsCap: 100}, Backend: fake, Limiter: ratelimit.New(),
+	}
+	raw, _ := json.Marshal(map[string]any{"limit": 20})
+	_, err := pipeline.Run[*tools.SearchCompaniesArgs, tools.SearchCompaniesResult](
+		context.Background(), tctx, "search_companies", false, nil, raw, tools.SearchCompanies,
+	)
+	if err == nil {
+		t.Fatal("expected validation error for missing filters")
+	}
+	if len(fake.SearchCalls) != 0 {
+		t.Fatal("backend should not be called when validation fails")
+	}
+}

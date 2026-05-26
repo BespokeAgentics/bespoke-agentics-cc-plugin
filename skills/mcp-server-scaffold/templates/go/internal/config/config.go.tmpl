@@ -1,0 +1,67 @@
+package config
+
+import (
+	"fmt"
+	"os"
+	"strconv"
+)
+
+type Config struct {
+	Port                    int
+	TLSCert, TLSKey         string
+	AuthMode                string // "oidc" | "api-key" | "both"
+	OIDCIssuerURL           string
+	OIDCAudience            string
+	APIKeysCSV              string
+	BackendBaseURL          string
+	MutationsEnabled        bool
+	RateLimitAISearchPerMin int
+	MaxResultsCap           int
+}
+
+func Load() (Config, error) {
+	c := Config{
+		Port:                    getInt("MCP_PORT", {{HTTPS_PORT}}),
+		TLSCert:                 getStr("MCP_TLS_CERT", "./certs/dev-cert.pem"),
+		TLSKey:                  getStr("MCP_TLS_KEY", "./certs/dev-key.pem"),
+		AuthMode:                getStr("MCP_AUTH_MODE", "{{AUTH_MODE}}"),
+		OIDCIssuerURL:           os.Getenv("OIDC_ISSUER_URL"),
+		OIDCAudience:            os.Getenv("OIDC_AUDIENCE"),
+		APIKeysCSV:              os.Getenv("MCP_API_KEYS"),
+		BackendBaseURL:          getStr("BACKEND_BASE_URL", "{{BACKEND_BASE_URL}}"),
+		MutationsEnabled:        getBool("MCP_MUTATIONS_ENABLED", false),
+		RateLimitAISearchPerMin: getInt("MCP_RATE_LIMIT_AI_SEARCH_PER_MIN", 6),
+		MaxResultsCap:           getInt("MCP_MAX_RESULTS_CAP", 100),
+	}
+	switch c.AuthMode {
+	case "oidc", "api-key", "both":
+	default:
+		return c, fmt.Errorf("invalid MCP_AUTH_MODE: %q", c.AuthMode)
+	}
+	return c, nil
+}
+
+func getStr(k, def string) string {
+	if v := os.Getenv(k); v != "" {
+		return v
+	}
+	return def
+}
+func getInt(k string, def int) int {
+	if v := os.Getenv(k); v != "" {
+		if n, err := strconv.Atoi(v); err == nil {
+			return n
+		}
+	}
+	return def
+}
+func getBool(k string, def bool) bool {
+	switch os.Getenv(k) {
+	case "true", "1", "yes":
+		return true
+	case "false", "0", "no":
+		return false
+	default:
+		return def
+	}
+}

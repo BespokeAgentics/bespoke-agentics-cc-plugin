@@ -1,0 +1,84 @@
+'use client';
+
+import type { AgentEvent, SessionId } from '{{IMPORT_ROOT}}/events';
+import type { ClientTransport, ControlMessage } from '{{IMPORT_ROOT}}/transport';
+
+export type WsClientTransportOptions = {
+  sessionId: SessionId;
+  prompt: string;
+  taskType?: string;
+  /** e.g. `wss://example.com/agent` */
+  url: string;
+};
+
+export function wsClientTransport(opts: WsClientTransportOptions): ClientTransport {
+  const params = new URLSearchParams({
+    sessionId: opts.sessionId,
+    prompt: opts.prompt,
+    ...(opts.taskType ? { taskType: opts.taskType } : {}),
+  });
+  const fullUrl = `${opts.url}?${params.toString()}`;
+
+  let ws: WebSocket | null = null;
+  const handlers = new Set<(event: AgentEvent) => void>();
+  let attempt = 0;
+  let closed = false;
+  const pendingControl: ControlMessage[] = [];
+
+  const connect = () => {
+    if (closed) return;
+    ws = new WebSocket(fullUrl);
+
+    ws.onopen = () => {
+      attempt = 0;
+      while (pendingControl.length && ws?.readyState === WebSocket.OPEN) {
+        ws.send(JSON.stringify(pendingControl.shift()));
+      }
+    };
+
+    ws.onmessage = (ev) => {
+      try {
+        const parsed = JSON.parse(ev.data as string) as AgentEvent;
+        for (const h of handlers) h(parsed);
+      } catch (err) {
+        console.error('[ai-waiting-ux] ws parse error', err);
+      }
+    };
+
+    ws.onerror = () => {
+      // onclose will handle reconnect.
+    };
+
+    ws.onclose = () => {
+      if (closed) return;
+      attempt += 1;
+      const backoffMs = Math.min(30_000, 500 * 2 ** attempt);
+      setTimeout(connect, backoffMs);
+    };
+  };
+
+  connect();
+
+  return {
+    subscribe(handler) {
+      handlers.add(handler);
+      return () => {
+        handlers.delete(handler);
+      };
+    },
+
+    async sendControl(msg: ControlMessage): Promise<void> {
+      if (ws?.readyState === WebSocket.OPEN) {
+        ws.send(JSON.stringify(msg));
+      } else {
+        pendingControl.push(msg);
+      }
+    },
+
+    async close(): Promise<void> {
+      closed = true;
+      ws?.close();
+      handlers.clear();
+    },
+  };
+}

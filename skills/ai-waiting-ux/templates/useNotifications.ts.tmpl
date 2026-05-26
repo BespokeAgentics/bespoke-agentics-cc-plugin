@@ -1,0 +1,83 @@
+'use client';
+
+import { useCallback, useEffect, useRef } from 'react';
+import type { SessionState } from '{{IMPORT_ROOT}}/reducer';
+import { selectIsRunning, selectIsStalled } from '{{IMPORT_ROOT}}/reducer';
+
+/**
+ * useNotifications — Web Notifications dispatcher.
+ *
+ *  - requestPermission(): call once at app start, not on first fire.
+ *  - fireTerminal(state): on session.stop, fires success/error/aborted.
+ *  - Auto-fires a "still running" notification once per stall window.
+ *
+ * The brief forbids gating on `document.hasFocus()`. We fire regardless of
+ * focus; it's the OS's job to surface notifications appropriately.
+ */
+export type UseNotificationsOptions = {
+  state: SessionState;
+  /** Deep link back to the session view. */
+  sessionUrl?: string;
+  /** Idle threshold before "still running" fires. Default 60s. */
+  stallThresholdMs?: number;
+  /** Title prefix. Default "Agent". */
+  titlePrefix?: string;
+};
+
+export function useNotifications(opts: UseNotificationsOptions) {
+  const lastStatusRef = useRef<SessionState['status'] | null>(null);
+  const lastStallNotifyRef = useRef<number>(0);
+
+  const isSupported =
+    typeof window !== 'undefined' && 'Notification' in window;
+
+  const requestPermission = useCallback(async () => {
+    if (!isSupported) return 'denied' as const;
+    if (Notification.permission === 'granted') return 'granted' as const;
+    if (Notification.permission === 'denied') return 'denied' as const;
+    return await Notification.requestPermission();
+  }, [isSupported]);
+
+  const fire = useCallback(
+    (title: string, body: string) => {
+      if (!isSupported || Notification.permission !== 'granted') return;
+      const n = new Notification(title, { body });
+      if (opts.sessionUrl) {
+        n.onclick = () => {
+          window.focus();
+          window.location.href = opts.sessionUrl!;
+          n.close();
+        };
+      }
+    },
+    [isSupported, opts.sessionUrl],
+  );
+
+  // Terminal transition
+  useEffect(() => {
+    const status = opts.state.status;
+    if (status === lastStatusRef.current) return;
+    lastStatusRef.current = status;
+    const prefix = opts.titlePrefix ?? 'Agent';
+    if (status === 'success') fire(`${prefix} finished`, 'Session completed successfully.');
+    else if (status === 'error') fire(`${prefix} failed`, opts.state.lastError?.message ?? 'Unknown error');
+    else if (status === 'aborted') fire(`${prefix} aborted`, 'Session was aborted.');
+  }, [opts.state.status, opts.state.lastError, opts.titlePrefix, fire]);
+
+  // Idle / stalled heartbeat
+  useEffect(() => {
+    const thr = opts.stallThresholdMs ?? 60_000;
+    if (!selectIsRunning(opts.state)) return;
+    const t = setInterval(() => {
+      if (!selectIsStalled(opts.state, Date.now(), thr)) return;
+      const now = Date.now();
+      if (now - lastStallNotifyRef.current < thr) return;
+      lastStallNotifyRef.current = now;
+      const prefix = opts.titlePrefix ?? 'Agent';
+      fire(`${prefix} still running`, `No events for ${Math.round(thr / 1000)}s.`);
+    }, 15_000);
+    return () => clearInterval(t);
+  }, [opts.state, opts.stallThresholdMs, opts.titlePrefix, fire]);
+
+  return { requestPermission, fire, isSupported };
+}

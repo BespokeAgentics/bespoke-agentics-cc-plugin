@@ -1,0 +1,84 @@
+import path from "node:path";
+
+function required(name: string): string {
+  const v = process.env[name];
+  if (!v || v.trim() === "") {
+    throw new Error(`Missing required env var: ${name}`);
+  }
+  return v;
+}
+
+function optional(name: string, fallback: string): string {
+  const v = process.env[name];
+  return v && v.trim() !== "" ? v : fallback;
+}
+
+export type AuthMode = "bearer" | "oauth";
+
+export interface AppConfig {
+  port: number;
+  authMode: AuthMode;
+  bearerTokens: Set<string>;
+  repoUrl: string;
+  gitToken: string;
+  branch: string;
+  localPath: string;
+  wikiSubpath: string;
+  wikiAbsPath: string;
+  pullIntervalMs: number;
+  authorName: string;
+  authorEmail: string;
+  logLevel: string;
+}
+
+export function loadConfig(): AppConfig {
+  const port = parseInt(optional("PORT", "10000"), 10);
+  const authMode = (optional("AUTH_MODE", "bearer") as AuthMode);
+  const bearerTokensRaw = optional("MCP_BEARER_TOKENS", "");
+  const bearerTokens = new Set(
+    bearerTokensRaw
+      .split(",")
+      .map((t) => t.trim())
+      .filter((t) => t.length > 0)
+  );
+  if (authMode === "bearer" && bearerTokens.size === 0) {
+    throw new Error("AUTH_MODE=bearer but MCP_BEARER_TOKENS is empty");
+  }
+
+  const repoUrl = required("WIKI_REPO_URL");
+  const gitToken = required("WIKI_GIT_TOKEN");
+  const branch = optional("WIKI_BRANCH", "main");
+  const localPath = optional("WIKI_LOCAL_PATH", "/var/data/wiki-repo");
+  // Normalize: strip leading/trailing slashes so callers can pass "apps/wiki",
+  // "apps/wiki/", or "/apps/wiki/" interchangeably. Required for monorepo
+  // wikis where the subpath is deeper than one level.
+  const wikiSubpath = optional("WIKI_SUBPATH", "{{SUBPATH}}")
+    .replace(/^\/+/, "")
+    .replace(/\/+$/, "");
+  const wikiAbsPath = wikiSubpath
+    ? path.resolve(localPath, wikiSubpath)
+    : path.resolve(localPath);
+  const pullIntervalMs = parseInt(
+    optional("WIKI_PULL_INTERVAL_MS", "300000"),
+    10
+  );
+  const authorName = optional("GIT_AUTHOR_NAME", "{{PROJECT_NAME}} MCP");
+  const authorEmail = optional("GIT_AUTHOR_EMAIL", "bot@example.com");
+  const logLevel = optional("LOG_LEVEL", "info");
+
+  return {
+    port,
+    authMode,
+    bearerTokens,
+    repoUrl,
+    gitToken,
+    branch,
+    localPath,
+    wikiSubpath,
+    wikiAbsPath,
+    pullIntervalMs,
+    authorName,
+    authorEmail,
+    logLevel,
+  };
+}

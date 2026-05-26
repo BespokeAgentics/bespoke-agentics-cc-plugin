@@ -1,0 +1,76 @@
+# {{SERVER_NAME}}
+
+An HTTPS MCP server in Go, scaffolded with the safe-MCP playbook. Read tools and write tools are physically separated; mutations are off by default behind a single visible env switch; queries are bounded; AI search is rate-limited; all telemetry goes to stderr; errors are typed and actionable.
+
+## Quickstart
+
+    go mod tidy
+    ./scripts/gen-dev-cert.sh        # one-time: localhost dev cert
+    go run ./cmd/mcp-server          # HTTPS on port {{HTTPS_PORT}}
+    ./scripts/inspector.sh           # stdio + MCP inspector UI
+    go test ./...                    # unit + gate + normalization tests
+
+## Environment variables
+
+| Var                                     | Purpose                                                       | Default                  |
+|-----------------------------------------|---------------------------------------------------------------|--------------------------|
+| `MCP_PORT`                              | HTTPS port                                                    | `{{HTTPS_PORT}}`         |
+| `MCP_TLS_CERT` / `MCP_TLS_KEY`          | TLS material paths                                            | `./certs/dev-*.pem`      |
+| `MCP_AUTH_MODE`                         | `oidc` / `api-key` / `both`                                   | `{{AUTH_MODE}}`          |
+| `OIDC_ISSUER_URL` / `OIDC_AUDIENCE`     | OIDC validation                                               | unset (must set in prod) |
+| `MCP_API_KEYS`                          | comma-separated keys, api-key mode only                       | unset                    |
+| `BACKEND_BASE_URL`                      | upstream system of record                                     | `{{BACKEND_BASE_URL}}`   |
+| `MCP_MUTATIONS_ENABLED`                 | **set to `true` to allow write tools**                        | `false`                  |
+| `MCP_RATE_LIMIT_AI_SEARCH_PER_MIN`      | AI search per-user ceiling                                    | `6`                      |
+| `MCP_MAX_RESULTS_CAP`                   | hard cap on search results                                    | `100`                    |
+
+## Tool inventory
+
+| Tool                  | Kind      | Notes                                                       |
+|-----------------------|-----------|-------------------------------------------------------------|
+| `search_companies`    | read      | Requires at least one filter; capped at 100 results.        |
+| `get_company`         | read      | Returns `NOT_FOUND` typed error for unknown ids.            |
+| `ai_search_companies` | read      | Rate-limited; configurable per-environment.                 |
+| `create_ticket`       | write     | Off by default. Enable via `MCP_MUTATIONS_ENABLED=true`.    |
+
+## The release-gate sequence
+
+Before connecting any LLM client:
+
+1. `go test ./...` — all tests green, including `TestMutationGate_GateClosed_BackendNotCalled`.
+2. `./scripts/inspector.sh` — inspector opens, tool count matches the table.
+3. Fire each read tool against the real backend. Confirm flat output shape.
+4. With `MCP_MUTATIONS_ENABLED=false`: invoke `create_ticket`. Confirm `MUTATION_DISABLED` error mentions the env var.
+5. With `MCP_MUTATIONS_ENABLED=true`: invoke `create_ticket` against a test backend. Confirm the success path.
+6. Malformed input → `VALIDATION_FAILED` with a specific message.
+7. AI search above the ceiling → `RATE_LIMITED` carrying the configured limit.
+
+If any step fails, comment out the offending tool in `internal/tools/registry.go` with a `// FIXME(inspector):` note until fixed. Fail closed.
+
+## Layout
+
+    cmd/mcp-server/main.go        HTTPS + stdio entry, startup log line
+    internal/
+      config/                     env parsing into a typed Config
+      auth/                       OIDC + api-key bearer verification
+      logger/                     slog over stderr
+      errors/                     typed error taxonomy
+      ratelimit/                  per-user, per-tool token bucket
+      pipeline/                   6-layer pipeline + AssertMutationsEnabled
+      backends/
+        client.go                 interface + typed records
+        rest.go                   REST adapter
+        graphql.go                GraphQL adapter
+        grpc.go                   gRPC adapter stub
+        fake.go                   recording fake for unit tests
+      tools/
+        registry.go               read tools first, mutations last
+        search_companies.go       read
+        get_company.go            read
+        ai_search_companies.go    read (rate-limited)
+        create_ticket.go          write (gated)
+    tests/                        unit + gate + normalization tests
+
+## Adding tools
+
+Use the parent skill's `add-tool` mode. Hand-rolling new tools drifts the conventions.

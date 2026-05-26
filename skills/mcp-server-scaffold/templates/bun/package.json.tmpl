@@ -1,0 +1,22 @@
+{
+  "name": "{{SERVER_NAME}}",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "start": "bun run src/server.ts",
+    "stdio": "bun run src/server.ts --stdio",
+    "dev": "bun run --watch src/server.ts",
+    "inspect": "./scripts/inspector.sh",
+    "test": "bun test",
+    "gen:cert": "./scripts/gen-dev-cert.sh"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.0.0",
+    "zod": "^3.23.0"
+  },
+  "devDependencies": {
+    "@types/bun": "latest",
+    "typescript": "^5.5.0"
+  }
+}

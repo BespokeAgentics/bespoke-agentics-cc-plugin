@@ -1,0 +1,36 @@
+package backends
+
+import "context"
+
+// Fake is a recording fake used in unit tests. It implements Client and
+// exposes recorded inputs per method so tests can assert on the *variables sent*
+// to the backend (Section 8). The default responses are minimal — override
+// the *Result fields to return specific shapes.
+type Fake struct {
+	GetCompanyCalls       []string
+	SearchCalls           []SearchCompaniesInput
+	AISearchCalls         []string
+	CreateTicketCalls     []CreateTicketInput
+
+	GetCompanyResult Company
+	SearchResult     []Company
+	AISearchResult   []Company
+	CreateResult     Ticket
+}
+
+func (f *Fake) GetCompany(_ context.Context, id string) (Company, error) {
+	f.GetCompanyCalls = append(f.GetCompanyCalls, id)
+	return f.GetCompanyResult, nil
+}
+func (f *Fake) SearchCompanies(_ context.Context, in SearchCompaniesInput) ([]Company, error) {
+	f.SearchCalls = append(f.SearchCalls, in)
+	return f.SearchResult, nil
+}
+func (f *Fake) AISearchCompanies(_ context.Context, q string) ([]Company, error) {
+	f.AISearchCalls = append(f.AISearchCalls, q)
+	return f.AISearchResult, nil
+}
+func (f *Fake) CreateTicket(_ context.Context, in CreateTicketInput) (Ticket, error) {
+	f.CreateTicketCalls = append(f.CreateTicketCalls, in)
+	return f.CreateResult, nil
+}

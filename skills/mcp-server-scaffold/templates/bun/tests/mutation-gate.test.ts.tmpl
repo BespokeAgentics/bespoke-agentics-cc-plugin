@@ -1,0 +1,65 @@
+import { describe, expect, it } from "bun:test";
+import { createTicket } from "../src/tools/create-ticket";
+import { runPipeline } from "../src/pipeline";
+import type { BackendClient, Ticket, CreateTicketInput } from "../src/backends/client";
+import { RateLimiter } from "../src/ratelimit";
+
+// TDD-style: this test was written FIRST. It asserts the backend is never
+// called when the gate is closed. Implement the guard until this passes —
+// and never let it regress.
+class RecordingBackend implements BackendClient {
+  createCalls: CreateTicketInput[] = [];
+  async getCompany() { throw new Error("nu"); }
+  async searchCompanies() { return []; }
+  async aiSearchCompanies() { return []; }
+  async createTicket(input: CreateTicketInput): Promise<Ticket> {
+    this.createCalls.push(input);
+    return { id: "t1", subject: input.subject, status: "open", createdAt: "2026-01-01T00:00:00Z" };
+  }
+}
+
+function ctx(backend: BackendClient, mutationsEnabled: boolean) {
+  return {
+    config: {
+      port: 8443, tlsCert: "", tlsKey: "",
+      authMode: "oidc" as const, backendBaseUrl: "https://x",
+      mutationsEnabled,
+      rateLimitAiSearchPerMin: 6, maxResultsCap: 100,
+    } as any,
+    backend,
+    user: { id: "u1", source: "oidc" as const, token: "t" },
+    rateLimiter: new RateLimiter(),
+  };
+}
+
+describe("mutation gate", () => {
+  it("blocks create_ticket and never calls the backend when gate is closed", async () => {
+    const fake = new RecordingBackend();
+    await expect(
+      runPipeline(createTicket as any, ctx(fake, false), {
+        subject: "test", body: "this is a test body of sufficient length", priority: "normal",
+      }),
+    ).rejects.toMatchObject({ code: "MUTATION_DISABLED" });
+    expect(fake.createCalls).toHaveLength(0);
+  });
+
+  it("error message names both the problem and the fix", async () => {
+    const fake = new RecordingBackend();
+    try {
+      await runPipeline(createTicket as any, ctx(fake, false), {
+        subject: "test", body: "this is a test body of sufficient length", priority: "normal",
+      });
+    } catch (e: any) {
+      expect(e.message).toContain("MCP_MUTATIONS_ENABLED");
+    }
+  });
+
+  it("allows create_ticket when gate is open", async () => {
+    const fake = new RecordingBackend();
+    const out = await runPipeline(createTicket as any, ctx(fake, true), {
+      subject: "test", body: "this is a test body of sufficient length", priority: "normal",
+    });
+    expect(fake.createCalls).toHaveLength(1);
+    expect((out as any).id).toBe("t1");
+  });
+});

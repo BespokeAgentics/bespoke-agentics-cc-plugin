@@ -1,0 +1,10 @@
+#!/usr/bin/env bash
+set -euo pipefail
+# Generate a self-signed cert for local HTTPS development. Localhost only.
+mkdir -p ./certs
+openssl req -x509 -newkey rsa:2048 -nodes -days 365 \
+  -keyout ./certs/dev-key.pem \
+  -out    ./certs/dev-cert.pem \
+  -subj "/CN=localhost" \
+  -addext "subjectAltName=DNS:localhost,IP:127.0.0.1"
+echo "dev cert written to ./certs/"

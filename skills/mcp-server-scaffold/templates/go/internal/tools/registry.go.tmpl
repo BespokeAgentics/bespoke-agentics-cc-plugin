@@ -1,0 +1,32 @@
+package tools
+
+import "{{GO_MODULE}}/internal/ratelimit"
+
+// Spec is the metadata advertised over MCP. Each tool exports a *Spec()
+// function; the registry orders them read-first, mutations-last as a
+// visual reminder of the two-tier model.
+type Spec struct {
+	Name        string
+	Description string
+	Mutates     bool
+	RateLimit   *ratelimit.Spec
+}
+
+// BuildRegistry returns the canonical tool list. Modify by adding new tools
+// with the parent skill's add-tool mode rather than editing by hand.
+func BuildRegistry(aiSearchPerMin int) []Spec {
+	return []Spec{
+		SearchCompaniesSpec(),
+		GetCompanySpec(),
+		withRateLimit(AISearchCompaniesSpec(), &ratelimit.Spec{
+			KeyPrefix: "ai_search_companies",
+			PerMinute: aiSearchPerMin,
+		}),
+		CreateTicketSpec(),
+	}
+}
+
+func withRateLimit(s Spec, rl *ratelimit.Spec) Spec {
+	s.RateLimit = rl
+	return s
+}

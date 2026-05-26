@@ -27,6 +27,21 @@ claude --plugin-dir ./bespoke-agentics-plugin
 | **Workflow Analyzer** | `/bespokeagentics:workflow-analyzer` | Client workflow analysis from video recordings. Produces application inventory, challenge mapping, and AI automation recommendations. |
 | **Setup Plugin** | `/bespokeagentics:setup-plugin` | Scaffold, optimize, and package a folder as a well-formed Claude Code plugin. Converts `.claude/` directories into distributable plugins. |
 | **Pi Assistant** | `/bespokeagentics:pi-assistant` | Understand the pi.dev coding agent, customize its harness, build Pi skills/extensions/packages, and search for or install Pi packages. |
+| **Spec Elicitation** | `/bespokeagentics:spec-elicitation` | Interview-driven spec development that turns vague ideas into complete implementation specifications. |
+
+## Spec Interviewer UI
+
+The interactive web interface lives in `apps/spec-interviewer/`. It loads `commands/spec-elicitation.md` as the source of truth, starts a Claude Agent SDK session, renders `AskUserQuestion` calls as structured form cards, and writes the final Markdown spec inside this repository.
+
+```bash
+cd apps/spec-interviewer
+npm install
+npm run dev
+```
+
+Open `http://127.0.0.1:4177`.
+
+The Agent SDK can use your local Claude Code OAuth login automatically. `ANTHROPIC_API_KEY` is optional if you prefer key-based auth.
 
 ### Pi Assistant Commands
 

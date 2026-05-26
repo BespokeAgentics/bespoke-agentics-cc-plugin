@@ -1,0 +1,192 @@
+import type { PageRecord, WikiSource } from "./wiki.js";
+
+export interface SearchHit {
+  relPath: string;
+  title?: string;
+  type?: string;
+  score: number;
+  snippets: string[];
+  /** Echoed frontmatter values for the filterable fields configured at build time. */
+  fields?: Record<string, string | undefined>;
+}
+
+export interface SearchOptions {
+  query: string;
+  subdir?: string;
+  limit?: number;
+  /** Frontmatter-field filters. Keyed by field name. */
+  filters?: Record<string, string | undefined>;
+}
+
+/**
+ * Full-text search across markdown files exposed by the given WikiSource.
+ * Pure intersection-of-terms scoring; for wikis up to a few thousand pages
+ * this is fast and gives stable rankings.
+ */
+export async function searchPages(
+  source: WikiSource,
+  opts: SearchOptions
+): Promise<SearchHit[]> {
+  const limit = opts.limit ?? 25;
+  const terms = opts.query
+    .split(/\s+/)
+    .map((t) => t.trim())
+    .filter((t) => t.length > 0)
+    .map((t) => t.toLowerCase());
+
+  if (terms.length === 0) return [];
+
+  const files = await source.listMarkdown(opts.subdir);
+  const hits: SearchHit[] = [];
+
+  for (const rel of files) {
+    let page: PageRecord;
+    try {
+      page = await source.readPage(rel);
+    } catch {
+      continue;
+    }
+
+    if (opts.filters) {
+      let dropped = false;
+      for (const [k, v] of Object.entries(opts.filters)) {
+        if (v === undefined || v === null || v === "") continue;
+        const got = String(page.frontmatter[k] ?? "").toLowerCase();
+        if (got !== v.toLowerCase()) {
+          dropped = true;
+          break;
+        }
+      }
+      if (dropped) continue;
+    }
+
+    const haystack = (page.body + "\n" + JSON.stringify(page.frontmatter)).toLowerCase();
+    let score = 0;
+    const snippets: string[] = [];
+    for (const term of terms) {
+      const idx = haystack.indexOf(term);
+      if (idx === -1) {
+        score = -1;
+        break;
+      }
+      score += 1;
+      const bodyLower = page.body.toLowerCase();
+      const bIdx = bodyLower.indexOf(term);
+      if (bIdx !== -1) {
+        const start = Math.max(0, bIdx - 80);
+        const end = Math.min(page.body.length, bIdx + term.length + 120);
+        snippets.push(
+          (start > 0 ? "…" : "") +
+            page.body.slice(start, end).replace(/\s+/g, " ").trim() +
+            (end < page.body.length ? "…" : "")
+        );
+      }
+    }
+    if (score < terms.length) continue;
+
+    hits.push({
+      relPath: page.relPath,
+      title: (page.frontmatter.title as string) ?? undefined,
+      type: (page.frontmatter.type as string) ?? undefined,
+      score,
+      snippets: snippets.slice(0, 3),
+    });
+  }
+
+  hits.sort((a, b) => b.score - a.score);
+  return hits.slice(0, limit);
+}
+
+/** Extract Obsidian-style [[wiki-links]] from a markdown body. */
+export function extractWikiLinks(body: string): string[] {
+  const out: string[] = [];
+  const re = /\[\[([^\]|#]+)(?:[#|][^\]]*)?\]\]/g;
+  let m: RegExpExecArray | null;
+  while ((m = re.exec(body)) !== null) {
+    out.push(m[1].trim());
+  }
+  return Array.from(new Set(out));
+}
+
+/** Extract relative markdown links like [text](path.md). */
+export function extractMarkdownLinks(body: string): string[] {
+  const out: string[] = [];
+  const re = /\]\(([^)]+\.md)(?:#[^)]*)?\)/g;
+  let m: RegExpExecArray | null;
+  while ((m = re.exec(body)) !== null) {
+    out.push(m[1].trim());
+  }
+  return Array.from(new Set(out));
+}
+
+/**
+ * Minimal YAML frontmatter emitter that handles the shapes a markdown wiki uses
+ * (scalars, lists of scalars, single-level objects). Used by write tools.
+ */
+export function renderFrontmatter(obj: Record<string, unknown>): string {
+  const lines: string[] = [];
+  for (const k of Object.keys(obj)) {
+    lines.push(emitKv(k, obj[k], 0));
+  }
+  return lines.join("\n") + (lines.length ? "\n" : "");
+}
+
+function emitKv(key: string, value: unknown, indent: number): string {
+  const pad = " ".repeat(indent);
+  if (value === null || value === undefined) return `${pad}${key}: null`;
+  if (Array.isArray(value)) {
+    if (value.length === 0) return `${pad}${key}: []`;
+    const items = value.map((v) => `${pad}  - ${scalar(v)}`).join("\n");
+    return `${pad}${key}:\n${items}`;
+  }
+  if (typeof value === "object") {
+    const inner = Object.entries(value as Record<string, unknown>)
+      .map(([k, v]) => emitKv(k, v, indent + 2))
+      .join("\n");
+    return `${pad}${key}:\n${inner}`;
+  }
+  return `${pad}${key}: ${scalar(value)}`;
+}
+
+function scalar(value: unknown): string {
+  if (value === null || value === undefined) return "null";
+  if (typeof value === "number" || typeof value === "boolean") return String(value);
+  const s = String(value);
+  if (/^[A-Za-z0-9._\-:/]+$/.test(s) && !/^(true|false|null|yes|no)$/i.test(s)) {
+    return s;
+  }
+  return JSON.stringify(s);
+}
+
+/** Parse a YAML-like frontmatter block. Minimal, no deps — same shape as gray-matter for our purposes. */
+export function parseFrontmatter(raw: string): { frontmatter: Record<string, unknown>; body: string } {
+  if (!raw.startsWith("---\n") && !raw.startsWith("---\r\n")) {
+    return { frontmatter: {}, body: raw };
+  }
+  const end = raw.indexOf("\n---", 4);
+  if (end === -1) return { frontmatter: {}, body: raw };
+  const block = raw.slice(4, end);
+  const body = raw.slice(end + 4).replace(/^\r?\n/, "");
+  const fm: Record<string, unknown> = {};
+  let currentKey: string | null = null;
+  let currentArray: unknown[] | null = null;
+  for (const line of block.split(/\r?\n/)) {
+    if (/^\s*-\s+/.test(line) && currentArray) {
+      currentArray.push(line.replace(/^\s*-\s+/, "").trim());
+      continue;
+    }
+    const m = line.match(/^([A-Za-z0-9_-]+)\s*:\s*(.*)$/);
+    if (!m) continue;
+    const [, key, rawVal] = m;
+    if (rawVal === "" || rawVal === undefined) {
+      currentKey = key;
+      currentArray = [];
+      fm[key] = currentArray;
+    } else {
+      currentKey = key;
+      currentArray = null;
+      fm[key] = rawVal.trim();
+    }
+  }
+  return { frontmatter: fm, body };
+}

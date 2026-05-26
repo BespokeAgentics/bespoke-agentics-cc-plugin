@@ -1,0 +1,207 @@
+import { parseFrontmatter } from "./search.js";
+
+/**
+ * WikiSource — Workers (R2-backed) implementation.
+ *
+ * Reads are served from R2, which a separate Cron Worker keeps in sync with
+ * GitHub. Writes go directly to the GitHub Contents API (which produces a real
+ * commit) and the next Cron tick refreshes R2.
+ */
+export interface PageRecord {
+  relPath: string;
+  frontmatter: Record<string, unknown>;
+  body: string;
+  size: number;
+  modifiedAt: string;
+}
+
+export interface WikiSource {
+  init(): Promise<void>;
+  wikiRoot(): string;
+  listMarkdown(subdir?: string): Promise<string[]>;
+  readPage(relPath: string): Promise<PageRecord>;
+  safePull(): Promise<{ updated: boolean }>;
+  writeAndCommit(args: {
+    files: Array<{ relPath: string; content: string }>;
+    message: string;
+  }): Promise<{ commit: string }>;
+  resolveWikiPath(relPath: string): string;
+  shutdown(): Promise<void>;
+}
+
+export interface R2BucketLike {
+  list(opts: { prefix?: string }): Promise<{ objects: Array<{ key: string; size: number; uploaded: Date }> }>;
+  get(key: string): Promise<{ text(): Promise<string>; size: number; uploaded: Date } | null>;
+  put(key: string, value: string): Promise<unknown>;
+}
+
+export interface R2WikiConfig {
+  bucket: R2BucketLike;
+  repoUrl: string;          // https://github.com/<owner>/<repo>.git
+  branch: string;
+  subpath: string;          // "" for repo root, or e.g. "apps/wiki" for a monorepo
+  githubToken: string;      // PAT for writes
+  authorName: string;
+  authorEmail: string;
+}
+
+export class R2WikiSource implements WikiSource {
+  private readonly subpath: string;
+
+  constructor(private cfg: R2WikiConfig) {
+    // Normalize subpath: strip leading/trailing slashes so monorepo paths like
+    // "apps/wiki/" or "/apps/wiki" can't produce double-slash R2 keys.
+    this.subpath = (cfg.subpath || "").replace(/^\/+/, "").replace(/\/+$/, "");
+  }
+
+  wikiRoot(): string {
+    return `r2://${this.subpath || "(root)"}@${this.cfg.branch}`;
+  }
+
+  async init(): Promise<void> {
+    // No-op — R2 is always ready, and the Cron Worker handles initial population.
+  }
+
+  /** R2 keys mirror the wiki layout. Top-level wiki/_index.md -> "wiki/_index.md" or "_index.md" if subpath empty. */
+  private toKey(relPath: string): string {
+    const norm = this.resolveWikiPath(relPath);
+    return this.subpath ? `${this.subpath}/${norm}` : norm;
+  }
+
+  private toRelPath(key: string): string {
+    if (this.subpath && key.startsWith(this.subpath + "/")) {
+      return key.slice(this.subpath.length + 1);
+    }
+    return key;
+  }
+
+  async listMarkdown(subdir?: string): Promise<string[]> {
+    const prefix = subdir
+      ? this.subpath
+        ? `${this.subpath}/${subdir}/`
+        : `${subdir}/`
+      : this.subpath
+        ? `${this.subpath}/`
+        : "";
+    const list = await this.cfg.bucket.list({ prefix });
+    return list.objects.filter((o) => o.key.endsWith(".md")).map((o) => this.toRelPath(o.key));
+  }
+
+  async readPage(relPath: string): Promise<PageRecord> {
+    const key = this.toKey(relPath);
+    const obj = await this.cfg.bucket.get(key);
+    if (!obj) throw new Error(`Not found in R2: ${relPath}`);
+    const text = await obj.text();
+    const parsed = parseFrontmatter(text);
+    return {
+      relPath: relPath.replace(/\\/g, "/"),
+      frontmatter: parsed.frontmatter,
+      body: parsed.body,
+      size: obj.size,
+      modifiedAt: obj.uploaded.toISOString(),
+    };
+  }
+
+  async safePull(): Promise<{ updated: boolean }> {
+    // Trigger an immediate sync via the Cron Worker isn't directly callable
+    // from another Worker without a service binding. As a workaround the
+    // user can hit the Cron Worker's /__sync route (if exposed). For now,
+    // safePull is a no-op that reports "not implemented" but doesn't fail.
+    return { updated: false };
+  }
+
+  async writeAndCommit(args: {
+    files: Array<{ relPath: string; content: string }>;
+    message: string;
+  }): Promise<{ commit: string }> {
+    // Use the GitHub Contents API to write each file. One commit per file
+    // (GitHub Contents API doesn't support multi-file atomic commits — that
+    // requires the Git Data API which is more involved). Returns the SHA of
+    // the LAST commit so callers can reference it.
+    const { owner, repo } = parseRepoUrl(this.cfg.repoUrl);
+    let lastCommit = "";
+    for (const file of args.files) {
+      const absPath = this.toKey(file.relPath);
+      const existing = await ghGetFileSha({
+        token: this.cfg.githubToken,
+        owner,
+        repo,
+        branch: this.cfg.branch,
+        path: absPath,
+      });
+      const res = await fetch(
+        `https://api.github.com/repos/${owner}/${repo}/contents/${encodeURIComponent(absPath)}`,
+        {
+          method: "PUT",
+          headers: {
+            Authorization: `token ${this.cfg.githubToken}`,
+            "User-Agent": "wiki-mcp-{{SLUG}}",
+            Accept: "application/vnd.github+json",
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            message: args.message,
+            content: btoa(unescape(encodeURIComponent(file.content))),
+            branch: this.cfg.branch,
+            sha: existing,
+            committer: { name: this.cfg.authorName, email: this.cfg.authorEmail },
+          }),
+        }
+      );
+      if (!res.ok) {
+        const detail = await res.text();
+        throw new Error(`GitHub write failed (${res.status}): ${detail}`);
+      }
+      const body = (await res.json()) as { commit: { sha: string } };
+      lastCommit = body.commit.sha;
+
+      // Mirror into R2 so reads see the new content immediately (before next Cron).
+      await this.cfg.bucket.put(absPath, file.content);
+    }
+    return { commit: lastCommit };
+  }
+
+  resolveWikiPath(relPath: string): string {
+    const norm = relPath.replace(/\\/g, "/").replace(/^([./]+)/g, "");
+    if (norm.startsWith("..") || norm.startsWith("/")) {
+      throw new Error(`Illegal path: ${relPath}`);
+    }
+    return norm;
+  }
+
+  async shutdown(): Promise<void> {
+    /* nothing to clean up */
+  }
+}
+
+function parseRepoUrl(url: string): { owner: string; repo: string } {
+  const m = url.match(/github\.com[:/]([^/]+)\/([^/.]+)(?:\.git)?/i);
+  if (!m) throw new Error(`Cannot parse repo URL: ${url}`);
+  return { owner: m[1], repo: m[2] };
+}
+
+async function ghGetFileSha(args: {
+  token: string;
+  owner: string;
+  repo: string;
+  branch: string;
+  path: string;
+}): Promise<string | undefined> {
+  const res = await fetch(
+    `https://api.github.com/repos/${args.owner}/${args.repo}/contents/${encodeURIComponent(args.path)}?ref=${args.branch}`,
+    {
+      headers: {
+        Authorization: `token ${args.token}`,
+        "User-Agent": "wiki-mcp-{{SLUG}}",
+        Accept: "application/vnd.github+json",
+      },
+    }
+  );
+  if (res.status === 404) return undefined;
+  if (!res.ok) {
+    const detail = await res.text();
+    throw new Error(`GitHub get-file-sha failed (${res.status}): ${detail}`);
+  }
+  const body = (await res.json()) as { sha: string };
+  return body.sha;
+}

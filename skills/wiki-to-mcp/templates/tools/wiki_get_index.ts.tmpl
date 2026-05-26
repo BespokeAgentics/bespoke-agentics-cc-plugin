@@ -1,0 +1,13 @@
+  server.tool(
+    "wiki_get_index",
+    "Return the contents of the wiki's _index.md (catalog), if present.",
+    {},
+    async () => {
+      try {
+        const page = await repo.readPage("_index.md");
+        return textResult(page.body);
+      } catch {
+        return textResult("(no _index.md present at the wiki root)");
+      }
+    }
+  );

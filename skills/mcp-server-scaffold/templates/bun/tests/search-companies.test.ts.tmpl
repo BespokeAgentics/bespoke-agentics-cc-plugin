@@ -1,0 +1,55 @@
+import { describe, expect, it } from "bun:test";
+import { searchCompanies } from "../src/tools/search-companies";
+import type { BackendClient, Company, SearchCompaniesInput } from "../src/backends/client";
+import type { ToolContext } from "../src/pipeline";
+import { RateLimiter } from "../src/ratelimit";
+
+// FakeBackend records every call so the test can assert on the *variables sent*
+// (Section 8). Catches normalization bugs that output-shape assertions miss.
+class FakeBackend implements BackendClient {
+  searchCalls: SearchCompaniesInput[] = [];
+  async getCompany(): Promise<Company> { throw new Error("not used"); }
+  async searchCompanies(input: SearchCompaniesInput): Promise<Company[]> {
+    this.searchCalls.push(input);
+    return [{ id: "c1", name: "ACME GmbH", country: "DE", segment: "midmarket", employeeCount: 42 }];
+  }
+  async aiSearchCompanies(): Promise<Company[]> { throw new Error("not used"); }
+  async createTicket(): Promise<never> { throw new Error("not used"); }
+}
+
+function ctx(backend: BackendClient): ToolContext {
+  return {
+    config: {
+      port: 8443, tlsCert: "", tlsKey: "",
+      authMode: "oidc", backendBaseUrl: "https://x",
+      mutationsEnabled: false,
+      rateLimitAiSearchPerMin: 6, maxResultsCap: 100,
+    } as any,
+    backend,
+    user: { id: "u1", source: "oidc", token: "t" },
+    rateLimiter: new RateLimiter(),
+  };
+}
+
+describe("search_companies", () => {
+  it("normalizes country aliases before calling the backend", async () => {
+    const fake = new FakeBackend();
+    await searchCompanies.execute(ctx(fake), { country: "germany", limit: 20 } as any);
+    expect(fake.searchCalls).toHaveLength(1);
+    expect(fake.searchCalls[0]!.country).toBe("DE");
+  });
+
+  it("caps limit at the configured max", async () => {
+    const fake = new FakeBackend();
+    await searchCompanies.execute(ctx(fake), { country: "DE", limit: 500 } as any);
+    expect(fake.searchCalls[0]!.limit).toBeLessThanOrEqual(100);
+  });
+
+  it("returns flat output records (no nested backend types)", async () => {
+    const fake = new FakeBackend();
+    const out = await searchCompanies.execute(ctx(fake), { country: "DE" } as any);
+    expect(out[0]).toEqual({
+      id: "c1", name: "ACME GmbH", country: "DE", segment: "midmarket", employeeCount: 42,
+    });
+  });
+});

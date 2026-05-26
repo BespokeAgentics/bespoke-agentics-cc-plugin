@@ -1,0 +1,44 @@
+// Typed error taxonomy. Each error carries a code, a human message, and
+// optional remediation guidance. The LLM client surfaces the message to the
+// user, so messages must be specific and actionable.
+
+export type ErrorCode =
+  | "UNAUTHORIZED"
+  | "NOT_FOUND"
+  | "RATE_LIMITED"
+  | "MUTATION_DISABLED"
+  | "VALIDATION_FAILED"
+  | "BACKEND_ERROR";
+
+export class McpToolError extends Error {
+  readonly code: ErrorCode;
+  readonly fields: Record<string, unknown>;
+  constructor(code: ErrorCode, message: string, fields: Record<string, unknown> = {}) {
+    super(message);
+    this.code = code;
+    this.fields = fields;
+  }
+}
+
+export const errors = {
+  unauthorized: (msg = "Missing or invalid auth token.") =>
+    new McpToolError("UNAUTHORIZED", msg, { fix: "Refresh your OIDC bearer or set MCP_API_KEYS." }),
+  notFound: (resource: string, id: string) =>
+    new McpToolError("NOT_FOUND", `${resource} '${id}' was not found.`, { resource, id }),
+  rateLimited: (perMinute: number, tool: string) =>
+    new McpToolError(
+      "RATE_LIMITED",
+      `Rate limit hit for ${tool}: ceiling is ${perMinute}/min per user. Reduce query frequency or raise the ceiling via MCP_RATE_LIMIT_*_PER_MIN.`,
+      { tool, perMinute },
+    ),
+  mutationDisabled: (tool: string) =>
+    new McpToolError(
+      "MUTATION_DISABLED",
+      `Mutations are disabled. Tool '${tool}' was blocked. Set MCP_MUTATIONS_ENABLED=true to allow writes (default is false for safety).`,
+      { tool, envVar: "MCP_MUTATIONS_ENABLED" },
+    ),
+  validation: (message: string, details?: unknown) =>
+    new McpToolError("VALIDATION_FAILED", message, { details }),
+  backend: (message: string, status?: number) =>
+    new McpToolError("BACKEND_ERROR", message, { status }),
+};

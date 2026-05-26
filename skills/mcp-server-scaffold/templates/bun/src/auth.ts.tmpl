@@ -1,0 +1,70 @@
+import { errors } from "./errors";
+import type { Config } from "./config";
+
+export type Principal = {
+  id: string;
+  source: "oidc" | "api-key";
+  token: string;
+};
+
+// Verify an incoming Authorization header against the configured auth mode.
+// OIDC: validates the bearer JWT against the configured issuer (signature + aud + exp).
+// api-key: matches the bearer against the comma-separated MCP_API_KEYS list.
+//
+// The verified Principal flows through the pipeline into the backend client so
+// downstream authorization runs against the *user's* identity — never a shared
+// service credential. Short-lived tokens limit blast radius (Section 6).
+export async function authenticate(
+  authHeader: string | null | undefined,
+  cfg: Config,
+): Promise<Principal> {
+  if (!authHeader || !authHeader.startsWith("Bearer ")) {
+    throw errors.unauthorized("Authorization header missing 'Bearer <token>'.");
+  }
+  const token = authHeader.slice("Bearer ".length).trim();
+  if (!token) throw errors.unauthorized("Empty bearer token.");
+
+  if (cfg.authMode === "oidc" || cfg.authMode === "both") {
+    try {
+      const principal = await verifyOidc(token, cfg);
+      return principal;
+    } catch (e) {
+      if (cfg.authMode !== "both") throw e;
+    }
+  }
+  if (cfg.authMode === "api-key" || cfg.authMode === "both") {
+    return verifyApiKey(token, cfg);
+  }
+  throw errors.unauthorized("No matching auth method accepted the token.");
+}
+
+async function verifyOidc(token: string, cfg: Config): Promise<Principal> {
+  if (!cfg.oidcIssuerUrl) {
+    throw errors.unauthorized("OIDC mode is on but OIDC_ISSUER_URL is unset.");
+  }
+  // Production: use a real JWT library (jose) to validate signature, iss, aud, exp.
+  // The stub below decodes the payload only — replace before shipping.
+  const parts = token.split(".");
+  if (parts.length !== 3) throw errors.unauthorized("Malformed OIDC token.");
+  try {
+    const payload = JSON.parse(
+      Buffer.from(parts[1]!, "base64url").toString("utf-8"),
+    ) as { sub?: string; aud?: string; exp?: number };
+    if (!payload.sub) throw errors.unauthorized("OIDC token missing subject.");
+    if (payload.exp && payload.exp * 1000 < Date.now()) {
+      throw errors.unauthorized("OIDC token expired.");
+    }
+    if (cfg.oidcAudience && payload.aud !== cfg.oidcAudience) {
+      throw errors.unauthorized("OIDC token audience mismatch.");
+    }
+    return { id: payload.sub, source: "oidc", token };
+  } catch {
+    throw errors.unauthorized("OIDC token validation failed.");
+  }
+}
+
+function verifyApiKey(token: string, cfg: Config): Principal {
+  const keys = (cfg.apiKeysCsv ?? "").split(",").map((k) => k.trim()).filter(Boolean);
+  if (!keys.includes(token)) throw errors.unauthorized("API key not recognized.");
+  return { id: `apikey:${token.slice(0, 6)}…`, source: "api-key", token };
+}

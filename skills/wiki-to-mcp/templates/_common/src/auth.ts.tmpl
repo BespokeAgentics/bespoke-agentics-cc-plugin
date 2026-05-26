@@ -1,0 +1,55 @@
+import type { NextFunction, Request, Response } from "express";
+
+/**
+ * Bearer-token middleware. Authorized if the `Authorization: Bearer <token>` header
+ * matches one of the tokens passed in (comma-separated env var, parsed into a Set).
+ *
+ * Note: `/health` and `/` are intentionally open so platform health checks can probe.
+ */
+export function bearerAuth(tokens: Set<string>) {
+  return function (req: Request, res: Response, next: NextFunction): void {
+    if (req.path === "/health" || req.path === "/") {
+      next();
+      return;
+    }
+    const header = req.headers.authorization ?? "";
+    const match = header.match(/^Bearer\s+(.+)$/i);
+    if (!match || !tokens.has(match[1].trim())) {
+      res.status(401).json({
+        jsonrpc: "2.0",
+        error: { code: -32001, message: "Unauthorized" },
+        id: null,
+      });
+      return;
+    }
+    next();
+  };
+}
+
+/**
+ * OAuth 2.1 scaffolding stub.
+ *
+ * MCP supports OAuth 2.1 with PKCE. The full flow is non-trivial: discovery,
+ * authorization, token exchange, refresh, token introspection. We ship a stub
+ * so that wiring OAuth in is a fill-in-the-blank rather than a refactor.
+ *
+ * To enable, set AUTH_MODE=oauth and implement the four functions below.
+ */
+export interface OAuthHandlers {
+  /** Resolve the bearer token presented by the client to a subject identifier and scopes. */
+  introspect(token: string): Promise<{ active: boolean; subject?: string; scopes?: string[] }>;
+}
+
+export function oauthAuth(_handlers: OAuthHandlers) {
+  return function (_req: Request, res: Response, _next: NextFunction): void {
+    // TODO: implement OAuth introspection per RFC 7662 + MCP §2.6.
+    res.status(501).json({
+      jsonrpc: "2.0",
+      error: {
+        code: -32099,
+        message: "OAuth not yet implemented. Set AUTH_MODE=bearer or implement oauthAuth in src/auth.ts.",
+      },
+      id: null,
+    });
+  };
+}

@@ -1,0 +1,81 @@
+package pipeline
+
+import (
+	"context"
+	"encoding/json"
+	"log/slog"
+	"time"
+
+	"{{GO_MODULE}}/internal/auth"
+	"{{GO_MODULE}}/internal/backends"
+	"{{GO_MODULE}}/internal/config"
+	myerr "{{GO_MODULE}}/internal/errors"
+	"{{GO_MODULE}}/internal/ratelimit"
+)
+
+type ToolContext struct {
+	Config  config.Config
+	Backend backends.Client
+	User    auth.Principal
+	Limiter *ratelimit.Limiter
+	Log     *slog.Logger
+}
+
+// Validator is implemented by every tool input type. Validate enforces required
+// fields, caps numeric limits, and resolves domain aliases. Mutation gating is
+// handled separately in Run.
+type Validator interface {
+	Validate() error
+}
+
+// AssertMutationsEnabled is imported ONLY by mutation tool files and by Run
+// when a tool reports Mutates() == true. If you find this symbol in a read tool,
+// you are violating Section 3.
+func AssertMutationsEnabled(cfg config.Config, toolName string) error {
+	if !cfg.MutationsEnabled {
+		return myerr.MutationDisabled(toolName)
+	}
+	return nil
+}
+
+// Run is the canonical 6-layer pipeline:
+//  1. JSON-RPC dispatch (done by the SDK before this is called)
+//  2. Decode raw args into the tool's typed input
+//  3. Validate + normalize + gate + rate-limit
+//  4. Execute against the backend client
+//  5. Shape into a flat output
+//  6. Encode and return
+//
+// Every tool calls Run; nothing skips a layer.
+func Run[A Validator, R any](
+	ctx context.Context,
+	tctx *ToolContext,
+	toolName string,
+	mutates bool,
+	rateSpec *ratelimit.Spec,
+	raw json.RawMessage,
+	exec func(context.Context, *ToolContext, A) (R, error),
+) (R, error) {
+	startedAt := time.Now()
+	var zero R
+	var args A
+	if err := json.Unmarshal(raw, &args); err != nil {
+		return zero, myerr.Validation("Invalid input shape: "+err.Error(), nil)
+	}
+	if err := args.Validate(); err != nil {
+		return zero, err
+	}
+	if mutates {
+		if err := AssertMutationsEnabled(tctx.Config, toolName); err != nil {
+			return zero, err
+		}
+	}
+	if rateSpec != nil {
+		if err := tctx.Limiter.Consume(*rateSpec, tctx.User.ID); err != nil {
+			return zero, err
+		}
+	}
+	result, err := exec(ctx, tctx, args)
+	tctx.Log.Info("tool", "name", toolName, "ms", time.Since(startedAt).Milliseconds(), "ok", err == nil)
+	return result, err
+}

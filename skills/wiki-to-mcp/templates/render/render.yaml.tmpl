@@ -1,0 +1,42 @@
+services:
+  - type: web
+    name: wiki-mcp-{{SLUG}}
+    runtime: docker
+    plan: starter
+    region: oregon
+    branch: main
+    dockerfilePath: ./Dockerfile
+    dockerContext: .
+    healthCheckPath: /health
+    envVars:
+      - key: PORT
+        value: "10000"
+      - key: NODE_ENV
+        value: production
+      - key: LOG_LEVEL
+        value: info
+      - key: WIKI_LOCAL_PATH
+        value: /var/data/wiki-repo
+      - key: WIKI_BRANCH
+        value: {{BRANCH}}
+      - key: WIKI_SUBPATH
+        value: "{{SUBPATH}}"
+      - key: WIKI_PULL_INTERVAL_MS
+        value: "300000"
+      - key: AUTH_MODE
+        value: bearer
+      - key: GIT_AUTHOR_NAME
+        value: {{PROJECT_NAME}} MCP
+      - key: GIT_AUTHOR_EMAIL
+        value: bot@example.com
+      # Secrets — set in Render dashboard, not in this file.
+      - key: MCP_BEARER_TOKENS
+        sync: false
+      - key: WIKI_REPO_URL
+        sync: false
+      - key: WIKI_GIT_TOKEN
+        sync: false
+    disk:
+      name: wiki-disk
+      mountPath: /var/data
+      sizeGB: 10

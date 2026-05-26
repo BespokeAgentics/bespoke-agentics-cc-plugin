@@ -1,0 +1,105 @@
+package tools
+
+import (
+	"context"
+	"regexp"
+	"strings"
+
+	"{{GO_MODULE}}/internal/backends"
+	myerr "{{GO_MODULE}}/internal/errors"
+	"{{GO_MODULE}}/internal/pipeline"
+)
+
+// READ-ONLY tool. This file MUST NOT import AssertMutationsEnabled.
+
+var alpha2 = regexp.MustCompile(`^[A-Za-z]{2}$`)
+
+var countryAliases = map[string]string{
+	"germany": "DE", "deutschland": "DE", "de": "DE",
+	"usa": "US", "united states": "US", "us": "US",
+	"uk": "GB", "united kingdom": "GB", "britain": "GB", "gb": "GB",
+}
+
+type SearchCompaniesArgs struct {
+	Country *string `json:"country,omitempty"`
+	Segment *string `json:"segment,omitempty"`
+	Query   *string `json:"query,omitempty"`
+	Limit   int     `json:"limit,omitempty"`
+}
+
+func (a *SearchCompaniesArgs) Validate() error {
+	if a.Country == nil && a.Segment == nil && a.Query == nil {
+		return myerr.Validation("Provide at least one filter (country, segment, or query).", nil)
+	}
+	if a.Limit == 0 {
+		a.Limit = 20
+	}
+	if a.Limit < 1 || a.Limit > 100 {
+		return myerr.Validation("limit must be between 1 and 100.", nil)
+	}
+	if a.Segment != nil {
+		switch *a.Segment {
+		case "smb", "midmarket", "enterprise":
+		default:
+			return myerr.Validation("segment must be one of: smb, midmarket, enterprise.", nil)
+		}
+	}
+	if a.Query != nil && len(*a.Query) > 120 {
+		return myerr.Validation("query must be 120 characters or fewer.", nil)
+	}
+	if a.Country != nil {
+		norm, err := normalizeCountry(*a.Country)
+		if err != nil { return err }
+		a.Country = &norm
+	}
+	return nil
+}
+
+type SearchCompaniesResult struct {
+	Items []CompanyDTO `json:"items"`
+}
+
+type CompanyDTO struct {
+	ID            string `json:"id"`
+	Name          string `json:"name"`
+	Country       string `json:"country"`
+	Segment       string `json:"segment"`
+	EmployeeCount int    `json:"employeeCount"`
+}
+
+func SearchCompaniesSpec() Spec {
+	return Spec{
+		Name:        "search_companies",
+		Description: "Search companies by country (ISO alpha-2), segment, and/or free-text query. Requires at least one filter. Max 100 results.",
+		Mutates:     false,
+	}
+}
+
+func SearchCompanies(ctx context.Context, tctx *pipeline.ToolContext, a *SearchCompaniesArgs) (SearchCompaniesResult, error) {
+	limit := a.Limit
+	if limit > tctx.Config.MaxResultsCap {
+		limit = tctx.Config.MaxResultsCap
+	}
+	companies, err := tctx.Backend.SearchCompanies(ctx, backends.SearchCompaniesInput{
+		Country: a.Country, Segment: a.Segment, Query: a.Query, Limit: limit,
+	})
+	if err != nil { return SearchCompaniesResult{}, err }
+	out := make([]CompanyDTO, 0, len(companies))
+	for _, c := range companies {
+		out = append(out, CompanyDTO{
+			ID: c.ID, Name: c.Name, Country: c.Country,
+			Segment: c.Segment, EmployeeCount: c.EmployeeCount,
+		})
+	}
+	return SearchCompaniesResult{Items: out}, nil
+}
+
+func normalizeCountry(input string) (string, error) {
+	key := strings.ToLower(strings.TrimSpace(input))
+	if v, ok := countryAliases[key]; ok { return v, nil }
+	if alpha2.MatchString(key) { return strings.ToUpper(key), nil }
+	return "", myerr.Validation(
+		"Unrecognized country '"+input+"'. Use ISO alpha-2 (e.g., 'DE', 'US', 'GB') or a common alias.",
+		nil,
+	)
+}

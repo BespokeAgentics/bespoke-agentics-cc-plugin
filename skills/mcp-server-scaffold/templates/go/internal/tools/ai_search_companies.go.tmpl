@@ -1,0 +1,44 @@
+package tools
+
+import (
+	"context"
+
+	myerr "{{GO_MODULE}}/internal/errors"
+	"{{GO_MODULE}}/internal/pipeline"
+)
+
+// READ-ONLY tool. Must not import AssertMutationsEnabled.
+// Opts into the rate limiter — the ceiling is wired in at registration time
+// from config so ops can tune per-environment without a code change.
+
+type AISearchCompaniesArgs struct {
+	Q string `json:"q"`
+}
+
+func (a *AISearchCompaniesArgs) Validate() error {
+	if l := len(a.Q); l < 3 || l > 280 {
+		return myerr.Validation("q must be between 3 and 280 characters.", nil)
+	}
+	return nil
+}
+
+func AISearchCompaniesSpec() Spec {
+	return Spec{
+		Name:        "ai_search_companies",
+		Description: "Natural-language company search. Rate-limited per user (configurable via MCP_RATE_LIMIT_AI_SEARCH_PER_MIN). Prefer search_companies when you can specify filters.",
+		Mutates:     false,
+	}
+}
+
+func AISearchCompanies(ctx context.Context, tctx *pipeline.ToolContext, a *AISearchCompaniesArgs) (SearchCompaniesResult, error) {
+	companies, err := tctx.Backend.AISearchCompanies(ctx, a.Q)
+	if err != nil { return SearchCompaniesResult{}, err }
+	out := make([]CompanyDTO, 0, len(companies))
+	for _, c := range companies {
+		out = append(out, CompanyDTO{
+			ID: c.ID, Name: c.Name, Country: c.Country,
+			Segment: c.Segment, EmployeeCount: c.EmployeeCount,
+		})
+	}
+	return SearchCompaniesResult{Items: out}, nil
+}

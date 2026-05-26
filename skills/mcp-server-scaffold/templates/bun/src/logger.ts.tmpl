@@ -1,0 +1,19 @@
+// All telemetry MUST go to stderr. Stdout is reserved for JSON-RPC when the
+// stdio transport is in use — anything written to stdout outside the protocol
+// will corrupt the MCP handshake.
+
+function emit(level: string, event: string, fields: Record<string, unknown>): void {
+  const line = JSON.stringify({
+    ts: new Date().toISOString(),
+    level,
+    event,
+    ...fields,
+  });
+  process.stderr.write(line + "\n");
+}
+
+export const log = {
+  info: (event: string, fields: Record<string, unknown> = {}) => emit("info", event, fields),
+  warn: (event: string, fields: Record<string, unknown> = {}) => emit("warn", event, fields),
+  error: (event: string, fields: Record<string, unknown> = {}) => emit("error", event, fields),
+};

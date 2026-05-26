@@ -1,0 +1,20 @@
+  server.tool(
+    "wiki_search",
+    "Full-text search across the {{PROJECT_NAME}} wiki. Filters listed below come from the wiki's frontmatter conventions. Returns ranked hits with snippets.",
+    {
+      query: z.string().min(1).describe("Free-text query. All terms must match."),
+      subdir: z.string().optional().describe("Restrict search to a subdirectory of the wiki root."),
+      limit: z.number().int().positive().max(100).optional(),
+{{FILTERABLE_FIELDS_ZOD}}
+    },
+    async (args) => {
+      const { query, subdir, limit, ...filters } = args as Record<string, unknown>;
+      const hits = await searchPages(repo, {
+        query: String(query),
+        subdir: typeof subdir === "string" ? subdir : undefined,
+        limit: typeof limit === "number" ? limit : undefined,
+        filters: filters as Record<string, string | undefined>,
+      });
+      return jsonResult({ count: hits.length, hits });
+    }
+  );

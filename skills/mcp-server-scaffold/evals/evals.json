@@ -1,0 +1,26 @@
+{
+  "skill_name": "mcp-server-scaffold",
+  "evals": [
+    {
+      "id": 1,
+      "name": "bun-rest-greenfield",
+      "prompt": "I want to expose our internal company-directory REST API to Claude via MCP. Stack is TypeScript and we already use bun on every other service. The API lives at https://api.acmedirectory.io/v1, auth is OIDC (issuer https://auth.acmedirectory.io, audience 'acme-mcp'). For now I just want read-only — searching companies by country/segment and fetching by id. We will probably want an AI-search tool eventually but write operations are off the table this quarter. Scaffold the project in a new directory called 'acme-directory-mcp'. Make sure it follows production-grade safety practices.",
+      "expected_output": "A directory acme-directory-mcp/ containing a runnable Bun MCP server with search_companies, get_company, and ai_search_companies tools (no create_ticket since the user said no writes). Should include the auth, pipeline, ratelimit, errors, logger modules, REST backend adapter, mutation-gate test, no-stdout test, search normalization test, README, scripts/inspector.sh, scripts/gen-dev-cert.sh, package.json with MCP SDK + zod, tsconfig.json. Startup log line must include auth=oidc, mutationsEnabled=false, tools=3, rateLimits.ai_search_companies=6.",
+      "files": []
+    },
+    {
+      "id": 2,
+      "name": "go-graphql-with-mutation",
+      "prompt": "We're building a Go MCP server that wraps our support platform. Backend is GraphQL at https://gql.support.example.com/graphql. We want Claude to be able to search tickets and create new ones — but only when an operator explicitly turns writes on, never by default. Go module path is github.com/example/support-mcp. Use OIDC bearer auth (issuer https://auth.example.com). Scaffold into ./support-mcp.",
+      "expected_output": "support-mcp/ Go project: cmd/mcp-server/main.go, internal/{auth,backends,config,errors,logger,pipeline,ratelimit,tools}, tests/. Includes the GraphQL adapter (not just REST). create_ticket tool is present with mutates=true and pipeline.AssertMutationsEnabled imported. tests/mutation_gate_test.go asserts the backend Fake is never called when MutationsEnabled=false. go.mod has the correct module path. README documents MCP_MUTATIONS_ENABLED and the release-gate sequence.",
+      "files": []
+    },
+    {
+      "id": 3,
+      "name": "audit-existing-server",
+      "prompt": "Audit my MCP server at ./tools/mcp-svc — I want to know what would need to change before I'd be comfortable pointing real users at it. Focus on the production-readiness checklist. Don't edit anything yet, just give me a report with PASS/FAIL per item and the smallest fix for each FAIL.",
+      "expected_output": "An audit report (no code edits) that walks the 13-item checklist from references/design-principles.md. Each item: PASS / FAIL / N/A with one-line evidence (file path + line or grep hit) and, for FAILs, the smallest diff to make it pass. Ends with a 'fix first' shortlist of the top three issues ordered by blast radius (mutation gating and stdout-discipline issues come before stylistic ones).",
+      "files": []
+    }
+  ]
+}

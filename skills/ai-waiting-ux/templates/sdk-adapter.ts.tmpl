@@ -1,0 +1,276 @@
+import { query, type SDKMessage } from '@anthropic-ai/claude-agent-sdk';
+import type { AgentEvent } from '{{IMPORT_ROOT}}/events';
+import { truncate } from '{{IMPORT_ROOT}}/events';
+import type { SdkAdapter, SessionRunInput } from '{{IMPORT_ROOT}}/adapters/types';
+
+/**
+ * ClaudeAgentSdkAdapter
+ *
+ * Wraps `query()` from @anthropic-ai/claude-agent-sdk. Normalizes the raw
+ * SDK message stream into AgentEvents. See references/event-mapping.md for
+ * the exact mapping table.
+ *
+ * Notes:
+ *  - The Claude Agent SDK's `query()` returns an async iterable of SDKMessage.
+ *    The exact discriminator field is `type`; the inner shape mirrors the
+ *    Anthropic Messages streaming protocol (message_start, content_block_*,
+ *    message_delta, message_stop) plus tool result blocks.
+ *  - Partial tool_use input is streamed via input_json_delta. We emit a
+ *    `tool.use` event with `inputPartial: true` on first sight, then a
+ *    `tool.input.update` once the block stops with the finalized input.
+ *  - Heartbeats are synthesized; the SDK does not emit them.
+ */
+export class ClaudeAgentSdkAdapter implements SdkAdapter {
+  constructor(private readonly defaultModel = 'claude-sonnet-4-6') {}
+
+  async *run(input: SessionRunInput): AsyncIterable<AgentEvent> {
+    const {
+      sessionId,
+      prompt,
+      modelId = this.defaultModel,
+      taskType,
+      stepBudget,
+      signal,
+      idleThresholdMs = 60_000,
+      pauseGate,
+    } = input;
+
+    const now = () => Date.now();
+    let lastEventAt = now();
+
+    yield {
+      type: 'session.start',
+      sessionId,
+      timestamp: now(),
+      modelId,
+      prompt,
+      taskType,
+      stepBudget,
+    };
+
+    // Heartbeat ticker — emits when idle exceeds threshold.
+    const heartbeatQueue: AgentEvent[] = [];
+    const heartbeatInterval = setInterval(() => {
+      if (now() - lastEventAt > idleThresholdMs) {
+        heartbeatQueue.push({
+          type: 'heartbeat',
+          sessionId,
+          timestamp: now(),
+          lastEventAt,
+        });
+      }
+    }, Math.min(15_000, idleThresholdMs / 2));
+
+    // Partial tool input buffer keyed by tool_use_id.
+    const toolInputJson = new Map<string, string>();
+
+    try {
+      const iterator = query({
+        prompt,
+        options: {
+          model: modelId,
+          abortController: { signal } as unknown as AbortController, // shape varies by SDK version
+        },
+      });
+
+      for await (const msg of iterator as AsyncIterable<SDKMessage>) {
+        if (pauseGate?.isPaused()) {
+          await pauseGate.wait();
+        }
+        if (signal.aborted) break;
+
+        lastEventAt = now();
+
+        // Drain any queued heartbeats first so ordering reflects wall clock.
+        while (heartbeatQueue.length) {
+          const hb = heartbeatQueue.shift()!;
+          yield hb;
+        }
+
+        for (const ev of this.normalize(msg, sessionId, toolInputJson)) {
+          lastEventAt = ev.timestamp;
+          yield ev;
+        }
+      }
+
+      if (signal.aborted) {
+        yield {
+          type: 'session.stop',
+          sessionId,
+          timestamp: now(),
+          status: 'aborted',
+        };
+        return;
+      }
+
+      yield {
+        type: 'session.stop',
+        sessionId,
+        timestamp: now(),
+        status: 'success',
+      };
+    } catch (err) {
+      if (signal.aborted) {
+        yield {
+          type: 'session.stop',
+          sessionId,
+          timestamp: now(),
+          status: 'aborted',
+        };
+        return;
+      }
+      const error = err instanceof Error
+        ? { name: err.name, message: err.message }
+        : { name: 'Error', message: String(err) };
+      yield {
+        type: 'session.stop',
+        sessionId,
+        timestamp: now(),
+        status: 'error',
+        error,
+      };
+    } finally {
+      clearInterval(heartbeatInterval);
+    }
+  }
+
+  /**
+   * Map a single SDKMessage to zero or more AgentEvents. Inner shapes are
+   * not strictly typed because the Claude Agent SDK's published types
+   * evolve — keep this narrow and defensive.
+   */
+  private *normalize(
+    msg: SDKMessage,
+    sessionId: string,
+    toolInputJson: Map<string, string>,
+  ): Generator<AgentEvent> {
+    const now = Date.now();
+    const m = msg as unknown as Record<string, unknown>;
+    const type = m.type as string | undefined;
+
+    if (type === 'message_start') {
+      const message = m.message as Record<string, unknown> | undefined;
+      const messageId = (message?.id as string) ?? 'unknown';
+      yield { type: 'message.start', sessionId, timestamp: now, messageId };
+      return;
+    }
+
+    if (type === 'content_block_start') {
+      const block = m.content_block as Record<string, unknown> | undefined;
+      if (block?.type === 'tool_use') {
+        const toolUseId = block.id as string;
+        toolInputJson.set(toolUseId, '');
+        yield {
+          type: 'tool.use',
+          sessionId,
+          timestamp: now,
+          toolUseId,
+          toolName: block.name as string,
+          input: block.input ?? {},
+          inputPartial: true,
+        };
+      }
+      return;
+    }
+
+    if (type === 'content_block_delta') {
+      const delta = m.delta as Record<string, unknown> | undefined;
+      const messageId = ((m.message as Record<string, unknown>)?.id as string) ?? '';
+      if (delta?.type === 'text_delta') {
+        yield {
+          type: 'text.delta',
+          sessionId,
+          timestamp: now,
+          messageId,
+          text: delta.text as string,
+        };
+        return;
+      }
+      if (delta?.type === 'thinking_delta') {
+        yield {
+          type: 'thinking.delta',
+          sessionId,
+          timestamp: now,
+          messageId,
+          text: delta.thinking as string,
+        };
+        return;
+      }
+      if (delta?.type === 'input_json_delta') {
+        // Buffer partial JSON; finalize on content_block_stop.
+        const toolUseId = (m.tool_use_id as string) ?? '';
+        const existing = toolInputJson.get(toolUseId) ?? '';
+        toolInputJson.set(toolUseId, existing + (delta.partial_json as string));
+        return;
+      }
+      return;
+    }
+
+    if (type === 'content_block_stop') {
+      const toolUseId = m.tool_use_id as string | undefined;
+      if (toolUseId && toolInputJson.has(toolUseId)) {
+        const buffered = toolInputJson.get(toolUseId)!;
+        toolInputJson.delete(toolUseId);
+        let parsed: unknown = buffered;
+        try {
+          parsed = JSON.parse(buffered);
+        } catch {
+          // leave as string on parse failure
+        }
+        yield {
+          type: 'tool.input.update',
+          sessionId,
+          timestamp: now,
+          toolUseId,
+          input: parsed,
+        };
+      }
+      return;
+    }
+
+    // The Claude Agent SDK surfaces tool results as content blocks; the
+    // exact event name may differ by SDK version. Handle both shapes.
+    if (type === 'tool_result' || type === 'tool_use_result') {
+      const toolUseId = (m.tool_use_id as string) ?? '';
+      const output = m.output ?? m.content ?? null;
+      const isError = Boolean(m.is_error);
+      const preview = truncate(
+        typeof output === 'string' ? output : JSON.stringify(output ?? null),
+      );
+      yield {
+        type: 'tool.result',
+        sessionId,
+        timestamp: now,
+        toolUseId,
+        output,
+        outputPreview: preview,
+        isError,
+      };
+      return;
+    }
+
+    if (type === 'message_stop') {
+      const messageId = ((m.message as Record<string, unknown>)?.id as string) ?? '';
+      const stopReason =
+        ((m.message as Record<string, unknown>)?.stop_reason as string) ?? 'unknown';
+      const usage = ((m.message as Record<string, unknown>)?.usage as
+        | { input_tokens?: number; output_tokens?: number }
+        | undefined) ?? {};
+      yield {
+        type: 'message.stop',
+        sessionId,
+        timestamp: now,
+        messageId,
+        stopReason,
+        usage: {
+          inputTokens: usage.input_tokens ?? 0,
+          outputTokens: usage.output_tokens ?? 0,
+        },
+      };
+      return;
+    }
+
+    // Unknown/unhandled SDK message — silently skip. Add a case here when
+    // the SDK adds a new event type and you want it surfaced.
+  }
+}

@@ -1,0 +1,6 @@
+#!/usr/bin/env bash
+set -euo pipefail
+# Boot the server over stdio and pipe to the MCP inspector. The inspector
+# is npm-distributed; Go users still call it via npx.
+exec npx -y @modelcontextprotocol/inspector \
+  go run ./cmd/mcp-server --stdio

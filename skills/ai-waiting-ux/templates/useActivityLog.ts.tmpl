@@ -1,0 +1,44 @@
+'use client';
+
+import { useEffect, useState } from 'react';
+import type { AgentEvent, SessionId } from '{{IMPORT_ROOT}}/events';
+import type { LogSink } from '{{IMPORT_ROOT}}/log-sink';
+
+export type UseActivityLogOptions = {
+  sessionId: SessionId | null;
+  sink: LogSink;
+  /** Cap how many events to keep in memory. Older ones still in storage. */
+  maxBuffered?: number;
+};
+
+/**
+ * useActivityLog — live tail of the LogSink. Used by the scrollable activity
+ * panel. Re-mount-safe: each mount creates its own AbortController and
+ * cleans up on unmount.
+ */
+export function useActivityLog(opts: UseActivityLogOptions): AgentEvent[] {
+  const [events, setEvents] = useState<AgentEvent[]>([]);
+  const max = opts.maxBuffered ?? 2000;
+
+  useEffect(() => {
+    if (!opts.sessionId) {
+      setEvents([]);
+      return;
+    }
+    const ac = new AbortController();
+    (async () => {
+      const collected: AgentEvent[] = [];
+      for await (const ev of opts.sink.tail(opts.sessionId!, ac.signal)) {
+        collected.push(ev);
+        if (collected.length > max) collected.splice(0, collected.length - max);
+        // Batch with microtask so React batches set-states.
+        setEvents([...collected]);
+      }
+    })().catch((err) => {
+      console.error('[ai-waiting-ux] tail failed', err);
+    });
+    return () => ac.abort();
+  }, [opts.sessionId, opts.sink, max]);
+
+  return events;
+}

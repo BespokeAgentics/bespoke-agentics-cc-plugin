@@ -1,0 +1,20 @@
+# Cron Worker — syncs GitHub → R2 every 5 minutes.
+name = "wiki-mcp-{{SLUG}}-sync"
+main = "src/cron.ts"
+compatibility_date = "2024-09-23"
+compatibility_flags = ["nodejs_compat"]
+
+[triggers]
+crons = ["*/5 * * * *"]
+
+[vars]
+WIKI_REPO_URL = "{{REPO_URL_PLACEHOLDER}}"
+WIKI_BRANCH = "{{BRANCH}}"
+WIKI_SUBPATH = "{{SUBPATH}}"
+
+[[r2_buckets]]
+binding = "WIKI_R2"
+bucket_name = "wiki-mcp-{{SLUG}}-cache"
+
+# Secret to set:
+#   WIKI_GIT_TOKEN   (same PAT as the main worker; needs Contents: Read at minimum)

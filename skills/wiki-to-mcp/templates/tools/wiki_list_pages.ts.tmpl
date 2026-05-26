@@ -1,0 +1,44 @@
+  server.tool(
+    "wiki_list_pages",
+    "List markdown pages, optionally scoped to a subdirectory or filtered by frontmatter fields.",
+    {
+      subdir: z.string().optional().describe("Restrict listing to this subdir."),
+      limit: z.number().int().positive().max(2000).optional(),
+{{FILTERABLE_FIELDS_ZOD}}
+    },
+    async (args) => {
+      const { subdir, limit, ...filters } = args as Record<string, unknown>;
+      const files = await repo.listMarkdown(typeof subdir === "string" ? subdir : undefined);
+      const items: Array<{ path: string; title?: string; type?: string }> = [];
+      const hasFilters = Object.values(filters).some((v) => v !== undefined && v !== "");
+      for (const rel of files) {
+        if (!hasFilters) {
+          items.push({ path: rel });
+          if (limit && items.length >= (limit as number)) break;
+          continue;
+        }
+        try {
+          const page = await repo.readPage(rel);
+          let drop = false;
+          for (const [k, v] of Object.entries(filters)) {
+            if (v === undefined || v === "") continue;
+            if (String(page.frontmatter[k] ?? "").toLowerCase() !== String(v).toLowerCase()) {
+              drop = true;
+              break;
+            }
+          }
+          if (!drop) {
+            items.push({
+              path: rel,
+              title: page.frontmatter.title as string | undefined,
+              type: page.frontmatter.type as string | undefined,
+            });
+          }
+        } catch {
+          /* skip unreadable */
+        }
+        if (limit && items.length >= (limit as number)) break;
+      }
+      return jsonResult({ count: items.length, items: items.slice(0, (limit as number) ?? items.length) });
+    }
+  );

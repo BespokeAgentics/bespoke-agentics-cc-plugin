@@ -1,0 +1,9 @@
+/**
+ * Next.js App Router stream route. Mount at:
+ *   {{ROUTE_BASE}}/stream/route.ts
+ *
+ * Thin re-export of the SSE handler from the transport layer so the
+ * route file is generated in the right place but the implementation
+ * lives next to its sibling transports.
+ */
+export { GET, getControlPlane, runtime, dynamic } from '{{IMPORT_ROOT}}/transport/sse-route';

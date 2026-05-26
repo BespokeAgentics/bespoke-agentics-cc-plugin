@@ -1,6 +1,6 @@
 {
   "name": "bespoke-agentics",
-  "version": "1.1.1",
+  "version": "1.2.0",
   "description": "AI transparency auditing, agent architecture generation, UX evaluation, Pi harness customization, video-to-deliverables pipelines, workflow analysis, and Biome AI guardrails for Claude Code",
   "author": {
     "name": "Bespoke Agentics"

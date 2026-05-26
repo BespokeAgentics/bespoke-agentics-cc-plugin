@@ -1,0 +1,40 @@
+/**
+ * Next.js App Router control route. Mount at {{ROUTE_BASE}}/control/route.ts.
+ *
+ * POST {{ROUTE_BASE}}/control
+ *   body: ControlMessage  → abort/pause/resume the running session
+ */
+import type { ControlMessage } from '{{IMPORT_ROOT}}/transport';
+import { getControlPlane } from './stream/route';
+
+export const runtime = 'nodejs';
+
+export async function POST(req: Request): Promise<Response> {
+  let body: ControlMessage;
+  try {
+    body = (await req.json()) as ControlMessage;
+  } catch {
+    return new Response('Invalid JSON', { status: 400 });
+  }
+
+  const cp = getControlPlane(body.sessionId);
+  if (!cp) {
+    return new Response(`Unknown sessionId ${body.sessionId}`, { status: 404 });
+  }
+
+  switch (body.type) {
+    case 'control.abort':
+      cp.abort(body.reason);
+      break;
+    case 'control.pause':
+      cp.pause();
+      break;
+    case 'control.resume':
+      cp.resume();
+      break;
+    default:
+      return new Response(`Unknown control type`, { status: 400 });
+  }
+
+  return Response.json({ ok: true });
+}

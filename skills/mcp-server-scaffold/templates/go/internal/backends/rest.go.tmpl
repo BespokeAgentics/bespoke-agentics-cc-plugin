@@ -1,0 +1,82 @@
+package backends
+
+import (
+	"bytes"
+	"context"
+	"encoding/json"
+	"fmt"
+	"io"
+	"net/http"
+	"net/url"
+
+	myerr "{{GO_MODULE}}/internal/errors"
+)
+
+type REST struct {
+	baseURL string
+	bearer  string
+	hc      *http.Client
+}
+
+func NewREST(baseURL, bearer string) *REST {
+	return &REST{baseURL: baseURL, bearer: bearer, hc: &http.Client{}}
+}
+
+func (r *REST) GetCompany(ctx context.Context, id string) (Company, error) {
+	var out Company
+	err := r.do(ctx, http.MethodGet, "/companies/"+url.PathEscape(id), nil, &out)
+	return out, err
+}
+
+func (r *REST) SearchCompanies(ctx context.Context, in SearchCompaniesInput) ([]Company, error) {
+	q := url.Values{}
+	if in.Country != nil { q.Set("country", *in.Country) }
+	if in.Segment != nil { q.Set("segment", *in.Segment) }
+	if in.Query != nil   { q.Set("q", *in.Query) }
+	q.Set("limit", fmt.Sprintf("%d", in.Limit))
+	var out []Company
+	err := r.do(ctx, http.MethodGet, "/companies?"+q.Encode(), nil, &out)
+	return out, err
+}
+
+func (r *REST) AISearchCompanies(ctx context.Context, q string) ([]Company, error) {
+	var out []Company
+	err := r.do(ctx, http.MethodPost, "/ai/companies/search", map[string]any{"q": q}, &out)
+	return out, err
+}
+
+func (r *REST) CreateTicket(ctx context.Context, in CreateTicketInput) (Ticket, error) {
+	var out Ticket
+	err := r.do(ctx, http.MethodPost, "/tickets", in, &out)
+	return out, err
+}
+
+func (r *REST) do(ctx context.Context, method, path string, body any, out any) error {
+	var reader io.Reader
+	if body != nil {
+		b, err := json.Marshal(body)
+		if err != nil { return myerr.Backend("encode body: "+err.Error(), 0) }
+		reader = bytes.NewReader(b)
+	}
+	req, err := http.NewRequestWithContext(ctx, method, r.baseURL+path, reader)
+	if err != nil { return myerr.Backend("build request: "+err.Error(), 0) }
+	req.Header.Set("content-type", "application/json")
+	req.Header.Set("authorization", "Bearer "+r.bearer)
+	res, err := r.hc.Do(req)
+	if err != nil { return myerr.Backend("request: "+err.Error(), 0) }
+	defer res.Body.Close()
+	switch res.StatusCode {
+	case 401:
+		return myerr.Unauthorized("Backend rejected token.")
+	case 404:
+		return myerr.NotFound("resource", path)
+	}
+	if res.StatusCode >= 400 {
+		b, _ := io.ReadAll(res.Body)
+		return myerr.Backend(fmt.Sprintf("backend %d: %s", res.StatusCode, string(b)), res.StatusCode)
+	}
+	if out != nil {
+		return json.NewDecoder(res.Body).Decode(out)
+	}
+	return nil
+}

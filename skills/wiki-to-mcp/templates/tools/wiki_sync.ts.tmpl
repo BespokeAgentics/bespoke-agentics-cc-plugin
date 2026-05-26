@@ -1,0 +1,9 @@
+  server.tool(
+    "wiki_sync",
+    "Force-pull the wiki from the upstream source (GitHub). Returns whether the working copy changed.",
+    {},
+    async () => {
+      const result = await repo.safePull();
+      return jsonResult({ synced: true, updated: result.updated });
+    }
+  );

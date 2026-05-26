@@ -1,0 +1,43 @@
+import { z } from "zod";
+import type { Tool } from "../pipeline";
+// MUTATION tool. The gate is enforced by runPipeline before execute is called,
+// AND we re-assert here as the very first statement so the contract is visible
+// in the tool file itself. Read tools must NOT import this symbol.
+
+const Input = z.object({
+  subject: z.string().min(3).max(120),
+  body: z.string().min(10).max(4000),
+  priority: z.enum(["low", "normal", "high"]).default("normal"),
+});
+
+const Output = z.object({
+  id: z.string(),
+  subject: z.string(),
+  status: z.enum(["open", "closed"]),
+  createdAt: z.string(),
+});
+
+type In = z.infer<typeof Input>;
+type Out = z.infer<typeof Output>;
+
+export const createTicket: Tool<In, Out> = {
+  name: "create_ticket",
+  description:
+    "Create a support ticket. WRITE OPERATION — disabled by default. " +
+    "Enable by setting MCP_MUTATIONS_ENABLED=true on the server process.",
+  inputSchema: Input,
+  outputSchema: Output,
+  mutates: true,
+  async execute(ctx, input) {
+    // Defense in depth: the pipeline already enforced the gate, but a direct
+    // call to execute (e.g., in a future code path) must still fail closed.
+    const { assertMutationsEnabled } = await import("../pipeline");
+    assertMutationsEnabled(ctx.config, "create_ticket");
+    const t = await ctx.backend.createTicket({
+      subject: input.subject,
+      body: input.body,
+      priority: input.priority,
+    });
+    return { id: t.id, subject: t.subject, status: t.status, createdAt: t.createdAt };
+  },
+};

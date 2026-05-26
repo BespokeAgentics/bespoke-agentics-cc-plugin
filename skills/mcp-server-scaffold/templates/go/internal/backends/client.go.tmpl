@@ -1,0 +1,41 @@
+package backends
+
+import "context"
+
+type Company struct {
+	ID            string `json:"id"`
+	Name          string `json:"name"`
+	Country       string `json:"country"` // canonical ISO-3166-1 alpha-2
+	Segment       string `json:"segment"`
+	EmployeeCount int    `json:"employeeCount"`
+}
+
+type Ticket struct {
+	ID        string `json:"id"`
+	Subject   string `json:"subject"`
+	Status    string `json:"status"`
+	CreatedAt string `json:"createdAt"`
+}
+
+type SearchCompaniesInput struct {
+	Country *string `json:"country,omitempty"`
+	Segment *string `json:"segment,omitempty"`
+	Query   *string `json:"query,omitempty"`
+	Limit   int     `json:"limit"` // already capped in validation
+}
+
+type CreateTicketInput struct {
+	Subject  string `json:"subject"`
+	Body     string `json:"body"`
+	Priority string `json:"priority"`
+}
+
+// Client is the interface every backend adapter implements. Tools depend on
+// this, not on a concrete adapter. Auth flows in via the constructor — the
+// client never reads tokens from the environment.
+type Client interface {
+	GetCompany(ctx context.Context, id string) (Company, error)
+	SearchCompanies(ctx context.Context, in SearchCompaniesInput) ([]Company, error)
+	AISearchCompanies(ctx context.Context, q string) ([]Company, error)
+	CreateTicket(ctx context.Context, in CreateTicketInput) (Ticket, error)
+}

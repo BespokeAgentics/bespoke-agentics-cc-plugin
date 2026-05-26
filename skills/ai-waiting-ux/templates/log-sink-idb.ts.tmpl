@@ -1,0 +1,145 @@
+import type { AgentEvent, SessionId } from '{{IMPORT_ROOT}}/events';
+import type { LogSink } from '{{IMPORT_ROOT}}/log-sink';
+
+/**
+ * IndexedDbLogSink — browser-side LogSink. Stores events in an object
+ * store keyed by `{sessionId}:{autoincrement}`. Live tail uses a
+ * BroadcastChannel so multiple tabs see the same stream.
+ *
+ * Database: {{DB_NAME}}
+ * Object store: events
+ *   key: [sessionId, seq]
+ *   value: AgentEvent
+ *   index: bySessionId (sessionId)
+ *
+ * No throttling: every event persists immediately.
+ */
+const DB_NAME = '{{DB_NAME}}';
+const STORE = 'events';
+const CHANNEL = '{{DB_NAME}}-channel';
+const VERSION = 1;
+
+export class IndexedDbLogSink implements LogSink {
+  private dbPromise: Promise<IDBDatabase> | null = null;
+  private channel: BroadcastChannel | null = null;
+  private seq = new Map<SessionId, number>();
+
+  private getChannel(): BroadcastChannel {
+    if (!this.channel) this.channel = new BroadcastChannel(CHANNEL);
+    return this.channel;
+  }
+
+  private async openDb(): Promise<IDBDatabase> {
+    if (this.dbPromise) return this.dbPromise;
+    this.dbPromise = new Promise((resolve, reject) => {
+      const req = indexedDB.open(DB_NAME, VERSION);
+      req.onupgradeneeded = () => {
+        const db = req.result;
+        if (!db.objectStoreNames.contains(STORE)) {
+          const store = db.createObjectStore(STORE, { keyPath: ['sessionId', 'seq'] });
+          store.createIndex('bySessionId', 'sessionId');
+        }
+      };
+      req.onsuccess = () => resolve(req.result);
+      req.onerror = () => reject(req.error);
+    });
+    return this.dbPromise;
+  }
+
+  async append(event: AgentEvent): Promise<void> {
+    const db = await this.openDb();
+    const seq = (this.seq.get(event.sessionId) ?? 0) + 1;
+    this.seq.set(event.sessionId, seq);
+    await new Promise<void>((resolve, reject) => {
+      const tx = db.transaction(STORE, 'readwrite');
+      tx.objectStore(STORE).put({ ...event, seq });
+      tx.oncomplete = () => resolve();
+      tx.onerror = () => reject(tx.error);
+    });
+    this.getChannel().postMessage({ kind: 'event', event });
+  }
+
+  async *read(sessionId: SessionId): AsyncIterable<AgentEvent> {
+    const db = await this.openDb();
+    const events: AgentEvent[] = await new Promise((resolve, reject) => {
+      const out: AgentEvent[] = [];
+      const tx = db.transaction(STORE, 'readonly');
+      const index = tx.objectStore(STORE).index('bySessionId');
+      const range = IDBKeyRange.only(sessionId);
+      const req = index.openCursor(range);
+      req.onsuccess = () => {
+        const cursor = req.result;
+        if (cursor) {
+          const { seq: _seq, ...event } = cursor.value as AgentEvent & { seq: number };
+          out.push(event as AgentEvent);
+          cursor.continue();
+        } else {
+          resolve(out);
+        }
+      };
+      req.onerror = () => reject(req.error);
+    });
+    for (const ev of events) yield ev;
+  }
+
+  async *tail(sessionId: SessionId, signal?: AbortSignal): AsyncIterable<AgentEvent> {
+    for await (const ev of this.read(sessionId)) {
+      if (signal?.aborted) return;
+      yield ev;
+    }
+    if (signal?.aborted) return;
+
+    const channel = this.getChannel();
+    const buffer: AgentEvent[] = [];
+    let notify: (() => void) | null = null;
+
+    const onMessage = (e: MessageEvent) => {
+      const msg = e.data as { kind: 'event'; event: AgentEvent } | undefined;
+      if (msg?.kind === 'event' && msg.event.sessionId === sessionId) {
+        buffer.push(msg.event);
+        notify?.();
+      }
+    };
+
+    channel.addEventListener('message', onMessage);
+
+    try {
+      while (!signal?.aborted) {
+        if (buffer.length === 0) {
+          await new Promise<void>((resolve) => {
+            notify = resolve;
+            signal?.addEventListener('abort', () => resolve(), { once: true });
+          });
+          notify = null;
+        }
+        while (buffer.length) {
+          const ev = buffer.shift()!;
+          yield ev;
+          if (ev.type === 'session.stop') return;
+        }
+      }
+    } finally {
+      channel.removeEventListener('message', onMessage);
+    }
+  }
+
+  async listSessions(limit = 50): Promise<SessionId[]> {
+    const db = await this.openDb();
+    return new Promise<SessionId[]>((resolve, reject) => {
+      const seen = new Set<SessionId>();
+      const tx = db.transaction(STORE, 'readonly');
+      const index = tx.objectStore(STORE).index('bySessionId');
+      const req = index.openKeyCursor(null, 'prev');
+      req.onsuccess = () => {
+        const cursor = req.result;
+        if (cursor && seen.size < limit) {
+          seen.add(cursor.key as SessionId);
+          cursor.continue();
+        } else {
+          resolve([...seen]);
+        }
+      };
+      req.onerror = () => reject(req.error);
+    });
+  }
+}

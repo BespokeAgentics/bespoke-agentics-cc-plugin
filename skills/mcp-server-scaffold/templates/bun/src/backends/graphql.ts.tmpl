@@ -1,0 +1,72 @@
+import { errors } from "../errors";
+import type {
+  BackendClient,
+  Company,
+  CreateTicketInput,
+  SearchCompaniesInput,
+  Ticket,
+} from "./client";
+
+// Minimal GraphQL adapter. Each method maps to a single operation; complex
+// composite queries should become new methods rather than passing query
+// strings through from tool code.
+export class GraphQLBackend implements BackendClient {
+  constructor(
+    private readonly endpoint: string,
+    private readonly bearer: string,
+  ) {}
+
+  async getCompany(id: string): Promise<Company> {
+    const data = await this.execute<{ company: Company | null }>(
+      `query($id: ID!) { company(id: $id) { id name country segment employeeCount } }`,
+      { id },
+    );
+    if (!data.company) throw errors.notFound("Company", id);
+    return data.company;
+  }
+
+  async searchCompanies(input: SearchCompaniesInput): Promise<Company[]> {
+    const data = await this.execute<{ companies: Company[] }>(
+      `query($f: CompanyFilters!, $limit: Int!) {
+        companies(filters: $f, limit: $limit) { id name country segment employeeCount }
+      }`,
+      { f: { country: input.country, segment: input.segment, query: input.query }, limit: input.limit },
+    );
+    return data.companies;
+  }
+
+  async aiSearchCompanies(q: string): Promise<Company[]> {
+    const data = await this.execute<{ aiCompanies: Company[] }>(
+      `query($q: String!) { aiCompanies(q: $q) { id name country segment employeeCount } }`,
+      { q },
+    );
+    return data.aiCompanies;
+  }
+
+  async createTicket(input: CreateTicketInput): Promise<Ticket> {
+    const data = await this.execute<{ createTicket: Ticket }>(
+      `mutation($i: CreateTicketInput!) {
+        createTicket(input: $i) { id subject status createdAt }
+      }`,
+      { i: input },
+    );
+    return data.createTicket;
+  }
+
+  private async execute<T>(query: string, variables: Record<string, unknown>): Promise<T> {
+    const res = await fetch(this.endpoint, {
+      method: "POST",
+      headers: {
+        "content-type": "application/json",
+        "authorization": `Bearer ${this.bearer}`,
+      },
+      body: JSON.stringify({ query, variables }),
+    });
+    if (res.status === 401) throw errors.unauthorized("Backend rejected token.");
+    if (!res.ok) throw errors.backend(`GraphQL ${res.status}`, res.status);
+    const body = (await res.json()) as { data?: T; errors?: Array<{ message: string }> };
+    if (body.errors?.length) throw errors.backend(body.errors.map((e) => e.message).join("; "));
+    if (!body.data) throw errors.backend("GraphQL response missing data field.");
+    return body.data;
+  }
+}

@@ -1,0 +1,30 @@
+import { errors } from "./errors";
+
+export type RateLimitSpec = { keyPrefix: string; perMinute: number };
+
+// Per-user, per-tool token bucket. In-memory by design — switch to Redis or
+// equivalent for multi-process deployments. Ceilings come from config so they
+// can be tuned per-environment without a code change (Section 9).
+export class RateLimiter {
+  private buckets = new Map<string, { tokens: number; updatedAt: number; perMinute: number }>();
+
+  consume(spec: RateLimitSpec, userId: string): void {
+    const key = `${spec.keyPrefix}:${userId}`;
+    const now = Date.now();
+    const b = this.buckets.get(key) ?? {
+      tokens: spec.perMinute,
+      updatedAt: now,
+      perMinute: spec.perMinute,
+    };
+    const elapsedMs = now - b.updatedAt;
+    const refill = (elapsedMs / 60_000) * b.perMinute;
+    b.tokens = Math.min(b.perMinute, b.tokens + refill);
+    b.updatedAt = now;
+    if (b.tokens < 1) {
+      this.buckets.set(key, b);
+      throw errors.rateLimited(spec.perMinute, spec.keyPrefix);
+    }
+    b.tokens -= 1;
+    this.buckets.set(key, b);
+  }
+}

@@ -1,0 +1,22 @@
+import type { Tool } from "../pipeline";
+import type { Config } from "../config";
+import { searchCompanies } from "./search-companies";
+import { getCompany } from "./get-company";
+import { aiSearchCompanies } from "./ai-search-companies";
+import { createTicket } from "./create-ticket";
+
+// Tool registry. The boot sequence iterates this and calls setRequestHandler
+// for each. Read tools first, mutation tools last — a visual reminder that
+// the two categories are different.
+export function buildRegistry(cfg: Config): Tool<unknown, unknown>[] {
+  const tools: Tool<unknown, unknown>[] = [];
+  tools.push(searchCompanies as unknown as Tool<unknown, unknown>);
+  tools.push(getCompany as unknown as Tool<unknown, unknown>);
+  // AI search opts into the rate limiter; ceiling is configurable.
+  tools.push({
+    ...(aiSearchCompanies as unknown as Tool<unknown, unknown>),
+    rateLimit: { keyPrefix: "ai_search_companies", perMinute: cfg.rateLimitAiSearchPerMin },
+  });
+  tools.push(createTicket as unknown as Tool<unknown, unknown>);
+  return tools;
+}

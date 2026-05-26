@@ -1,0 +1,138 @@
+/**
+ * AgentEvent — the single source of truth that fans out into UI, ETA,
+ * notifications, and the durable log. All downstream code depends on this
+ * union staying stable. Add new event types by extending the union; never
+ * stuff payload variants into an existing type.
+ */
+
+export type ToolUseId = string;
+export type SessionId = string;
+export type MessageId = string;
+
+export type ToolCallStatus = 'running' | 'complete' | 'error';
+
+export type ToolCall = {
+  toolUseId: ToolUseId;
+  toolName: string;
+  input: unknown;
+  status: ToolCallStatus;
+  startedAt: number;
+  endedAt: number | null;
+  /** Truncated for in-memory state; full payload lives in the LogSink. */
+  outputPreview?: string;
+  isError?: boolean;
+};
+
+export type Usage = {
+  inputTokens: number;
+  outputTokens: number;
+};
+
+export type AgentEvent =
+  | {
+      type: 'session.start';
+      sessionId: SessionId;
+      timestamp: number;
+      modelId: string;
+      prompt: string;
+      taskType?: string;
+      stepBudget?: number;
+    }
+  | {
+      type: 'message.start';
+      sessionId: SessionId;
+      timestamp: number;
+      messageId: MessageId;
+    }
+  | {
+      type: 'text.delta';
+      sessionId: SessionId;
+      timestamp: number;
+      messageId: MessageId;
+      text: string;
+    }
+  | {
+      type: 'thinking.delta';
+      sessionId: SessionId;
+      timestamp: number;
+      messageId: MessageId;
+      text: string;
+    }
+  | {
+      type: 'tool.use';
+      sessionId: SessionId;
+      timestamp: number;
+      toolUseId: ToolUseId;
+      toolName: string;
+      input: unknown;
+      /** True when input was still streaming; expect a tool.input.update next. */
+      inputPartial?: boolean;
+    }
+  | {
+      type: 'tool.input.update';
+      sessionId: SessionId;
+      timestamp: number;
+      toolUseId: ToolUseId;
+      input: unknown;
+    }
+  | {
+      type: 'tool.result';
+      sessionId: SessionId;
+      timestamp: number;
+      toolUseId: ToolUseId;
+      output: unknown;
+      outputPreview: string;
+      isError: boolean;
+    }
+  | {
+      type: 'message.stop';
+      sessionId: SessionId;
+      timestamp: number;
+      messageId: MessageId;
+      stopReason: string;
+      usage: Usage;
+    }
+  | {
+      type: 'heartbeat';
+      sessionId: SessionId;
+      timestamp: number;
+      lastEventAt: number;
+    }
+  | {
+      type: 'control.abort';
+      sessionId: SessionId;
+      timestamp: number;
+      reason?: string;
+    }
+  | {
+      type: 'control.pause';
+      sessionId: SessionId;
+      timestamp: number;
+    }
+  | {
+      type: 'control.resume';
+      sessionId: SessionId;
+      timestamp: number;
+    }
+  | {
+      type: 'session.stop';
+      sessionId: SessionId;
+      timestamp: number;
+      status: 'success' | 'error' | 'aborted';
+      error?: { name: string; message: string };
+    };
+
+export type AgentEventType = AgentEvent['type'];
+
+/** Exhaustive helper — throws at compile time if a new event type is added without handling. */
+export function assertNever(x: never): never {
+  throw new Error(`Unhandled AgentEvent variant: ${JSON.stringify(x)}`);
+}
+
+export function isTerminal(event: AgentEvent): boolean {
+  return event.type === 'session.stop';
+}
+
+export function truncate(s: string, max = 280): string {
+  return s.length > max ? `${s.slice(0, max)}…` : s;
+}

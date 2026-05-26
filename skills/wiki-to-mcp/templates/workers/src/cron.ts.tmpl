@@ -1,0 +1,118 @@
+/**
+ * Cron Worker — syncs GitHub → R2 every 5 minutes.
+ *
+ * Strategy: list the tree at HEAD of the configured branch, compare each
+ * markdown file's GitHub blob SHA against what's stored alongside the R2
+ * object (`x-amz-meta-sha`), and only re-fetch+rewrite when they differ.
+ * This keeps writes proportional to actual change volume.
+ */
+
+interface Env {
+  WIKI_R2: R2Bucket;
+  WIKI_REPO_URL: string;
+  WIKI_BRANCH: string;
+  WIKI_SUBPATH: string;
+  WIKI_GIT_TOKEN: string;
+}
+
+interface TreeEntry {
+  path: string;
+  mode: string;
+  type: "blob" | "tree" | "commit";
+  sha: string;
+  size?: number;
+}
+
+function parseRepoUrl(url: string): { owner: string; repo: string } {
+  const m = url.match(/github\.com[:/]([^/]+)\/([^/.]+)(?:\.git)?/i);
+  if (!m) throw new Error(`Cannot parse repo URL: ${url}`);
+  return { owner: m[1], repo: m[2] };
+}
+
+async function gh<T>(env: Env, path: string): Promise<T> {
+  const res = await fetch(`https://api.github.com${path}`, {
+    headers: {
+      Authorization: `token ${env.WIKI_GIT_TOKEN}`,
+      "User-Agent": "wiki-mcp-{{SLUG}}-sync",
+      Accept: "application/vnd.github+json",
+    },
+  });
+  if (!res.ok) {
+    throw new Error(`GitHub ${path} -> ${res.status}: ${await res.text()}`);
+  }
+  return res.json() as Promise<T>;
+}
+
+async function fetchBlobText(env: Env, owner: string, repo: string, sha: string): Promise<string> {
+  const res = await fetch(`https://api.github.com/repos/${owner}/${repo}/git/blobs/${sha}`, {
+    headers: {
+      Authorization: `token ${env.WIKI_GIT_TOKEN}`,
+      "User-Agent": "wiki-mcp-{{SLUG}}-sync",
+      Accept: "application/vnd.github+json",
+    },
+  });
+  const body = (await res.json()) as { content: string; encoding: string };
+  if (body.encoding !== "base64") throw new Error(`unexpected encoding ${body.encoding}`);
+  return atob(body.content);
+}
+
+async function sync(env: Env): Promise<{ written: number; skipped: number }> {
+  const { owner, repo } = parseRepoUrl(env.WIKI_REPO_URL);
+  const branch = env.WIKI_BRANCH;
+  // Normalize subpath so monorepos with WIKI_SUBPATH="apps/wiki/" still match.
+  const subpath = (env.WIKI_SUBPATH || "").replace(/^\/+/, "").replace(/\/+$/, "");
+
+  // Get the tree SHA at branch tip.
+  const refData = await gh<{ object: { sha: string } }>(env, `/repos/${owner}/${repo}/git/refs/heads/${branch}`);
+  const commitSha = refData.object.sha;
+  const commitData = await gh<{ tree: { sha: string } }>(env, `/repos/${owner}/${repo}/git/commits/${commitSha}`);
+  const treeData = await gh<{ tree: TreeEntry[]; truncated: boolean }>(
+    env,
+    `/repos/${owner}/${repo}/git/trees/${commitData.tree.sha}?recursive=1`
+  );
+
+  if (treeData.truncated) {
+    console.warn("Tree truncated by GitHub; some files may be missed. Consider tightening WIKI_SUBPATH.");
+  }
+
+  const candidates = treeData.tree.filter(
+    (e) => e.type === "blob" && e.path.endsWith(".md") && (!subpath || e.path.startsWith(subpath + "/") || e.path === `${subpath}.md`)
+  );
+
+  let written = 0;
+  let skipped = 0;
+
+  for (const entry of candidates) {
+    const existing = await env.WIKI_R2.head(entry.path);
+    const existingSha = existing?.customMetadata?.sha;
+    if (existingSha === entry.sha) {
+      skipped++;
+      continue;
+    }
+    const content = await fetchBlobText(env, owner, repo, entry.sha);
+    await env.WIKI_R2.put(entry.path, content, { customMetadata: { sha: entry.sha } });
+    written++;
+  }
+
+  return { written, skipped };
+}
+
+export default {
+  async scheduled(_event: ScheduledEvent, env: Env, ctx: ExecutionContext): Promise<void> {
+    ctx.waitUntil(
+      sync(env)
+        .then((r) => console.log(JSON.stringify({ event: "sync_done", ...r })))
+        .catch((err) => console.error("sync_failed", String(err)))
+    );
+  },
+
+  // Optional: allow on-demand sync via /__sync (requires the same WIKI_GIT_TOKEN secret in the request).
+  async fetch(req: Request, env: Env): Promise<Response> {
+    const url = new URL(req.url);
+    if (url.pathname !== "/__sync") return new Response("Not found", { status: 404 });
+    const provided = req.headers.get("x-sync-token") ?? "";
+    if (provided !== env.WIKI_GIT_TOKEN) return new Response("Unauthorized", { status: 401 });
+    const r = await sync(env);
+    return new Response(JSON.stringify(r), { headers: { "Content-Type": "application/json" } });
+  },
+};

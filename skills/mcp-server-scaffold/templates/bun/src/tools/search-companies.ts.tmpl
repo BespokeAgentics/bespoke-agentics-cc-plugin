@@ -1,0 +1,73 @@
+import { z } from "zod";
+import type { Tool } from "../pipeline";
+import { errors } from "../errors";
+
+// READ-ONLY tool. This file intentionally does not import the mutation gate.
+// If you add a write path here, you are violating Section 3.
+
+// Country aliases collapse common user inputs to the canonical alpha-2 code
+// expected by the backend. Surface the canonical form in the input description
+// so the LLM client learns the contract.
+const COUNTRY_ALIASES: Record<string, string> = {
+  germany: "DE", deutschland: "DE", de: "DE",
+  usa: "US", "united states": "US", us: "US",
+  uk: "GB", "united kingdom": "GB", britain: "GB", gb: "GB",
+};
+
+const Input = z.object({
+  country: z.string().optional(),
+  segment: z.enum(["smb", "midmarket", "enterprise"]).optional(),
+  query: z.string().max(120).optional(),
+  limit: z.number().int().positive().max(100).default(20),
+}).refine(
+  (v) => Boolean(v.country || v.segment || v.query),
+  { message: "Provide at least one filter (country, segment, or query)." },
+);
+
+const OutputItem = z.object({
+  id: z.string(),
+  name: z.string(),
+  country: z.string(),
+  segment: z.string(),
+  employeeCount: z.number(),
+});
+const Output = z.array(OutputItem);
+
+type In = z.infer<typeof Input>;
+type Out = z.infer<typeof Output>;
+
+export const searchCompanies: Tool<In, Out> = {
+  name: "search_companies",
+  description:
+    "Search companies by country (ISO alpha-2), segment (smb|midmarket|enterprise), and/or free-text query. " +
+    "Requires at least one filter. Results are capped at 100; default 20.",
+  inputSchema: Input,
+  outputSchema: Output,
+  mutates: false,
+  async execute(ctx, input) {
+    const country = input.country ? normalizeCountry(input.country) : undefined;
+    const companies = await ctx.backend.searchCompanies({
+      country,
+      segment: input.segment,
+      query: input.query,
+      limit: Math.min(input.limit, ctx.config.maxResultsCap),
+    });
+    return companies.map((c) => ({
+      id: c.id,
+      name: c.name,
+      country: c.country,
+      segment: c.segment,
+      employeeCount: c.employeeCount,
+    }));
+  },
+};
+
+function normalizeCountry(input: string): string {
+  const key = input.trim().toLowerCase();
+  const alias = COUNTRY_ALIASES[key];
+  if (alias) return alias;
+  if (/^[a-z]{2}$/.test(key)) return key.toUpperCase();
+  throw errors.validation(
+    `Unrecognized country '${input}'. Use ISO alpha-2 (e.g., 'DE', 'US', 'GB') or a common alias.`,
+  );
+}

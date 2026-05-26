@@ -1,0 +1,38 @@
+/**
+ * AbortButton / PauseButton / ResumeButton — extend-mode controls. The
+ * version below assumes shadcn/ui Button. Skill should rewrite to match
+ * the detected button primitive when different.
+ */
+'use client';
+
+import type { UseAgentSessionResult } from '{{HOOKS_ROOT}}/useAgentSession';
+// Replace if the detected button primitive differs.
+import { Button } from '@/components/ui/button';
+
+export function AbortButton({ session, label }: { session: UseAgentSessionResult; label?: string }) {
+  const running = session.state.status === 'running' || session.state.status === 'paused';
+  if (!running) return null;
+  return (
+    <Button variant="destructive" size="sm" onClick={() => session.abort('user-requested')}>
+      {label ?? 'Abort'}
+    </Button>
+  );
+}
+
+export function PauseButton({ session }: { session: UseAgentSessionResult }) {
+  if (session.state.status !== 'running') return null;
+  return (
+    <Button variant="outline" size="sm" onClick={() => session.pause()}>
+      Pause
+    </Button>
+  );
+}
+
+export function ResumeButton({ session }: { session: UseAgentSessionResult }) {
+  if (session.state.status !== 'paused') return null;
+  return (
+    <Button variant="outline" size="sm" onClick={() => session.resume()}>
+      Resume
+    </Button>
+  );
+}

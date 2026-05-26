@@ -1,0 +1,67 @@
+import type { z } from "zod";
+import type { Config } from "./config";
+import type { BackendClient } from "./backends/client";
+import type { Principal } from "./auth";
+import type { RateLimiter, RateLimitSpec } from "./ratelimit";
+import { errors, McpToolError } from "./errors";
+import { log } from "./logger";
+
+export type ToolContext = {
+  config: Config;
+  backend: BackendClient;
+  user: Principal;
+  rateLimiter: RateLimiter;
+};
+
+export type Tool<TInput, TOutput> = {
+  name: string;
+  description: string;
+  inputSchema: z.ZodType<TInput>;
+  outputSchema: z.ZodType<TOutput>;
+  mutates: boolean;
+  rateLimit?: RateLimitSpec;
+  execute(ctx: ToolContext, input: TInput): Promise<TOutput>;
+};
+
+// The canonical 6-layer pipeline. Every tool invocation passes through this.
+// Layers, in order:
+//   1. Transport receives the JSON-RPC call (done by the SDK; we receive args here).
+//   2. Parse raw args into a typed input via the tool's zod schema.
+//   3. Validate + normalize + gate + rate-limit. The schema does most of (3a);
+//      the mutation gate runs before any backend call (3b); the rate limiter
+//      runs only for tools that opt in.
+//   4. tool.execute calls the backend client.
+//   5. tool.execute returns a flat output object.
+//   6. We re-parse the output through the bounded schema before returning —
+//      this is what keeps raw backend payloads from ever reaching the client.
+export async function runPipeline<TIn, TOut>(
+  tool: Tool<TIn, TOut>,
+  ctx: ToolContext,
+  rawArgs: unknown,
+): Promise<TOut> {
+  const startedAt = Date.now();
+  try {
+    const parsed = parseInput(tool, rawArgs);
+    if (tool.mutates) assertMutationsEnabled(ctx.config, tool.name);
+    if (tool.rateLimit) ctx.rateLimiter.consume(tool.rateLimit, ctx.user.id);
+    const raw = await tool.execute(ctx, parsed);
+    const validated = tool.outputSchema.parse(raw);
+    log.info("tool.ok", { tool: tool.name, ms: Date.now() - startedAt });
+    return validated;
+  } catch (e) {
+    const code = e instanceof McpToolError ? e.code : "BACKEND_ERROR";
+    log.error("tool.fail", { tool: tool.name, code, ms: Date.now() - startedAt });
+    throw e;
+  }
+}
+
+function parseInput<TIn>(tool: Tool<TIn, unknown>, rawArgs: unknown): TIn {
+  const r = tool.inputSchema.safeParse(rawArgs);
+  if (!r.success) throw errors.validation(`Invalid input for ${tool.name}.`, r.error.issues);
+  return r.data;
+}
+
+// Mutation gate. Called only by mutation tools — read tools never import this.
+export function assertMutationsEnabled(cfg: Config, toolName: string): void {
+  if (!cfg.mutationsEnabled) throw errors.mutationDisabled(toolName);
+}

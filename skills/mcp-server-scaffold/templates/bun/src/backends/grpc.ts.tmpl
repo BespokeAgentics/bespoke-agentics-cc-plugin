@@ -1,0 +1,37 @@
+import { errors } from "../errors";
+import type {
+  BackendClient,
+  Company,
+  CreateTicketInput,
+  SearchCompaniesInput,
+  Ticket,
+} from "./client";
+
+// gRPC adapter stub. Real wiring depends on which gRPC client you use
+// (e.g., @grpc/grpc-js with generated stubs, or connect-es). This stub
+// shows the contract; replace each method body with a real RPC call and
+// drop the throw. The bearer is attached to outgoing metadata for every
+// call so the user's identity flows to the backend unchanged.
+export class GrpcBackend implements BackendClient {
+  constructor(
+    private readonly address: string,
+    private readonly bearer: string,
+  ) {}
+
+  private metadata() {
+    return { authorization: `Bearer ${this.bearer}` };
+  }
+
+  async getCompany(_id: string): Promise<Company> {
+    throw errors.backend("gRPC adapter is a stub. Wire up your generated client and remove this throw.");
+  }
+  async searchCompanies(_input: SearchCompaniesInput): Promise<Company[]> {
+    throw errors.backend("gRPC adapter is a stub. Wire up your generated client and remove this throw.");
+  }
+  async aiSearchCompanies(_q: string): Promise<Company[]> {
+    throw errors.backend("gRPC adapter is a stub. Wire up your generated client and remove this throw.");
+  }
+  async createTicket(_input: CreateTicketInput): Promise<Ticket> {
+    throw errors.backend("gRPC adapter is a stub. Wire up your generated client and remove this throw.");
+  }
+}

@@ -1,0 +1,20 @@
+# Main request Worker — serves MCP JSON-RPC over HTTPS.
+name = "wiki-mcp-{{SLUG}}"
+main = "src/index.ts"
+compatibility_date = "2024-09-23"
+compatibility_flags = ["nodejs_compat"]
+
+[vars]
+WIKI_REPO_URL = "{{REPO_URL_PLACEHOLDER}}"
+WIKI_BRANCH = "{{BRANCH}}"
+WIKI_SUBPATH = "{{SUBPATH}}"
+AUTH_MODE = "bearer"
+PROJECT_NAME = "{{PROJECT_NAME}}"
+
+[[r2_buckets]]
+binding = "WIKI_R2"
+bucket_name = "wiki-mcp-{{SLUG}}-cache"
+
+# Secrets (set via `wrangler secret put`):
+#   MCP_BEARER_TOKENS
+#   WIKI_GIT_TOKEN   (PAT with Contents: Read/Write on the wiki repo)

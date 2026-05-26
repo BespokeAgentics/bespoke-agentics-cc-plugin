@@ -1,0 +1,36 @@
+import { z } from "zod";
+
+const ConfigSchema = z.object({
+  port: z.coerce.number().int().positive().default({{HTTPS_PORT}}),
+  tlsCert: z.string().default("./certs/dev-cert.pem"),
+  tlsKey: z.string().default("./certs/dev-key.pem"),
+  authMode: z.enum(["oidc", "api-key", "both"]).default("{{AUTH_MODE}}"),
+  oidcIssuerUrl: z.string().url().optional(),
+  oidcAudience: z.string().optional(),
+  apiKeysCsv: z.string().optional(),
+  backendBaseUrl: z.string().url().default("{{BACKEND_BASE_URL}}"),
+  mutationsEnabled: z
+    .union([z.string(), z.boolean()])
+    .transform((v) => v === true || v === "true" || v === "1")
+    .default(false),
+  rateLimitAiSearchPerMin: z.coerce.number().int().positive().default(6),
+  maxResultsCap: z.coerce.number().int().positive().default(100),
+});
+
+export type Config = z.infer<typeof ConfigSchema>;
+
+export function loadConfig(env: Record<string, string | undefined> = process.env): Config {
+  return ConfigSchema.parse({
+    port: env.MCP_PORT,
+    tlsCert: env.MCP_TLS_CERT,
+    tlsKey: env.MCP_TLS_KEY,
+    authMode: env.MCP_AUTH_MODE,
+    oidcIssuerUrl: env.OIDC_ISSUER_URL,
+    oidcAudience: env.OIDC_AUDIENCE,
+    apiKeysCsv: env.MCP_API_KEYS,
+    backendBaseUrl: env.BACKEND_BASE_URL,
+    mutationsEnabled: env.MCP_MUTATIONS_ENABLED,
+    rateLimitAiSearchPerMin: env.MCP_RATE_LIMIT_AI_SEARCH_PER_MIN,
+    maxResultsCap: env.MCP_MAX_RESULTS_CAP,
+  });
+}

@@ -1,0 +1,113 @@
+'use client';
+
+import { useEffect, useMemo, useReducer, useRef, useState } from 'react';
+import {
+  agentReducer,
+  initialSessionState,
+  type SessionState,
+} from '{{IMPORT_ROOT}}/reducer';
+import type { AgentEvent } from '{{IMPORT_ROOT}}/events';
+import type { ClientTransport, ControlMessage } from '{{IMPORT_ROOT}}/transport';
+
+/**
+ * useAgentSession — top-level hook. Subscribes to a ClientTransport,
+ * dispatches each AgentEvent into the reducer, and exposes the resulting
+ * SessionState plus control callbacks.
+ *
+ * UI updates are batched to requestAnimationFrame to avoid layout thrash
+ * under high token rates. Log writes happen server-side, never throttled.
+ *
+ * The hook is HEADLESS — it returns state, not JSX. Compose your UI from
+ * `state`, `events`, and the `useToolCalls` / `useETA` / `useActivityLog`
+ * selectors.
+ */
+export type UseAgentSessionOptions = {
+  transport: ClientTransport;
+  /** Called on terminal status transitions — wire to useNotifications. */
+  onTerminal?: (status: 'success' | 'error' | 'aborted', state: SessionState) => void;
+};
+
+export type UseAgentSessionResult = {
+  state: SessionState;
+  events: AgentEvent[];
+  abort: (reason?: string) => Promise<void>;
+  pause: () => Promise<void>;
+  resume: () => Promise<void>;
+};
+
+export function useAgentSession(opts: UseAgentSessionOptions): UseAgentSessionResult {
+  const [state, dispatch] = useReducer(agentReducer, initialSessionState);
+  const [events, setEvents] = useState<AgentEvent[]>([]);
+  const pendingRef = useRef<AgentEvent[]>([]);
+  const rafRef = useRef<number | null>(null);
+  const terminalFiredRef = useRef(false);
+
+  const flush = () => {
+    rafRef.current = null;
+    const pending = pendingRef.current;
+    pendingRef.current = [];
+    if (pending.length === 0) return;
+    for (const ev of pending) dispatch(ev);
+    setEvents((prev) => [...prev, ...pending]);
+    const last = pending[pending.length - 1];
+    if (last.type === 'session.stop' && !terminalFiredRef.current) {
+      terminalFiredRef.current = true;
+      // Read latest state via a microtask so reducer has applied.
+      queueMicrotask(() => {
+        opts.onTerminal?.(last.status, /* state */ stateRef.current);
+      });
+    }
+  };
+
+  // Keep a ref to latest state for onTerminal callback.
+  const stateRef = useRef(state);
+  stateRef.current = state;
+
+  useEffect(() => {
+    const unsubscribe = opts.transport.subscribe((event) => {
+      pendingRef.current.push(event);
+      if (rafRef.current == null) {
+        rafRef.current =
+          typeof requestAnimationFrame === 'function'
+            ? requestAnimationFrame(flush)
+            : (setTimeout(flush, 16) as unknown as number);
+      }
+    });
+
+    return () => {
+      unsubscribe();
+      if (rafRef.current != null) {
+        if (typeof cancelAnimationFrame === 'function') cancelAnimationFrame(rafRef.current);
+        else clearTimeout(rafRef.current);
+        rafRef.current = null;
+      }
+      opts.transport.close().catch(() => {});
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  const sessionId = state.sessionId;
+
+  const send = (msg: ControlMessage) =>
+    opts.transport.sendControl(msg);
+
+  return useMemo<UseAgentSessionResult>(
+    () => ({
+      state,
+      events,
+      abort: async (reason) => {
+        if (!sessionId) return;
+        await send({ type: 'control.abort', sessionId, reason });
+      },
+      pause: async () => {
+        if (!sessionId) return;
+        await send({ type: 'control.pause', sessionId });
+      },
+      resume: async () => {
+        if (!sessionId) return;
+        await send({ type: 'control.resume', sessionId });
+      },
+    }),
+    [state, events, sessionId],
+  );
+}

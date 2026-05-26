@@ -1,0 +1,74 @@
+import type { AgentEvent, SessionId } from '{{IMPORT_ROOT}}/events';
+import type { PauseGate } from '{{IMPORT_ROOT}}/adapters/types';
+
+/**
+ * Control plane — wraps an AbortController and a pause gate. The SDK
+ * adapter consumes both. Client UIs call abort/pause/resume; the resulting
+ * lifecycle events flow back into the reducer and the LogSink so partial
+ * state is preserved on cancel (brief requirement).
+ */
+export class ControlPlane implements PauseGate {
+  private controller = new AbortController();
+  private paused = false;
+  private resumeWaiters: Array<() => void> = [];
+
+  constructor(
+    public readonly sessionId: SessionId,
+    private readonly emit: (event: AgentEvent) => void,
+  ) {}
+
+  get signal(): AbortSignal {
+    return this.controller.signal;
+  }
+
+  abort(reason?: string): void {
+    if (this.controller.signal.aborted) return;
+    this.emit({
+      type: 'control.abort',
+      sessionId: this.sessionId,
+      timestamp: Date.now(),
+      reason,
+    });
+    this.controller.abort(reason ?? 'user-requested');
+    // Wake any pause waiters so the loop unwinds.
+    this.flushResumeWaiters();
+  }
+
+  pause(): void {
+    if (this.paused || this.controller.signal.aborted) return;
+    this.paused = true;
+    this.emit({
+      type: 'control.pause',
+      sessionId: this.sessionId,
+      timestamp: Date.now(),
+    });
+  }
+
+  resume(): void {
+    if (!this.paused) return;
+    this.paused = false;
+    this.emit({
+      type: 'control.resume',
+      sessionId: this.sessionId,
+      timestamp: Date.now(),
+    });
+    this.flushResumeWaiters();
+  }
+
+  isPaused(): boolean {
+    return this.paused;
+  }
+
+  wait(): Promise<void> {
+    if (!this.paused) return Promise.resolve();
+    return new Promise<void>((resolve) => {
+      this.resumeWaiters.push(resolve);
+    });
+  }
+
+  private flushResumeWaiters(): void {
+    const waiters = this.resumeWaiters;
+    this.resumeWaiters = [];
+    for (const w of waiters) w();
+  }
+}

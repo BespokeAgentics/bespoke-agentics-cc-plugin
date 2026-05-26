@@ -1,0 +1,45 @@
+/**
+ * EtaBadge — extend-mode component. Generated only when Phase 0.5 found
+ * existing AI UI. Match the project's styling primitive — the version
+ * below assumes Tailwind + shadcn/ui. The skill rewrites this when the
+ * detected primitive is different (see references/ui-integration.md).
+ */
+'use client';
+
+import type { SessionState } from '{{IMPORT_ROOT}}/reducer';
+import type { AgentEvent } from '{{IMPORT_ROOT}}/events';
+import { useETA } from '{{HOOKS_ROOT}}/useETA';
+// Replace these two imports if your project uses a different badge primitive.
+import { Badge } from '@/components/ui/badge';
+
+export type EtaBadgeProps = {
+  state: SessionState;
+  events: AgentEvent[];
+  /** Optional override label for the elapsed counter. */
+  elapsedLabelPrefix?: string;
+};
+
+export function EtaBadge({ state, events, elapsedLabelPrefix }: EtaBadgeProps) {
+  const eta = useETA(state, events);
+  if (state.status === 'idle') return null;
+
+  return (
+    <div className="inline-flex items-center gap-2">
+      <Badge variant="secondary">
+        {elapsedLabelPrefix ?? ''}
+        {eta.elapsedLabel} elapsed
+      </Badge>
+      <Badge
+        variant={eta.confidence === 'stable' ? 'default' : 'outline'}
+        title={`Confidence: ${eta.confidence}`}
+      >
+        ETA {eta.etaLabel}
+      </Badge>
+      {eta.isStalled && (
+        <Badge variant="destructive">
+          still running — last event {Math.round(eta.idleMs / 1000)}s ago
+        </Badge>
+      )}
+    </div>
+  );
+}

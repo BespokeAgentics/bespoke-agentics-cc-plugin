@@ -1,0 +1,54 @@
+package ratelimit
+
+import (
+	"sync"
+	"time"
+
+	myerr "{{GO_MODULE}}/internal/errors"
+)
+
+type Spec struct {
+	KeyPrefix string
+	PerMinute int
+}
+
+type bucket struct {
+	tokens    float64
+	updatedAt time.Time
+	perMinute int
+}
+
+// Limiter is a per-user, per-tool token bucket. In-memory only — switch to
+// a shared store (Redis) for multi-process deployments. Ceilings come from
+// config so ops can tune per-environment without a code change.
+type Limiter struct {
+	mu      sync.Mutex
+	buckets map[string]*bucket
+}
+
+func New() *Limiter { return &Limiter{buckets: map[string]*bucket{}} }
+
+func (l *Limiter) Consume(spec Spec, userID string) error {
+	l.mu.Lock()
+	defer l.mu.Unlock()
+	key := spec.KeyPrefix + ":" + userID
+	now := time.Now()
+	b, ok := l.buckets[key]
+	if !ok {
+		b = &bucket{tokens: float64(spec.PerMinute), updatedAt: now, perMinute: spec.PerMinute}
+		l.buckets[key] = b
+	}
+	elapsed := now.Sub(b.updatedAt).Seconds()
+	refill := (elapsed / 60.0) * float64(b.perMinute)
+	if b.tokens+refill > float64(b.perMinute) {
+		b.tokens = float64(b.perMinute)
+	} else {
+		b.tokens += refill
+	}
+	b.updatedAt = now
+	if b.tokens < 1 {
+		return myerr.RateLimited(spec.KeyPrefix, spec.PerMinute)
+	}
+	b.tokens -= 1
+	return nil
+}

@@ -1,0 +1,83 @@
+/**
+ * ActivityLogDrawer — extend-mode component. Reuses the project's existing
+ * drawer/sheet/dialog primitive if one was detected; otherwise generates a
+ * minimal fixed-position aside the user can restyle.
+ *
+ * The version below uses shadcn/ui Sheet. Swap when detected primitive differs.
+ */
+'use client';
+
+import { useState } from 'react';
+import type { SessionId } from '{{IMPORT_ROOT}}/events';
+import type { LogSink } from '{{IMPORT_ROOT}}/log-sink';
+import { useActivityLog } from '{{HOOKS_ROOT}}/useActivityLog';
+// Replace if your project uses a different drawer/sheet/dialog primitive.
+import {
+  Sheet,
+  SheetContent,
+  SheetHeader,
+  SheetTitle,
+  SheetTrigger,
+} from '@/components/ui/sheet';
+import { Button } from '@/components/ui/button';
+
+export type ActivityLogDrawerProps = {
+  sessionId: SessionId | null;
+  sink: LogSink;
+  triggerLabel?: string;
+};
+
+export function ActivityLogDrawer({ sessionId, sink, triggerLabel }: ActivityLogDrawerProps) {
+  const [open, setOpen] = useState(false);
+  const events = useActivityLog({ sessionId: open ? sessionId : null, sink });
+
+  return (
+    <Sheet open={open} onOpenChange={setOpen}>
+      <SheetTrigger asChild>
+        <Button variant="ghost" size="sm">
+          {triggerLabel ?? 'Activity log'}
+        </Button>
+      </SheetTrigger>
+      <SheetContent side="right" className="w-[480px] sm:w-[640px]">
+        <SheetHeader>
+          <SheetTitle>Activity log {sessionId ? `· ${sessionId.slice(0, 8)}` : ''}</SheetTitle>
+        </SheetHeader>
+        <div className="mt-4 h-[calc(100vh-8rem)] overflow-auto rounded-md border bg-muted/30 p-2 font-mono text-xs">
+          {events.length === 0 ? (
+            <p className="text-muted-foreground">No events yet.</p>
+          ) : (
+            events.map((ev, i) => (
+              <div key={`${ev.timestamp}-${i}`} className="whitespace-pre-wrap py-0.5">
+                <span className="text-muted-foreground">
+                  {new Date(ev.timestamp).toISOString().slice(11, 23)}
+                </span>{' '}
+                <span className="text-foreground">{ev.type}</span>
+                <span className="text-muted-foreground"> {summarize(ev)}</span>
+              </div>
+            ))
+          )}
+        </div>
+      </SheetContent>
+    </Sheet>
+  );
+}
+
+function summarize(ev: import('{{IMPORT_ROOT}}/events').AgentEvent): string {
+  switch (ev.type) {
+    case 'tool.use':
+      return `${ev.toolName}`;
+    case 'tool.result':
+      return ev.isError ? '(error)' : '';
+    case 'text.delta':
+    case 'thinking.delta':
+      return `+${ev.text.length} chars`;
+    case 'message.stop':
+      return `${ev.stopReason} · in=${ev.usage.inputTokens} out=${ev.usage.outputTokens}`;
+    case 'session.stop':
+      return ev.status;
+    case 'heartbeat':
+      return `last event ${new Date(ev.lastEventAt).toISOString().slice(11, 19)}`;
+    default:
+      return '';
+  }
+}

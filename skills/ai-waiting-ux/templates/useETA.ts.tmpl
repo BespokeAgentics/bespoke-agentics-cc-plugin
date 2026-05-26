@@ -1,0 +1,62 @@
+'use client';
+
+import { useEffect, useMemo, useRef, useState } from 'react';
+import type { SessionState } from '{{IMPORT_ROOT}}/reducer';
+import { selectIsRunning, selectIdleMs, selectIsStalled } from '{{IMPORT_ROOT}}/reducer';
+import { computeETA, formatEta, type EtaReport } from '{{IMPORT_ROOT}}/eta';
+import type { AgentEvent } from '{{IMPORT_ROOT}}/events';
+
+export type UseEtaResult = EtaReport & {
+  elapsedLabel: string;
+  etaLabel: string;
+  idleMs: number;
+  isStalled: boolean;
+};
+
+/**
+ * useETA — recomputes ETA on every event AND ticks elapsed at ~1Hz so the
+ * visible counter never freezes. The brief explicitly requires both:
+ * the ETA refines, the elapsed counter never stops moving.
+ */
+export function useETA(
+  state: SessionState,
+  recentEvents: AgentEvent[],
+  opts: { stallThresholdMs?: number } = {},
+): UseEtaResult {
+  const [now, setNow] = useState(() => Date.now());
+  const running = selectIsRunning(state);
+
+  useEffect(() => {
+    if (!running) return;
+    const t = setInterval(() => setNow(Date.now()), 1000);
+    return () => clearInterval(t);
+  }, [running]);
+
+  // Recompute on every event by including events in the dep array length + last timestamp.
+  const lastEventTs = recentEvents[recentEvents.length - 1]?.timestamp ?? 0;
+
+  const recentTextDeltas = useMemo(
+    () =>
+      recentEvents
+        .filter((e): e is Extract<AgentEvent, { type: 'text.delta' }> => e.type === 'text.delta')
+        .slice(-200)
+        .map((e) => ({ timestamp: e.timestamp, text: e.text })),
+    [recentEvents.length, lastEventTs],
+  );
+
+  const report = useMemo(
+    () => computeETA(state, now, recentTextDeltas),
+    [state, now, recentTextDeltas],
+  );
+
+  const idleMs = selectIdleMs(state, now);
+  const isStalled = selectIsStalled(state, now, opts.stallThresholdMs);
+
+  return {
+    ...report,
+    elapsedLabel: formatEta(report.elapsedMs),
+    etaLabel: formatEta(report.etaMs),
+    idleMs,
+    isStalled,
+  };
+}

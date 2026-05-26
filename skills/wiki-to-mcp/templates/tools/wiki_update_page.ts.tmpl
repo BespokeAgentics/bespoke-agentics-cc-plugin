@@ -1,0 +1,25 @@
+  server.tool(
+    "wiki_update_page",
+    "Overwrite the body of an existing wiki page. Frontmatter is shallow-merged with what's provided. Commits and pushes.",
+    {
+      path: z.string().describe("Path relative to wiki root."),
+      content: z.string().describe("Replacement markdown body (without frontmatter)."),
+      frontmatter_patch: z
+        .record(z.unknown())
+        .optional()
+        .describe("Optional shallow patch to apply to existing frontmatter."),
+      message: z.string().optional(),
+    },
+    async ({ path: relPath, content, frontmatter_patch, message }) => {
+      repo.resolveWikiPath(relPath);
+      const page = await repo.readPage(relPath);
+      const fm = { ...page.frontmatter, ...(frontmatter_patch ?? {}) };
+      const yaml = renderFrontmatter(fm);
+      const full = `---\n${yaml}---\n\n${content.trimEnd()}\n`;
+      const commit = await repo.writeAndCommit({
+        files: [{ relPath, content: full }],
+        message: message ?? `wiki(mcp): update ${relPath}`,
+      });
+      return jsonResult({ updated: relPath, commit: commit.commit });
+    }
+  );

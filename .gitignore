@@ -1,1 +1,8 @@
 .DS_Store
+node_modules/
+dist/
+.env
+.env.*
+apps/spec-interviewer/node_modules/
+apps/spec-interviewer/dist/
+apps/spec-interviewer/artifacts/

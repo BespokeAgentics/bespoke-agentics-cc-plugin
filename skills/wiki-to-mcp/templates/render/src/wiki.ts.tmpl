@@ -1,0 +1,265 @@
+import fs from "node:fs/promises";
+import path from "node:path";
+import { simpleGit, SimpleGit, SimpleGitOptions } from "simple-git";
+import type { AppConfig } from "./config.js";
+import { log } from "./log.js";
+import { parseFrontmatter } from "./search.js";
+
+/**
+ * WikiSource — the abstraction src/tools.ts talks to.
+ * (Definition lives in this file rather than a separate one so each deploy
+ * target's wiki.ts is self-contained.)
+ */
+export interface PageRecord {
+  relPath: string;
+  frontmatter: Record<string, unknown>;
+  body: string;
+  size: number;
+  modifiedAt: string;
+}
+
+export interface WikiSource {
+  init(): Promise<void>;
+  wikiRoot(): string;
+  listMarkdown(subdir?: string): Promise<string[]>;
+  readPage(relPath: string): Promise<PageRecord>;
+  safePull(): Promise<{ updated: boolean }>;
+  writeAndCommit(args: {
+    files: Array<{ relPath: string; content: string }>;
+    message: string;
+  }): Promise<{ commit: string }>;
+  resolveWikiPath(relPath: string): string;
+  shutdown(): Promise<void>;
+}
+
+function buildAuthUrl(rawUrl: string, token: string): string {
+  try {
+    const url = new URL(rawUrl);
+    if (url.username || url.password) return rawUrl;
+    url.username = "x-access-token";
+    url.password = token;
+    return url.toString();
+  } catch {
+    return rawUrl;
+  }
+}
+
+/**
+ * Git-backed WikiSource: clones the repo to a persistent disk, polls upstream,
+ * and commits + pushes on writes. Used by the Render and Docker deploy targets.
+ */
+export class GitWikiSource implements WikiSource {
+  private git!: SimpleGit;
+  private pullTimer?: NodeJS.Timeout;
+  private writeLock: Promise<void> = Promise.resolve();
+
+  constructor(private cfg: AppConfig) {}
+
+  wikiRoot(): string {
+    return this.cfg.wikiAbsPath;
+  }
+
+  async init(): Promise<void> {
+    const { localPath, repoUrl, gitToken, branch, authorName, authorEmail } = this.cfg;
+    await fs.mkdir(localPath, { recursive: true });
+
+    const authUrl = buildAuthUrl(repoUrl, gitToken);
+    const isRepo = await this.isGitRepo(localPath);
+
+    const baseOptions: Partial<SimpleGitOptions> = {
+      baseDir: localPath,
+      binary: "git",
+      maxConcurrentProcesses: 1,
+      trimmed: true,
+    };
+
+    const useSparse = this.cfg.wikiSubpath !== "";
+
+    if (!isRepo) {
+      const parent = path.dirname(localPath);
+      const target = path.basename(localPath);
+      await fs.mkdir(parent, { recursive: true });
+      const cloner = simpleGit({ ...baseOptions, baseDir: parent });
+
+      if (useSparse) {
+        // Sparse clone: fetch tree metadata but only blobs for files under the
+        // wiki subpath. Drops disk usage dramatically for monorepo wikis.
+        log.info("Cloning wiki repo (sparse)", {
+          repoUrl,
+          localPath,
+          branch,
+          subpath: this.cfg.wikiSubpath,
+        });
+        await cloner.clone(authUrl, target, [
+          "--branch",
+          branch,
+          "--single-branch",
+          "--filter=blob:none",
+          "--sparse",
+        ]);
+        const repoGit = simpleGit(baseOptions);
+        await repoGit.raw(["sparse-checkout", "init", "--cone"]);
+        await repoGit.raw(["sparse-checkout", "set", this.cfg.wikiSubpath]);
+      } else {
+        log.info("Cloning wiki repo (full)", { repoUrl, localPath, branch });
+        await cloner.clone(authUrl, target, ["--branch", branch, "--single-branch"]);
+      }
+    } else {
+      log.info("Wiki repo already cloned, syncing", { localPath, branch });
+    }
+
+    this.git = simpleGit(baseOptions);
+    await this.git.addConfig("user.name", authorName, false, "local");
+    await this.git.addConfig("user.email", authorEmail, false, "local");
+    await this.git.remote(["set-url", "origin", authUrl]);
+
+    // Idempotently upgrade an existing non-sparse clone to sparse mode when
+    // a subpath is configured — applies the optimization on next restart
+    // without requiring an operator-driven re-clone.
+    if (useSparse && isRepo) {
+      const sparseConfigured = await this.isSparseConfigured();
+      if (!sparseConfigured) {
+        log.info("Upgrading existing clone to sparse-checkout", {
+          subpath: this.cfg.wikiSubpath,
+        });
+        await this.git.raw(["sparse-checkout", "init", "--cone"]);
+        await this.git.raw(["sparse-checkout", "set", this.cfg.wikiSubpath]);
+      }
+    }
+
+    await this.git.fetch("origin", branch);
+    await this.git.checkout(branch);
+    await this.git.reset(["--hard", `origin/${branch}`]);
+
+    if (this.cfg.pullIntervalMs > 0) this.startPullLoop();
+  }
+
+  private async isSparseConfigured(): Promise<boolean> {
+    try {
+      const out = await this.git.raw(["config", "--get", "core.sparseCheckout"]);
+      return out.trim() === "true";
+    } catch {
+      return false;
+    }
+  }
+
+  private async isGitRepo(p: string): Promise<boolean> {
+    try {
+      const stat = await fs.stat(path.join(p, ".git"));
+      return stat.isDirectory() || stat.isFile();
+    } catch {
+      return false;
+    }
+  }
+
+  private startPullLoop(): void {
+    const interval = this.cfg.pullIntervalMs;
+    log.info("Starting pull loop", { intervalMs: interval });
+    this.pullTimer = setInterval(() => {
+      this.safePull().catch((err) =>
+        log.warn("Background pull failed", { error: String(err) })
+      );
+    }, interval);
+    if (this.pullTimer.unref) this.pullTimer.unref();
+  }
+
+  async safePull(): Promise<{ updated: boolean }> {
+    return this.runExclusive(async () => {
+      const status = await this.git.status();
+      if (!status.isClean()) {
+        log.warn("Working tree dirty; skipping background pull");
+        return { updated: false };
+      }
+      const before = await this.git.revparse(["HEAD"]);
+      await this.git.fetch("origin", this.cfg.branch);
+      await this.git.reset(["--hard", `origin/${this.cfg.branch}`]);
+      const after = await this.git.revparse(["HEAD"]);
+      return { updated: before !== after };
+    });
+  }
+
+  async listMarkdown(subdir?: string): Promise<string[]> {
+    const fg = (await import("fast-glob")).default;
+    const base = subdir ? path.posix.join(this.cfg.wikiAbsPath, subdir) : this.cfg.wikiAbsPath;
+    const entries = await fg(["**/*.md"], {
+      cwd: base,
+      onlyFiles: true,
+      dot: false,
+      followSymbolicLinks: false,
+    });
+    return entries.map((e) => (subdir ? path.posix.join(subdir, e) : e));
+  }
+
+  async readPage(relPath: string): Promise<PageRecord> {
+    const abs = path.resolve(this.cfg.wikiAbsPath, relPath);
+    const stat = await fs.stat(abs);
+    const raw = await fs.readFile(abs, "utf8");
+    const parsed = parseFrontmatter(raw);
+    return {
+      relPath: relPath.split(path.sep).join("/"),
+      frontmatter: parsed.frontmatter,
+      body: parsed.body,
+      size: stat.size,
+      modifiedAt: stat.mtime.toISOString(),
+    };
+  }
+
+  async writeAndCommit(args: {
+    files: Array<{ relPath: string; content: string }>;
+    message: string;
+  }): Promise<{ commit: string }> {
+    return this.runExclusive(async () => {
+      await this.git.fetch("origin", this.cfg.branch);
+      await this.git.reset(["--hard", `origin/${this.cfg.branch}`]);
+
+      for (const { relPath, content } of args.files) {
+        const abs = this.resolveAbsoluteWikiPath(relPath);
+        await fs.mkdir(path.dirname(abs), { recursive: true });
+        await fs.writeFile(abs, content, "utf8");
+      }
+
+      const repoRelPaths = args.files.map((f) =>
+        this.cfg.wikiSubpath ? path.posix.join(this.cfg.wikiSubpath, f.relPath) : f.relPath
+      );
+      await this.git.add(repoRelPaths);
+
+      const status = await this.git.status();
+      if (status.staged.length === 0) return { commit: "no-op" };
+
+      const commit = await this.git.commit(args.message, repoRelPaths);
+      await this.git.push("origin", this.cfg.branch);
+      log.info("Committed wiki change", { commit: commit.commit, files: repoRelPaths });
+      return { commit: commit.commit };
+    });
+  }
+
+  resolveWikiPath(relPath: string): string {
+    const normalized = path.normalize(relPath).replace(/^([./\\]+)/g, "").replace(/\\/g, "/");
+    if (normalized.startsWith("..") || path.isAbsolute(normalized)) {
+      throw new Error(`Illegal path: ${relPath}`);
+    }
+    return normalized;
+  }
+
+  private resolveAbsoluteWikiPath(relPath: string): string {
+    const normalized = this.resolveWikiPath(relPath);
+    const abs = path.resolve(this.cfg.wikiAbsPath, normalized);
+    if (!abs.startsWith(this.cfg.wikiAbsPath + path.sep) && abs !== this.cfg.wikiAbsPath) {
+      throw new Error(`Path escapes wiki root: ${relPath}`);
+    }
+    return abs;
+  }
+
+  private runExclusive<T>(fn: () => Promise<T>): Promise<T> {
+    const next = this.writeLock.then(fn, fn);
+    this.writeLock = next.then(
+      () => undefined,
+      () => undefined
+    );
+    return next;
+  }
+
+  async shutdown(): Promise<void> {
+    if (this.pullTimer) clearInterval(this.pullTimer);
+  }
+}

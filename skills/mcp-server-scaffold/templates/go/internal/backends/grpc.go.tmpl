@@ -1,0 +1,30 @@
+package backends
+
+import (
+	"context"
+
+	myerr "{{GO_MODULE}}/internal/errors"
+)
+
+// GRPC is a stub adapter. Wire up your generated client (e.g., google.golang.org/grpc
+// with protoc-generated stubs, or connect-go) and replace each method body
+// with a real call. The bearer is attached to outgoing metadata.
+type GRPC struct {
+	address string
+	bearer  string
+}
+
+func NewGRPC(address, bearer string) *GRPC { return &GRPC{address: address, bearer: bearer} }
+
+func (g *GRPC) GetCompany(_ context.Context, _ string) (Company, error) {
+	return Company{}, myerr.Backend("gRPC adapter is a stub. Wire up the generated client and remove this.", 0)
+}
+func (g *GRPC) SearchCompanies(_ context.Context, _ SearchCompaniesInput) ([]Company, error) {
+	return nil, myerr.Backend("gRPC adapter is a stub. Wire up the generated client and remove this.", 0)
+}
+func (g *GRPC) AISearchCompanies(_ context.Context, _ string) ([]Company, error) {
+	return nil, myerr.Backend("gRPC adapter is a stub. Wire up the generated client and remove this.", 0)
+}
+func (g *GRPC) CreateTicket(_ context.Context, _ CreateTicketInput) (Ticket, error) {
+	return Ticket{}, myerr.Backend("gRPC adapter is a stub. Wire up the generated client and remove this.", 0)
+}

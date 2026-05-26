@@ -1,0 +1,77 @@
+# Deploy — Cloudflare Workers (alpha)
+
+This project is configured to run on **Cloudflare Workers** with an **R2 bucket** acting as the local wiki cache, kept in sync with GitHub by a separate **Cron-triggered Worker**.
+
+> ⚠️ **Alpha notice.** The Workers MCP path uses plain JSON-RPC over HTTPS (no Streamable HTTP server-initiated streams). Most MCP clients handle this gracefully via fallback, but if you need full streaming or session resumability, use the **Render** or **Docker** deploy target. The Workers/MCP integration ecosystem is evolving — expect upstream changes.
+
+## Prerequisites
+
+- A Cloudflare account with Workers + R2 enabled.
+- `wrangler` CLI (`npm install -g wrangler` or `npx wrangler`).
+- A GitHub fine-grained PAT with `Contents: Read/Write` on the wiki repo.
+
+## One-time setup
+
+```bash
+cd wiki-mcp-{{SLUG}}
+npm install
+npx wrangler login
+
+# Create the R2 bucket the cache lives in:
+npx wrangler r2 bucket create wiki-mcp-{{SLUG}}-cache
+
+# Set secrets on the main worker:
+npx wrangler secret put MCP_BEARER_TOKENS   # paste comma-separated tokens
+npx wrangler secret put WIKI_GIT_TOKEN      # paste the PAT
+
+# Set the same secret on the cron worker:
+npx wrangler --config wrangler.cron.toml secret put WIKI_GIT_TOKEN
+```
+
+## Deploy
+
+```bash
+# Main request worker (MCP endpoint):
+npx wrangler deploy
+
+# Cron sync worker (every 5 minutes):
+npx wrangler deploy --config wrangler.cron.toml
+```
+
+## Prime the cache
+
+The Cron Worker fires every 5 minutes by default, so the cache will populate on its own. To populate immediately:
+
+```bash
+SYNC_URL="https://wiki-mcp-{{SLUG}}-sync.<your-subdomain>.workers.dev/__sync"
+curl -X POST "$SYNC_URL" -H "x-sync-token: <WIKI_GIT_TOKEN>"
+```
+
+## Verify
+
+```bash
+WORKER_URL="https://wiki-mcp-{{SLUG}}.<your-subdomain>.workers.dev"
+
+curl -fsS "$WORKER_URL/health"
+
+# MCP initialize (replace <token> with a value from MCP_BEARER_TOKENS):
+curl -fsS -X POST "$WORKER_URL/mcp" \
+  -H "Authorization: Bearer <token>" \
+  -H "Content-Type: application/json" \
+  -d '{"jsonrpc":"2.0","id":1,"method":"initialize","params":{}}'
+```
+
+See `SMOKE-TEST.md` for the full 6-check sequence.
+
+## Limitations vs Render / Docker
+
+- **No server-initiated streams.** `tools/call` returns a single JSON-RPC response.
+- **Writes don't atomically batch.** Multi-file writes produce one commit per file (GitHub Contents API limitation). Use Render/Docker for transactional writes.
+- **`wiki_sync` is a no-op.** Cache freshness is controlled by the Cron Worker; trigger immediate sync via `POST /__sync` on the Cron Worker URL.
+- **No persistent disk.** All state lives in R2.
+
+## Cost
+
+- Free Workers plan handles ~100k requests/day.
+- R2 free tier: 10 GB storage + 1M Class A ops/month + 10M Class B ops/month.
+- For a wiki under ~10k pages with normal team usage, expect zero cost.

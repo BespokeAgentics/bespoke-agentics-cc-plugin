@@ -1,0 +1,167 @@
+/**
+ * Cloudflare Worker fetch handler — MCP JSON-RPC over HTTPS.
+ *
+ * V1 NOTE: This Worker implements MCP as plain JSON-RPC POST. It does NOT
+ * support Streamable HTTP server-initiated streams or session resumability —
+ * Workers' request/response model and the SDK's Node-bound transport make
+ * that non-trivial. Most MCP clients fall back to plain JSON-RPC gracefully.
+ * For full streaming support, use the Render or Docker deploy target.
+ */
+import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
+import { R2WikiSource } from "./wiki.js";
+import { registerWikiTools } from "./tools.js";
+
+interface Env {
+  WIKI_R2: R2Bucket;
+  WIKI_REPO_URL: string;
+  WIKI_BRANCH: string;
+  WIKI_SUBPATH: string;
+  PROJECT_NAME: string;
+  AUTH_MODE: string;
+  MCP_BEARER_TOKENS: string;
+  WIKI_GIT_TOKEN: string;
+}
+
+function jsonRpcError(id: unknown, code: number, message: string): Response {
+  return new Response(
+    JSON.stringify({ jsonrpc: "2.0", error: { code, message }, id: id ?? null }),
+    { status: 200, headers: { "Content-Type": "application/json" } }
+  );
+}
+
+function checkAuth(req: Request, env: Env): boolean {
+  if (env.AUTH_MODE !== "bearer") return false;
+  const header = req.headers.get("authorization") ?? "";
+  const match = header.match(/^Bearer\s+(.+)$/i);
+  if (!match) return false;
+  const tokens = new Set(env.MCP_BEARER_TOKENS.split(",").map((t) => t.trim()).filter(Boolean));
+  return tokens.has(match[1].trim());
+}
+
+function buildServer(env: Env): McpServer {
+  const repo = new R2WikiSource({
+    bucket: env.WIKI_R2,
+    repoUrl: env.WIKI_REPO_URL,
+    branch: env.WIKI_BRANCH,
+    subpath: env.WIKI_SUBPATH || "",
+    githubToken: env.WIKI_GIT_TOKEN,
+    authorName: `${env.PROJECT_NAME} MCP`,
+    authorEmail: "bot@example.com",
+  });
+  const server = new McpServer(
+    { name: "{{SLUG}}", version: "0.1.0" },
+    {
+      capabilities: { tools: {} },
+      instructions:
+        "{{PROJECT_NAME}} wiki access (Cloudflare Workers + R2). Writes go through the GitHub Contents API.",
+    }
+  );
+  registerWikiTools(server, repo);
+  return server;
+}
+
+export default {
+  async fetch(req: Request, env: Env): Promise<Response> {
+    const url = new URL(req.url);
+
+    if (req.method === "GET" && url.pathname === "/health") {
+      return new Response(JSON.stringify({ status: "ok", time: new Date().toISOString() }), {
+        headers: { "Content-Type": "application/json" },
+      });
+    }
+
+    if (req.method !== "POST" || url.pathname !== "/mcp") {
+      return new Response("Not found", { status: 404 });
+    }
+
+    if (!checkAuth(req, env)) {
+      return new Response(
+        JSON.stringify({ jsonrpc: "2.0", error: { code: -32001, message: "Unauthorized" }, id: null }),
+        { status: 401, headers: { "Content-Type": "application/json" } }
+      );
+    }
+
+    let body: { jsonrpc?: string; id?: unknown; method?: string; params?: unknown };
+    try {
+      body = await req.json();
+    } catch {
+      return jsonRpcError(null, -32700, "Parse error");
+    }
+
+    if (body.jsonrpc !== "2.0" || typeof body.method !== "string") {
+      return jsonRpcError(body.id, -32600, "Invalid Request");
+    }
+
+    const server = buildServer(env);
+
+    // The SDK's McpServer doesn't expose a "handle one request" path directly
+    // for non-stream transports; we use a small adapter that maps method names
+    // onto its internal dispatcher. For v1 we support: initialize, tools/list,
+    // tools/call. Other methods can be added as needed.
+    try {
+      const result = await dispatch(server, body.method, body.params, body.id);
+      return new Response(
+        JSON.stringify({ jsonrpc: "2.0", id: body.id ?? null, result }),
+        { status: 200, headers: { "Content-Type": "application/json" } }
+      );
+    } catch (err) {
+      return jsonRpcError(body.id, -32603, String((err as Error).message ?? err));
+    }
+  },
+};
+
+/** Minimal dispatcher: maps the methods our wiki tools need to MCP server internals. */
+async function dispatch(server: McpServer, method: string, params: unknown, _id: unknown): Promise<unknown> {
+  switch (method) {
+    case "initialize":
+      return {
+        protocolVersion: "2024-11-05",
+        capabilities: { tools: {} },
+        serverInfo: { name: "{{SLUG}}", version: "0.1.0" },
+      };
+    case "tools/list": {
+      // McpServer.server.notification(... ) — no public list method. Walk the
+      // internal registry. (The SDK's public API for non-stream dispatch is
+      // evolving; track upstream and replace this when it stabilizes.)
+      const tools = collectRegisteredTools(server);
+      return { tools };
+    }
+    case "tools/call": {
+      const p = (params as { name?: string; arguments?: Record<string, unknown> }) ?? {};
+      if (!p.name) throw new Error("Missing 'name'");
+      return await invokeTool(server, p.name, p.arguments ?? {});
+    }
+    default:
+      throw new Error(`Method not supported in Workers v1: ${method}`);
+  }
+}
+
+interface RegisteredTool {
+  name: string;
+  description?: string;
+  inputSchema?: unknown;
+}
+
+/** Pull the tool list from the server's internal registry. Best-effort across SDK versions. */
+function collectRegisteredTools(server: McpServer): RegisteredTool[] {
+  const anyServer = server as unknown as {
+    _registeredTools?: Map<string, { description?: string; inputSchema?: unknown }>;
+  };
+  if (anyServer._registeredTools instanceof Map) {
+    return Array.from(anyServer._registeredTools.entries()).map(([name, def]) => ({
+      name,
+      description: def.description,
+      inputSchema: def.inputSchema,
+    }));
+  }
+  return [];
+}
+
+async function invokeTool(server: McpServer, name: string, args: Record<string, unknown>): Promise<unknown> {
+  const anyServer = server as unknown as {
+    _registeredTools?: Map<string, { handler: (args: Record<string, unknown>) => Promise<unknown> }>;
+  };
+  const entry = anyServer._registeredTools?.get(name);
+  if (!entry) throw new Error(`Unknown tool: ${name}`);
+  return entry.handler(args);
+}

@@ -1,0 +1,131 @@
+import { readFileSync } from "node:fs";
+import { Server } from "@modelcontextprotocol/sdk/server/index.js";
+import { StreamableHTTPServerTransport } from "@modelcontextprotocol/sdk/server/streamableHttp.js";
+import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
+import {
+  CallToolRequestSchema,
+  ListToolsRequestSchema,
+} from "@modelcontextprotocol/sdk/types.js";
+import { loadConfig } from "./config";
+import { log } from "./logger";
+import { authenticate } from "./auth";
+import { RateLimiter } from "./ratelimit";
+import { McpToolError } from "./errors";
+import { runPipeline, type Tool, type ToolContext } from "./pipeline";
+import { buildRegistry } from "./tools/registry";
+import { RestBackend } from "./backends/rest";
+// import { GraphQLBackend } from "./backends/graphql";
+// import { GrpcBackend } from "./backends/grpc";
+
+const cfg = loadConfig();
+const tools = buildRegistry(cfg);
+const rateLimiter = new RateLimiter();
+
+const useStdio = process.argv.includes("--stdio");
+
+// Single structured startup line — auth mode, gate state, tool count, rate
+// limits, port. Operators can verify configuration from logs alone.
+log.info("startup", {
+  auth: cfg.authMode,
+  mutationsEnabled: cfg.mutationsEnabled,
+  tools: tools.length,
+  rateLimits: { ai_search_companies: cfg.rateLimitAiSearchPerMin },
+  transport: useStdio ? "stdio" : "https",
+  port: useStdio ? null : cfg.port,
+});
+
+function buildServer(): Server {
+  const server = new Server(
+    { name: "{{SERVER_NAME}}", version: "0.1.0" },
+    { capabilities: { tools: {} } },
+  );
+
+  server.setRequestHandler(ListToolsRequestSchema, async () => ({
+    tools: tools.map((t) => ({
+      name: t.name,
+      description: t.description,
+      inputSchema: zodToJsonSchema(t.inputSchema),
+    })),
+  }));
+
+  server.setRequestHandler(CallToolRequestSchema, async (req, extra) => {
+    const tool = tools.find((t) => t.name === req.params.name);
+    if (!tool) {
+      return toolError("VALIDATION_FAILED", `Unknown tool: ${req.params.name}`);
+    }
+    try {
+      // Auth happens here so it can read the request's transport metadata.
+      // For stdio runs the inspector forwards its own headers; for HTTPS we
+      // get them from the request below.
+      const principal = await authenticate(
+        (extra?.request as { headers?: Record<string, string> } | undefined)?.headers?.authorization,
+        cfg,
+      );
+      const ctx: ToolContext = {
+        config: cfg,
+        backend: makeBackend(principal.token),
+        user: principal,
+        rateLimiter,
+      };
+      const result = await runPipeline(tool as Tool<unknown, unknown>, ctx, req.params.arguments);
+      return { content: [{ type: "text", text: JSON.stringify(result) }] };
+    } catch (e) {
+      if (e instanceof McpToolError) return toolError(e.code, e.message);
+      log.error("unhandled", { tool: tool.name, err: String(e) });
+      return toolError("BACKEND_ERROR", "Internal error.");
+    }
+  });
+
+  return server;
+}
+
+function toolError(code: string, message: string) {
+  return {
+    isError: true,
+    content: [{ type: "text" as const, text: JSON.stringify({ code, message }) }],
+  };
+}
+
+function makeBackend(bearer: string) {
+  // Swap in GraphQLBackend or GrpcBackend if those are your systems of record.
+  return new RestBackend(cfg.backendBaseUrl, bearer);
+}
+
+// Minimal zod-to-json-schema shim — replace with zod-to-json-schema package
+// for full coverage. We surface only the top-level structure the MCP client
+// uses to render input forms.
+function zodToJsonSchema(schema: unknown): Record<string, unknown> {
+  return { type: "object" }; // intentionally narrow; expand as needed
+}
+
+async function main() {
+  if (useStdio) {
+    const transport = new StdioServerTransport();
+    const server = buildServer();
+    await server.connect(transport);
+    return;
+  }
+  Bun.serve({
+    port: cfg.port,
+    tls: {
+      cert: readFileSync(cfg.tlsCert),
+      key: readFileSync(cfg.tlsKey),
+    },
+    async fetch(req) {
+      const url = new URL(req.url);
+      if (url.pathname === "/healthz") return new Response("ok");
+      if (url.pathname !== "/mcp") return new Response("not found", { status: 404 });
+      const transport = new StreamableHTTPServerTransport({
+        sessionIdGenerator: () => crypto.randomUUID(),
+      });
+      const server = buildServer();
+      await server.connect(transport);
+      return transport.handleRequest(req);
+    },
+  });
+}
+
+main().catch((e) => {
+  log.error("fatal", { err: String(e) });
+  process.exit(1);
+});

@@ -1,0 +1,37 @@
+'use client';
+
+import { useMemo } from 'react';
+import type { SessionState } from '{{IMPORT_ROOT}}/reducer';
+import type { ToolCall } from '{{IMPORT_ROOT}}/events';
+
+export type UseToolCallsResult = {
+  /** Currently running tool call, if any. */
+  active: ToolCall | null;
+  /** Completed tool calls in order. */
+  completed: ToolCall[];
+  /** Active + completed flattened, for a single live list UI. */
+  all: ToolCall[];
+  /** Ordinal step counter — equals currentStep in the reducer. */
+  currentStep: number;
+  /** Soft budget for "Step N of ~M" display. */
+  stepBudget: number;
+};
+
+export function useToolCalls(state: SessionState): UseToolCallsResult {
+  return useMemo(() => {
+    const completed = state.completedToolCalls;
+    const active = state.activeToolCall;
+    return {
+      active,
+      completed,
+      all: active ? [...completed, active] : completed,
+      currentStep: state.currentStep,
+      stepBudget: state.stepBudget ?? 12,
+    };
+  }, [
+    state.completedToolCalls,
+    state.activeToolCall,
+    state.currentStep,
+    state.stepBudget,
+  ]);
+}

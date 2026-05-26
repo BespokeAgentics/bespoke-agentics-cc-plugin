@@ -1,0 +1,17 @@
+  server.tool(
+    "wiki_get_log",
+    "Return the contents of the wiki's _log.md audit trail, if present. Use `tail` to limit to the last N lines.",
+    {
+      tail: z.number().int().positive().max(2000).optional(),
+    },
+    async ({ tail }) => {
+      try {
+        const page = await repo.readPage("_log.md");
+        if (!tail) return textResult(page.body);
+        const lines = page.body.split("\n");
+        return textResult(lines.slice(-tail).join("\n"));
+      } catch {
+        return textResult("(no _log.md present at the wiki root)");
+      }
+    }
+  );

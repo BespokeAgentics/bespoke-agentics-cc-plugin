@@ -1,0 +1,171 @@
+package main
+
+import (
+	"context"
+	"encoding/json"
+	"flag"
+	"net/http"
+	"os"
+
+	"github.com/mark3labs/mcp-go/mcp"
+	"github.com/mark3labs/mcp-go/server"
+
+	"{{GO_MODULE}}/internal/auth"
+	"{{GO_MODULE}}/internal/backends"
+	"{{GO_MODULE}}/internal/config"
+	myerr "{{GO_MODULE}}/internal/errors"
+	"{{GO_MODULE}}/internal/logger"
+	"{{GO_MODULE}}/internal/pipeline"
+	"{{GO_MODULE}}/internal/ratelimit"
+	"{{GO_MODULE}}/internal/tools"
+)
+
+func main() {
+	stdio := flag.Bool("stdio", false, "run over stdio (for the inspector)")
+	flag.Parse()
+
+	cfg, err := config.Load()
+	if err != nil {
+		os.Stderr.WriteString("config: " + err.Error() + "\n")
+		os.Exit(1)
+	}
+	log := logger.New()
+	registry := tools.BuildRegistry(cfg.RateLimitAISearchPerMin)
+	limiter := ratelimit.New()
+
+	rlMap := map[string]int{}
+	for _, s := range registry {
+		if s.RateLimit != nil {
+			rlMap[s.Name] = s.RateLimit.PerMinute
+		}
+	}
+	transport := "https"
+	if *stdio { transport = "stdio" }
+	log.Info("startup",
+		"auth", cfg.AuthMode,
+		"mutations_enabled", cfg.MutationsEnabled,
+		"tools", len(registry),
+		"rate_limits", rlMap,
+		"transport", transport,
+		"port", cfg.Port,
+	)
+
+	srv := server.NewMCPServer("{{SERVER_NAME}}", "0.1.0")
+	registerTools(srv, registry, &cfg, limiter, log)
+
+	if *stdio {
+		if err := server.ServeStdio(srv); err != nil {
+			log.Error("stdio.fail", "err", err.Error())
+			os.Exit(1)
+		}
+		return
+	}
+
+	mux := http.NewServeMux()
+	mux.HandleFunc("/healthz", func(w http.ResponseWriter, _ *http.Request) {
+		w.WriteHeader(http.StatusOK)
+		_, _ = w.Write([]byte("ok"))
+	})
+	streamableHandler := server.NewStreamableHTTPServer(srv)
+	mux.Handle("/mcp", streamableHandler)
+
+	httpSrv := &http.Server{
+		Addr:    ":" + itoa(cfg.Port),
+		Handler: mux,
+	}
+	if err := httpSrv.ListenAndServeTLS(cfg.TLSCert, cfg.TLSKey); err != nil {
+		log.Error("https.fail", "err", err.Error())
+		os.Exit(1)
+	}
+}
+
+func registerTools(srv *server.MCPServer, registry []tools.Spec, cfg *config.Config, lim *ratelimit.Limiter, log *anyLogger) {
+	for _, s := range registry {
+		s := s // capture
+		srv.AddTool(
+			mcp.NewTool(s.Name, mcp.WithDescription(s.Description)),
+			func(ctx context.Context, req mcp.CallToolRequest) (*mcp.CallToolResult, error) {
+				return dispatch(ctx, cfg, lim, log, s, req)
+			},
+		)
+	}
+}
+
+type anyLogger = struct{} // placeholder so signature compiles regardless of slog import location
+// In your final main.go, replace anyLogger with *slog.Logger and pass log through.
+
+func dispatch(
+	ctx context.Context,
+	cfg *config.Config,
+	lim *ratelimit.Limiter,
+	_ *anyLogger,
+	spec tools.Spec,
+	req mcp.CallToolRequest,
+) (*mcp.CallToolResult, error) {
+	authHeader, _ := req.Params.Meta["authorization"].(string)
+	principal, err := auth.Authenticate(authHeader, *cfg)
+	if err != nil { return toolErr(err), nil }
+
+	tctx := &pipeline.ToolContext{
+		Config:  *cfg,
+		Backend: backends.NewREST(cfg.BackendBaseURL, principal.Token),
+		User:    principal,
+		Limiter: lim,
+	}
+
+	raw, _ := json.Marshal(req.Params.Arguments)
+	out, err := runByName(ctx, tctx, spec, raw)
+	if err != nil { return toolErr(err), nil }
+	return mcp.NewToolResultText(string(out)), nil
+}
+
+func runByName(ctx context.Context, tctx *pipeline.ToolContext, spec tools.Spec, raw json.RawMessage) (json.RawMessage, error) {
+	switch spec.Name {
+	case "search_companies":
+		r, err := pipeline.Run[*tools.SearchCompaniesArgs, tools.SearchCompaniesResult](
+			ctx, tctx, spec.Name, spec.Mutates, spec.RateLimit, raw, tools.SearchCompanies,
+		)
+		if err != nil { return nil, err }
+		return json.Marshal(r)
+	case "get_company":
+		r, err := pipeline.Run[*tools.GetCompanyArgs, tools.CompanyDTO](
+			ctx, tctx, spec.Name, spec.Mutates, spec.RateLimit, raw, tools.GetCompany,
+		)
+		if err != nil { return nil, err }
+		return json.Marshal(r)
+	case "ai_search_companies":
+		r, err := pipeline.Run[*tools.AISearchCompaniesArgs, tools.SearchCompaniesResult](
+			ctx, tctx, spec.Name, spec.Mutates, spec.RateLimit, raw, tools.AISearchCompanies,
+		)
+		if err != nil { return nil, err }
+		return json.Marshal(r)
+	case "create_ticket":
+		r, err := pipeline.Run[*tools.CreateTicketArgs, tools.TicketDTO](
+			ctx, tctx, spec.Name, spec.Mutates, spec.RateLimit, raw, tools.CreateTicket,
+		)
+		if err != nil { return nil, err }
+		return json.Marshal(r)
+	}
+	return nil, myerr.Validation("Unknown tool: "+spec.Name, nil)
+}
+
+func toolErr(err error) *mcp.CallToolResult {
+	te, ok := err.(*myerr.ToolError)
+	if !ok {
+		return mcp.NewToolResultError(err.Error())
+	}
+	b, _ := json.Marshal(map[string]any{"code": te.Code, "message": te.Message})
+	return mcp.NewToolResultError(string(b))
+}
+
+func itoa(n int) string {
+	// hand-rolled to avoid pulling strconv just for this
+	if n == 0 { return "0" }
+	neg := false
+	if n < 0 { neg = true; n = -n }
+	var b [20]byte
+	i := len(b)
+	for n > 0 { i--; b[i] = byte('0' + n%10); n /= 10 }
+	if neg { i--; b[i] = '-' }
+	return string(b[i:])
+}

@@ -1,0 +1,31 @@
+  server.tool(
+    "wiki_create_page",
+    "Create a new wiki page. Fails if the page already exists. Commits and pushes to the configured branch.",
+    {
+      path: z.string().describe("Path relative to wiki root, ending in '.md'. Use kebab-case filenames."),
+      frontmatter: z.record(z.unknown()).describe("YAML frontmatter object. At minimum include `type`."),
+      content: z.string().describe("Markdown body (without the frontmatter block)."),
+      message: z.string().optional().describe("Commit message override; generated if omitted."),
+    },
+    async ({ path: relPath, frontmatter, content, message }) => {
+      repo.resolveWikiPath(relPath);
+      // Reject create if the page already exists.
+      let exists = false;
+      try {
+        await repo.readPage(relPath);
+        exists = true;
+      } catch {
+        /* not found: good */
+      }
+      if (exists) {
+        throw new Error(`Page already exists: ${relPath}. Use wiki_update_page.`);
+      }
+      const yaml = renderFrontmatter(frontmatter);
+      const full = `---\n${yaml}---\n\n${content.trimEnd()}\n`;
+      const commit = await repo.writeAndCommit({
+        files: [{ relPath, content: full }],
+        message: message ?? `wiki(mcp): create ${relPath}`,
+      });
+      return jsonResult({ created: relPath, commit: commit.commit });
+    }
+  );

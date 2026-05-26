@@ -1,0 +1,124 @@
+import { promises as fs, createReadStream } from 'node:fs';
+import { createInterface } from 'node:readline';
+import path from 'node:path';
+import { EventEmitter } from 'node:events';
+import type { AgentEvent, SessionId } from '{{IMPORT_ROOT}}/events';
+import type { LogSink } from '{{IMPORT_ROOT}}/log-sink';
+
+/**
+ * JsonlLogSink — Node-side LogSink. Append-only JSONL, one file per session.
+ *
+ * Layout:  {{LOG_DIR}}/{YYYY-MM-DD}/{sessionId}.jsonl
+ *
+ * Designed for fault-tolerance: every append is fsync'd. Tail uses an
+ * in-process EventEmitter so multiple subscribers see the same stream;
+ * cross-process tail requires watching the file (use fs.watch externally).
+ */
+export class JsonlLogSink implements LogSink {
+  private emitter = new EventEmitter();
+
+  constructor(private readonly rootDir: string = '{{LOG_DIR}}') {}
+
+  private filePath(sessionId: SessionId): string {
+    const day = new Date().toISOString().slice(0, 10);
+    return path.join(this.rootDir, day, `${sessionId}.jsonl`);
+  }
+
+  async append(event: AgentEvent): Promise<void> {
+    const filePath = this.filePath(event.sessionId);
+    await fs.mkdir(path.dirname(filePath), { recursive: true });
+    const line = JSON.stringify(event) + '\n';
+    const fh = await fs.open(filePath, 'a');
+    try {
+      await fh.appendFile(line);
+      await fh.sync();
+    } finally {
+      await fh.close();
+    }
+    this.emitter.emit(event.sessionId, event);
+  }
+
+  async *read(sessionId: SessionId): AsyncIterable<AgentEvent> {
+    const filePath = this.filePath(sessionId);
+    try {
+      await fs.access(filePath);
+    } catch {
+      return;
+    }
+    const rl = createInterface({
+      input: createReadStream(filePath, { encoding: 'utf8' }),
+      crlfDelay: Infinity,
+    });
+    for await (const line of rl) {
+      if (!line.trim()) continue;
+      try {
+        yield JSON.parse(line) as AgentEvent;
+      } catch {
+        // Skip malformed lines rather than abort the whole replay.
+      }
+    }
+  }
+
+  async *tail(sessionId: SessionId, signal?: AbortSignal): AsyncIterable<AgentEvent> {
+    // Replay existing first.
+    for await (const ev of this.read(sessionId)) {
+      if (signal?.aborted) return;
+      yield ev;
+    }
+
+    if (signal?.aborted) return;
+
+    // Then subscribe.
+    let buffer: AgentEvent[] = [];
+    let notify: (() => void) | null = null;
+
+    const onEvent = (ev: AgentEvent) => {
+      buffer.push(ev);
+      notify?.();
+    };
+
+    this.emitter.on(sessionId, onEvent);
+
+    try {
+      while (!signal?.aborted) {
+        if (buffer.length === 0) {
+          await new Promise<void>((resolve) => {
+            notify = resolve;
+            signal?.addEventListener('abort', () => resolve(), { once: true });
+          });
+          notify = null;
+        }
+        while (buffer.length) {
+          const ev = buffer.shift()!;
+          yield ev;
+          if (ev.type === 'session.stop') return;
+        }
+      }
+    } finally {
+      this.emitter.off(sessionId, onEvent);
+    }
+  }
+
+  async listSessions(limit = 50): Promise<SessionId[]> {
+    try {
+      const days = await fs.readdir(this.rootDir);
+      const all: { sessionId: SessionId; mtime: number }[] = [];
+      for (const day of days.sort().reverse()) {
+        const dayPath = path.join(this.rootDir, day);
+        const files = await fs.readdir(dayPath).catch(() => []);
+        for (const f of files) {
+          if (!f.endsWith('.jsonl')) continue;
+          const stat = await fs.stat(path.join(dayPath, f));
+          all.push({ sessionId: f.replace(/\.jsonl$/, ''), mtime: stat.mtimeMs });
+        }
+        if (all.length >= limit) break;
+      }
+      return all
+        .sort((a, b) => b.mtime - a.mtime)
+        .slice(0, limit)
+        .map((x) => x.sessionId);
+    } catch {
+      return [];
+    }
+  }
+}

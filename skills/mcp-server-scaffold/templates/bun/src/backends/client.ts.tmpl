@@ -1,0 +1,39 @@
+// Backend client interface. Tools depend on this — not on a concrete adapter.
+// Adapters live alongside (rest.ts, graphql.ts, grpc.ts) and each implements
+// this interface. Auth flows in via the constructor; the client *never* reads
+// tokens from the environment.
+
+export type Company = {
+  id: string;
+  name: string;
+  country: string;        // canonical ISO-3166-1 alpha-2 (e.g., "DE", not "Germany")
+  segment: string;
+  employeeCount: number;
+};
+
+export type Ticket = {
+  id: string;
+  subject: string;
+  status: "open" | "closed";
+  createdAt: string;      // ISO 8601
+};
+
+export type SearchCompaniesInput = {
+  country?: string;
+  segment?: string;
+  query?: string;
+  limit: number;          // already capped in the validation layer
+};
+
+export type CreateTicketInput = {
+  subject: string;
+  body: string;
+  priority: "low" | "normal" | "high";
+};
+
+export interface BackendClient {
+  getCompany(id: string): Promise<Company>;
+  searchCompanies(input: SearchCompaniesInput): Promise<Company[]>;
+  aiSearchCompanies(naturalLanguageQuery: string): Promise<Company[]>;
+  createTicket(input: CreateTicketInput): Promise<Ticket>;
+}

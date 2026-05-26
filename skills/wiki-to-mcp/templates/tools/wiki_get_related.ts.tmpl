@@ -1,0 +1,31 @@
+  server.tool(
+    "wiki_get_related",
+    "Resolve {{WIKILINKS_STYLE}}-style links and frontmatter `related:` entries for a page.",
+    {
+      path: z.string().describe("Path relative to the wiki root."),
+    },
+    async ({ path: relPath }) => {
+      repo.resolveWikiPath(relPath);
+      const page = await repo.readPage(relPath);
+      const linksInBody =
+        "{{WIKILINKS_STYLE}}" === "markdown"
+          ? extractMarkdownLinks(page.body)
+          : extractWikiLinks(page.body);
+      const related = Array.isArray(page.frontmatter.related)
+        ? (page.frontmatter.related as unknown[]).map((r) => String(r))
+        : [];
+      const all = Array.from(new Set([...linksInBody, ...related]));
+      const all_files = await repo.listMarkdown();
+      const resolved = all.map((name) => {
+        const needle = name.toLowerCase().replace(/\s+/g, "-");
+        const match = all_files.find(
+          (f) =>
+            f.toLowerCase().endsWith(`/${needle}.md`) ||
+            f.toLowerCase() === `${needle}.md` ||
+            f.toLowerCase().endsWith(`/${needle}/index.md`)
+        );
+        return { ref: name, resolved: match ?? null };
+      });
+      return jsonResult({ from: relPath, related: resolved });
+    }
+  );

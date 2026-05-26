@@ -1,0 +1,28 @@
+  server.tool(
+    "wiki_append_to_log",
+    "Append a dated entry to the wiki's _log.md audit trail. Commits and pushes.",
+    {
+      entry: z.string().describe("Markdown to append. A heading with today's ISO date is added automatically."),
+    },
+    async ({ entry }) => {
+      const today = new Date().toISOString().slice(0, 10);
+      let body = "";
+      let frontmatter: Record<string, unknown> = {};
+      try {
+        const page = await repo.readPage("_log.md");
+        body = page.body;
+        frontmatter = page.frontmatter;
+      } catch {
+        // _log.md doesn't exist yet — initialize it.
+      }
+      const block = `\n## ${today}\n\n${entry.trim()}\n`;
+      const nextBody = body.endsWith("\n") ? body + block : body + "\n" + block;
+      const yaml = renderFrontmatter(frontmatter);
+      const full = yaml ? `---\n${yaml}---\n\n${nextBody.trimEnd()}\n` : `${nextBody.trimEnd()}\n`;
+      const commit = await repo.writeAndCommit({
+        files: [{ relPath: "_log.md", content: full }],
+        message: `wiki(mcp): log entry ${today}`,
+      });
+      return jsonResult({ appended: true, date: today, commit: commit.commit });
+    }
+  );

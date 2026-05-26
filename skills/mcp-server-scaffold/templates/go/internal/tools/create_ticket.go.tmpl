@@ -1,0 +1,64 @@
+package tools
+
+import (
+	"context"
+
+	"{{GO_MODULE}}/internal/backends"
+	myerr "{{GO_MODULE}}/internal/errors"
+	"{{GO_MODULE}}/internal/pipeline"
+)
+
+// MUTATION tool. The pipeline enforces the gate before exec runs; we ALSO
+// assert the gate in the first line of exec as defense in depth and to keep
+// the contract visible in the tool file itself. Read tools MUST NOT import
+// pipeline.AssertMutationsEnabled.
+
+type CreateTicketArgs struct {
+	Subject  string `json:"subject"`
+	Body     string `json:"body"`
+	Priority string `json:"priority"`
+}
+
+func (a *CreateTicketArgs) Validate() error {
+	if l := len(a.Subject); l < 3 || l > 120 {
+		return myerr.Validation("subject must be between 3 and 120 characters.", nil)
+	}
+	if l := len(a.Body); l < 10 || l > 4000 {
+		return myerr.Validation("body must be between 10 and 4000 characters.", nil)
+	}
+	if a.Priority == "" {
+		a.Priority = "normal"
+	}
+	switch a.Priority {
+	case "low", "normal", "high":
+	default:
+		return myerr.Validation("priority must be one of: low, normal, high.", nil)
+	}
+	return nil
+}
+
+type TicketDTO struct {
+	ID        string `json:"id"`
+	Subject   string `json:"subject"`
+	Status    string `json:"status"`
+	CreatedAt string `json:"createdAt"`
+}
+
+func CreateTicketSpec() Spec {
+	return Spec{
+		Name:        "create_ticket",
+		Description: "Create a support ticket. WRITE OPERATION — disabled by default. Enable via MCP_MUTATIONS_ENABLED=true.",
+		Mutates:     true,
+	}
+}
+
+func CreateTicket(ctx context.Context, tctx *pipeline.ToolContext, a *CreateTicketArgs) (TicketDTO, error) {
+	if err := pipeline.AssertMutationsEnabled(tctx.Config, "create_ticket"); err != nil {
+		return TicketDTO{}, err
+	}
+	t, err := tctx.Backend.CreateTicket(ctx, backends.CreateTicketInput{
+		Subject: a.Subject, Body: a.Body, Priority: a.Priority,
+	})
+	if err != nil { return TicketDTO{}, err }
+	return TicketDTO{ID: t.ID, Subject: t.Subject, Status: t.Status, CreatedAt: t.CreatedAt}, nil
+}

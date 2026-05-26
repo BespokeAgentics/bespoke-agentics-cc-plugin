@@ -1,0 +1,31 @@
+import type { AgentEvent, SessionId } from '{{IMPORT_ROOT}}/events';
+
+/**
+ * LogSink — durable storage for the AgentEvent stream. Implementations:
+ *   - JsonlLogSink (Node) — append-only JSONL, one file per session
+ *   - IndexedDbLogSink (browser) — object store per session
+ *
+ * Every event MUST persist with full fidelity. No throttling, no
+ * coalescing, no UI-side truncation leaking into storage.
+ *
+ * `tail()` returns events for live UI subscription. `read()` returns the
+ * full session for replay. Implementations should support both efficiently.
+ */
+export interface LogSink {
+  append(event: AgentEvent): Promise<void>;
+  read(sessionId: SessionId): AsyncIterable<AgentEvent>;
+  /** Live tail — yields existing events first, then yields new ones as they arrive. */
+  tail(sessionId: SessionId, signal?: AbortSignal): AsyncIterable<AgentEvent>;
+  /** Optional — list known session IDs (most recent first). */
+  listSessions?(limit?: number): Promise<SessionId[]>;
+}
+
+/** No-op sink for tests / when persistence is intentionally disabled. */
+export class NullLogSink implements LogSink {
+  async append(): Promise<void> {}
+  async *read(): AsyncIterable<AgentEvent> {}
+  async *tail(): AsyncIterable<AgentEvent> {}
+  async listSessions(): Promise<SessionId[]> {
+    return [];
+  }
+}

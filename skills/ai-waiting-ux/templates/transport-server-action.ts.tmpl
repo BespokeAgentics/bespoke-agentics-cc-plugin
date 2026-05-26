@@ -1,0 +1,73 @@
+'use server';
+
+/**
+ * Server Action transport.
+ *
+ * Returns an async iterable of AgentEvents from a Server Action. Suitable
+ * for App Router + RSC patterns where you don't want a custom route or WS
+ * server. Trade-off: high-frequency token deltas are heavier than SSE for
+ * the same payload, and you cannot send control messages on the same
+ * channel — use a sibling Server Action for abort/pause/resume.
+ *
+ * Caveat: async-iterable Server Actions are a Next.js feature and require
+ * the experimental config flag in some versions. Verify with your Next
+ * version before relying on this transport.
+ */
+
+import type { AgentEvent } from '{{IMPORT_ROOT}}/events';
+import { ClaudeAgentSdkAdapter } from '{{IMPORT_ROOT}}/adapters/claude-agent-sdk';
+import { ControlPlane } from '{{IMPORT_ROOT}}/control-plane';
+import { JsonlLogSink } from '{{IMPORT_ROOT}}/log-sink/jsonl';
+
+const sink = new JsonlLogSink();
+const adapter = new ClaudeAgentSdkAdapter();
+const controlPlanes = new Map<string, ControlPlane>();
+
+export async function* streamAgentSession(args: {
+  sessionId: string;
+  prompt: string;
+  taskType?: string;
+}): AsyncIterable<AgentEvent> {
+  const { sessionId, prompt, taskType } = args;
+  const buffer: AgentEvent[] = [];
+  const send = (event: AgentEvent) => {
+    buffer.push(event);
+    sink.append(event).catch((err) => {
+      console.error('[ai-waiting-ux] log append failed', err);
+    });
+  };
+
+  const cp = new ControlPlane(sessionId, send);
+  controlPlanes.set(sessionId, cp);
+
+  try {
+    for await (const ev of adapter.run({
+      sessionId,
+      prompt,
+      taskType,
+      signal: cp.signal,
+      pauseGate: cp,
+    })) {
+      send(ev);
+      while (buffer.length) {
+        const out = buffer.shift()!;
+        yield out;
+        if (out.type === 'session.stop') return;
+      }
+    }
+  } finally {
+    controlPlanes.delete(sessionId);
+  }
+}
+
+export async function abortAgentSession(sessionId: string, reason?: string): Promise<void> {
+  controlPlanes.get(sessionId)?.abort(reason);
+}
+
+export async function pauseAgentSession(sessionId: string): Promise<void> {
+  controlPlanes.get(sessionId)?.pause();
+}
+
+export async function resumeAgentSession(sessionId: string): Promise<void> {
+  controlPlanes.get(sessionId)?.resume();
+}
