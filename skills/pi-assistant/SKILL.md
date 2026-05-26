@@ -1,6 +1,6 @@
 ---
 name: pi-assistant
-description: Understand and customize the pi.dev coding agent harness, including settings.json, AGENTS.md and SYSTEM.md context files, skills, extensions, prompt templates, themes, slash commands registered via TypeScript extensions, and Pi Packages. Use when working with Pi (`@mariozechner/pi-coding-agent`), adapting harness behavior, building or debugging Pi skills/extensions/packages, reviewing a local Pi setup, or searching for and installing packages from pi.dev/packages or npm packages tagged `pi-package`.
+description: "Customize the pi.dev coding agent harness — settings, AGENTS.md, skills, extensions, Pi Packages. Use for Pi (`@mariozechner/pi-coding-agent`) setup, debugging, or package install."
 ---
 
 # Pi Assistant

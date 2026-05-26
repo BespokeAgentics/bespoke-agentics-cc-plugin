@@ -1,6 +1,6 @@
 ---
 name: mcp-server-scaffold
-description: "Deterministically scaffold a production-grade HTTPS MCP server in Bun (TypeScript) or Go that implements the safe-MCP playbook — layered request pipeline, read/write tool separation with default-deny mutation gate, OIDC bearer auth, bounded queries, configurable rate limits, structured stderr logging, typed errors, and inspector-driven testing. Auto-detects the target language from project context (package.json/bun.lock → Bun; go.mod → Go) and asks only when the signal is missing. Use whenever someone wants to build, generate, scaffold, bootstrap, or stand up an MCP server, expose an internal API to an LLM client, wrap a REST/GraphQL/gRPC backend as MCP tools, or wire a company system into Claude/ChatGPT/Cursor — even if they don't say 'MCP server' explicitly. Also use when adding new tools to an existing scaffold produced by this skill, or when reviewing/hardening an existing MCP server against the same checklist."
+description: "Scaffold a safe-by-default HTTPS MCP server in Bun or Go, add tools to an existing scaffold, or audit one. Triggers: scaffold/build/expose-as-MCP, wrap REST/GraphQL as MCP."
 args:
   - name: mode
     description: "One of `init` | `add-tool` | `audit`. If omitted, infer from context (no MCP code present → init; existing scaffold + 'add a tool' → add-tool; 'review my MCP server' → audit)."

@@ -1,6 +1,6 @@
 ---
 name: extract-video-frames
-description: Extracts frames and timestamped audio segments from video files (GIF, MP4, MOV) at configurable intervals and stores them in a directory with a manifest file. Use when analyzing video content, preparing frames for visual review, extracting audio for transcription, or creating frame+audio sequences for another agent to process.
+description: "Extract frames + timestamped audio segments from video files (GIF, MP4, MOV) at a given interval, with a manifest.json. Use for video analysis, transcription prep, or visual review."
 argument-hint: [video-path] [interval-seconds] [output-dir]
 ---
 

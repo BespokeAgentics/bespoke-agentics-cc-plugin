@@ -1,6 +1,6 @@
 ---
 name: dedupe-frames
-description: "Remove near-duplicate frames from a video extraction directory using perceptual hashing (dhash). Runs after frame extraction and before frame analysis to reduce context window usage by eliminating visually identical frames. Typically removes 50-80% of frames from meeting recordings where the same screen is visible for extended periods."
+description: "Remove near-duplicate frames from a video-extraction dir using perceptual hashing (dhash). Run after extract, before analysis. Typically removes 50-80% of frames."
 args:
   - name: frames-dir
     description: "Path to the directory containing extracted frames and manifest.json (e.g., screencast/platform-overview-frames/)"

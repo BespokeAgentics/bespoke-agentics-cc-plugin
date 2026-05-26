@@ -1,6 +1,6 @@
 ---
 name: biome-guardrails
-description: "Initialize Biome.js with AI guardrails in any JavaScript/TypeScript project. Sets up enforced linter rules, formatter config, a sidecar ESLint config for rules Biome cannot cover natively, package.json scripts, and optional Claude Code hooks for config protection and lint-on-edit feedback. Use when someone wants to add strict code quality rules, enforce AI-generated code constraints, set up Biome, add Biome to a project, or add lint guardrails."
+description: "Install Biome.js + sidecar ESLint as strict AI-code guardrails in a JS/TS project. Triggers: 'add Biome', 'set up linting', 'enforce code quality', 'lint guardrails'."
 ---
 
 <objective>

@@ -1,6 +1,6 @@
 ---
 name: glean-agent-toolkit
-description: "Scaffold, extend, and troubleshoot Glean Agent Toolkit projects (Python). Bootstraps new agents for OpenAI Agents SDK, LangChain, or Google ADK; adds custom @tool_spec tools; wires additional framework adapters; runs environment + project diagnostics. Use when someone wants to build a Glean agent, add a Glean tool, integrate a new framework, or debug a broken Glean setup. Complements upstream `glean-agent-toolkit-guide` and `glean-agent-toolkit-builder` skills — install those for SDK reference."
+description: "Scaffold, extend, and troubleshoot Glean Agent Toolkit (Python) projects across OpenAI SDK / LangChain / Google ADK. Use to init, add tool, add adapter, or diagnose."
 args:
   - name: mode
     description: "One of `init` | `add-tool` | `add-adapter` | `doctor`. If omitted, infer from context or fall back to `init`."

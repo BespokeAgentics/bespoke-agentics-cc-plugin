@@ -1,6 +1,6 @@
 ---
 name: git-submodules
-description: "Set up, convert, and maintain Git submodules safely. Add a submodule from a URL, convert a directory of nested git repos into a proper submodule layout, initialize a brand-new parent repo wrapping existing project folders, or run a health check (detached HEAD, drift, missing remotes). Use this skill whenever a user mentions submodules, nested .git directories, monorepo-from-multirepos, super-repo, `.gitmodules`, `git submodule add`, dependency repos, or says things like 'I have a folder with a bunch of git projects in it and want to organize them' — even if they don't say the word 'submodule'."
+description: "Add/convert/init/audit Git submodules safely. Triggers: submodules, nested .git dirs, super-repo, monorepo-from-multirepos, 'wrap these projects into one parent repo'."
 args:
   - name: mode
     description: "One of `add` | `convert` | `init` | `status`. If omitted, infer from context or ask via AskUserQuestion."

@@ -1,13 +1,6 @@
 ---
 name: ux-audit
-description: >
-  Perform a comprehensive UX audit using Nielsen's 10 Usability Heuristics and Don Norman's 6
-  Design Principles. Use this skill whenever the user uploads a codebase, component files,
-  screencasts (MP4 or GIF), screenshots, or user flow recordings for UX review. Also trigger
-  when the user asks about usability problems, UX violations, design critique, heuristic
-  evaluation, or wants to find UX issues in their product. Works on React, HTML/CSS,
-  Vue, Angular, mobile UI code, or any front-end code. Produces a structured severity-rated
-  report with specific fixes.
+description: "UX audit using Nielsen heuristics + Norman principles on code, screenshots, or screencasts. Triggers: UX review, usability audit, heuristic evaluation, design critique."
 ---
 
 # UX Audit Skill

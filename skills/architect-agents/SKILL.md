@@ -1,6 +1,6 @@
 ---
 name: architect-agents
-description: Analyzes any project (via spec, codebase, and adaptive interview) and generates a complete agent/command architecture — .claude/agents/ files, .claude/commands/ files, and an _architecture.md reference doc. Use when setting up a new project's agent team, adding agents to an existing project, or regenerating agents after significant codebase changes.
+description: "Analyze a project and generate a full .claude/ agent + command architecture with _architecture.md. Use to set up, extend, or regenerate a project's agent team."
 ---
 
 <pipeline>

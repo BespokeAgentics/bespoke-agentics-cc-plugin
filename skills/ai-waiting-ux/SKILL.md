@@ -1,6 +1,6 @@
 ---
 name: ai-waiting-ux
-description: Audit and scaffold real-time AI waiting UX in a Next.js (App Router) + TypeScript project that uses `@anthropic-ai/claude-agent-sdk`. Enforces the four properties from the "Doherty Threshold" brief — continuous progress, live ETA, OS-level completion notifications, and a persistent readable log — by generating an event-sourced architecture (AgentEvent normalizer, reducer, transport adapter, LogSink adapter, headless React hooks, notification dispatcher, control plane). Use when the user says "add streaming progress", "show what the agent is doing", "ETA for AI", "agent notifications", "audit my agent UX", "long-running AI feels stuck", "make my AI feel less black-box", or invokes `/bespokeagentics:ai-waiting-ux`. Complements `ai-transparency` (stack-agnostic transparency audit) — this skill is the opinionated Next.js + claude-agent-sdk implementation.
+description: "Audit/scaffold real-time AI waiting UX (progress, ETA, notifications, log) in Next.js + claude-agent-sdk projects. Triggers: streaming progress, agent ETA, agent notifications, audit agent UX."
 args:
   - name: mode
     description: "`audit` | `scaffold` | `audit-and-scaffold` (default). `audit` writes a gap report only; `scaffold` skips the audit and generates the architecture; `audit-and-scaffold` does both."

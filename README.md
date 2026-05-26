@@ -16,18 +16,28 @@ claude --plugin-dir ./bespoke-agentics-plugin
 
 ## Skills
 
+> Most primary skills are invoked directly by the Skill tool (or by Claude when it recognizes the trigger) — no slash command needed. Slash commands are kept only for skills that benefit from `argument-hint`-style invocation (the `wiki:*` and `ux-audit-*` families below).
+
 ### Primary Skills
 
-| Skill | Command | Description |
-|-------|---------|-------------|
-| **AI Transparency** | `/bespokeagentics:ai-transparency` | Audit and fix AI operations lacking UI state coverage (loading, streaming, logs, errors). Enforces the "No Black Boxes" policy. |
-| **Architect Agents** | `/bespokeagentics:architect-agents` | Analyze a project and generate a complete `.claude/agents/` and `.claude/commands/` architecture with documentation. |
-| **UX Audit** | `/bespokeagentics:ux-audit` | Comprehensive UX evaluation using Nielsen's 10 Heuristics and Norman's 6 Design Principles. |
-| **Video to Deliverables** | `/bespokeagentics:video-to-deliverables` | End-to-end video analysis pipeline. Transforms recordings into workflow docs, migration analysis, meeting summaries, or training guides. |
-| **Workflow Analyzer** | `/bespokeagentics:workflow-analyzer` | Client workflow analysis from video recordings. Produces application inventory, challenge mapping, and AI automation recommendations. |
-| **Setup Plugin** | `/bespokeagentics:setup-plugin` | Scaffold, optimize, and package a folder as a well-formed Claude Code plugin. Converts `.claude/` directories into distributable plugins. |
-| **Pi Assistant** | `/bespokeagentics:pi-assistant` | Understand the pi.dev coding agent, customize its harness, build Pi skills/extensions/packages, and search for or install Pi packages. |
-| **Spec Elicitation** | `/bespokeagentics:spec-elicitation` | Interview-driven spec development that turns vague ideas into complete implementation specifications. |
+| Skill | Description |
+|-------|-------------|
+| **ai-transparency** | Audit and fix AI operations lacking UI state coverage (loading, streaming, logs, errors). Enforces the "No Black Boxes" policy. |
+| **architect-agents** | Analyze a project and generate a complete `.claude/agents/` and `.claude/commands/` architecture with documentation. |
+| **ux-audit** | Comprehensive UX evaluation using Nielsen's 10 Heuristics and Norman's 6 Design Principles. See ux-audit-* variants below for narrower scopes. |
+| **video-to-deliverables** | End-to-end video analysis pipeline. Transforms recordings into workflow docs, migration analysis, meeting summaries, or training guides. |
+| **workflow-analyzer** | Client workflow analysis from video recordings. Produces application inventory, challenge mapping, and AI automation recommendations. |
+| **setup-plugin** | Scaffold, optimize, and package a folder as a well-formed Claude Code plugin. Converts `.claude/` directories into distributable plugins. |
+| **pi-assistant** | Understand the pi.dev coding agent, customize its harness, build Pi skills/extensions/packages, and search for or install Pi packages. |
+| **spec-elicitation** | Interview-driven spec development that turns vague ideas into complete implementation specifications. Also available as `/bespokeagentics:spec-elicitation`. |
+| **biome-guardrails** | Install Biome.js + sidecar ESLint as strict AI-code guardrails in a JS/TS project. |
+| **bun-workspace** | Convert sibling Node/Bun repos into a Bun workspace monorepo, audit one, or add a package. |
+| **git-submodules** | Add/convert/init/audit Git submodules safely. |
+| **session-hooks** | Design Claude Code SessionStart/SessionEnd/Stop hooks via interview. |
+| **mcp-server-scaffold** | Scaffold a safe-by-default HTTPS MCP server in Bun or Go, add tools to one, or audit one. |
+| **glean-agent-toolkit** | Scaffold/extend Glean Agent Toolkit (Python) projects across OpenAI SDK / LangChain / Google ADK. |
+| **ai-waiting-ux** | Audit/scaffold real-time AI waiting UX in Next.js + claude-agent-sdk projects. |
+| **codex-prompt-builder** | Convert session context, bug reports, or feature notes into a Codex prompt. |
 
 ## Spec Interviewer UI
 
@@ -43,18 +53,9 @@ Open `http://127.0.0.1:4177`.
 
 The Agent SDK can use your local Claude Code OAuth login automatically. `ANTHROPIC_API_KEY` is optional if you prefer key-based auth.
 
-### Pi Assistant Commands
+### Pi Assistant
 
-| Command | Description |
-|---------|-------------|
-| `/bespokeagentics:pi-assistant` | General Pi harness and package workflow entry point |
-| `/bespokeagentics:pi-customize-harness` | Customize settings, context files, skills, prompt templates, extensions, or packages |
-| `/bespokeagentics:pi-build-extension` | Build or update a Pi TypeScript extension and its slash commands |
-| `/bespokeagentics:pi-build-skill` | Build or update a Pi skill with bundled references or helper scripts |
-| `/bespokeagentics:pi-build-package` | Build or update a shareable Pi package using conventional resource directories |
-| `/bespokeagentics:pi-search-packages` | Search npm packages tagged `pi-package` and recommend the best matches |
-| `/bespokeagentics:pi-install-package` | Install a Pi package with the correct source syntax and scope |
-| `/bespokeagentics:pi-review-setup` | Audit a local Pi setup and recommend targeted improvements |
+All Pi tasks route through the `pi-assistant` skill. Describe the task in natural language ("build a Pi extension that…", "search Pi packages for browser automation", "review my local Pi setup", "install Pi package X globally") and the skill routes to the right surface — harness customization, extension/skill/package authoring, package search, install, or setup review. See `skills/pi-assistant/SKILL.md` and its `references/` for surface-by-surface guidance.
 
 ### UX Audit Variants
 

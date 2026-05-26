@@ -1,6 +1,6 @@
 ---
 name: session-hooks
-description: "Interview-driven designer for Claude Code SessionStart / SessionEnd / Stop hooks. Helps the user decide what context to auto-load at session start (Confluence pages, wiki summaries, codebase snapshots, recent commits, third-party AI consultations, CI status) and what to capture at session end (session log to wiki, summary to Confluence, change diff, notifications). Produces both a design doc explaining each hook and the working .claude/settings.json block plus executable scripts. Use when the user says 'design hooks', 'session start hook', 'session stop hook', 'auto-load context', 'pre-flight context', 'wrap-up hook', 'log every session', 'add a SessionStart hook', or invokes /hook:design."
+description: "Design Claude Code SessionStart/SessionEnd/Stop hooks via interview; emit settings.json + scripts. Triggers: 'design hooks', 'auto-load context', 'wrap-up hook', 'log every session'."
 args:
   - name: mode
     description: "One of `design` | `add-start` | `add-stop` | `inspect`. If omitted, defaults to `design` (full interview)."

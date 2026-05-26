@@ -1,6 +1,6 @@
 ---
 name: setup-plugin
-description: "Scaffold, optimize, and package a Claude Code plugin from a project folder. Use this skill whenever someone wants to create a new plugin, convert a .claude/ directory into a distributable plugin, audit and optimize existing plugin components (commands, skills, hooks, agents), generate a README, or organize a folder as a well-formed Claude Code plugin. Also trigger when the user mentions 'new plugin', 'plugin setup', 'package plugin', 'plugin scaffold', or wants to clean up and optimize their .claude/ directory for distribution."
+description: "Scaffold, optimize, and package a Claude Code plugin. Triggers: 'new plugin', 'package plugin', 'plugin scaffold', or convert a .claude/ dir into a distributable plugin."
 ---
 
 # Setup Plugin
