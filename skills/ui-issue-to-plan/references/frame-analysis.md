@@ -31,8 +31,10 @@ output_path:    {ANALYSIS_DIR}/frame-analysis-chunk-{N}.md
 The agent's full instructions live in its definition (`agents/ui-frame-analyst.md`). In short, for
 each frame in its range it records: the screen/route, the visible UI components (type + on-screen
 label + rough location + state), the component(s) the narrator is pointing at, the problem or desire
-expressed (with a verbatim quote + timestamp), and the on-screen text anchors that will help
-grounding (exact labels, headings, URLs, error strings).
+expressed (with a verbatim quote + timestamp), the on-screen text anchors that will help grounding
+(exact labels, headings, URLs, error strings), and — separate from defects — any **aspirational
+statements** the narrator makes ("we should be able to…", "ideally this would…") and **opportunity
+signals** (visible friction, missing affordances, dated patterns) even when not spoken aloud.
 
 Wait for ALL analysts to finish before Step 3.
 
@@ -71,7 +73,21 @@ The narrated intent, distilled into discrete **candidate asks**. Each ask:
 
 Keep asks distinct and minimal — if the narrator circles back to the same problem, it's one ask.
 
-If transcription was skipped, build `issue-summary.md` from on-screen evidence alone (errors, broken
-layout, repeated focus on one element) and mark every ask `narration: missing` so Phase 3 fills the gap.
+Then add two more sections, kept **separate from the defect asks** above — these feed the opportunity
+synthesis (Phase 2.5), not the fix list:
 
-Report: `Phase 1 complete. {N} screens, {N} components, {N} candidate asks ({N} blocking questions)`.
+#### `## Vision & aspirational statements`
+Verbatim quotes (with timestamps) where the narrator describes how things *should* work beyond fixing
+the immediate bug — "we need X across the whole app", "ideally you'd see…", "it'd be great if…". These
+are intent signals, not defects. If the narrator never goes aspirational, write "none stated".
+
+#### `## Opportunity signals`
+Observed friction or gaps the *screen* reveals, even if unspoken: dead-ends, missing states
+(loading/empty/error), repeated manual steps, no feedback on an action, dated patterns. Each: what was
+seen + which component (ref into `observed-ui-map.md`). Descriptive only — don't design fixes here.
+
+If transcription was skipped, build the asks from on-screen evidence alone (errors, broken layout,
+repeated focus on one element) and mark every ask `narration: missing` so Phase 3 fills the gap; the
+Vision section will likely be "none stated" — that's fine, Phase 3's framing beat recovers it.
+
+Report: `Phase 1 complete. {N} screens, {N} components, {N} candidate asks ({N} blocking), {N} vision/signal notes`.

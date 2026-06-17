@@ -1,7 +1,7 @@
 ---
 name: "bespokeagentics:ui-issue-to-plan"
-description: "Turn a narrated screen recording of a UI issue into a grounded implementation plan. Extracts and reads the frames to identify the UI components being referenced, transcribes the narration, maps the observed components to real source files in the CURRENT repo (file:line), runs an AskUserQuestion interview to pin down exactly what to fix/create/update, then writes an implementation plan to ./plans/. For .mp4/.mov/.webm/.gif screencasts of a bug, layout glitch, or desired UI change in the project open in this session."
-argument-hint: "'<video-path>' [issue-label] [interval] [--out <dir>] [--no-ground] [--skip-dedup] [--skip-transcribe] [--force]"
+description: "Turn a narrated screen recording into a grounded implementation plan that captures BOTH what to fix AND how to improve the experience. Reads the frames to identify the UI components being referenced, transcribes the narration, maps the observed components to real source files in the CURRENT repo (file:line), surfaces a curated set of grounded improvement opportunities, runs an AskUserQuestion interview that frames intent (fix vs improve) and lets you opt into enhancements, then writes a plan to ./plans/ with separate Defect-fix and Enhancement sections. For .mp4/.mov/.webm/.gif screencasts of a bug, layout glitch, desired change, or how a flow should work better in the project open in this session."
+argument-hint: "'<video-path>' [issue-label] [interval] [--mode fix|improve|both] [--out <dir>] [--no-ground] [--skip-dedup] [--skip-transcribe] [--force]"
 allowed-tools: Skill(ui-issue-to-plan), Agent, AskUserQuestion, Bash, Read, Write, Edit, Glob, Grep
 ---
 
@@ -15,12 +15,14 @@ repo's source, interview the user to lock the intent, and write an implementatio
 Parse from `$ARGUMENTS`:
 
 ```
-'<video-path>' [issue-label] [interval] [--out <dir>] [--no-ground] [--skip-dedup] [--skip-transcribe] [--force]
+'<video-path>' [issue-label] [interval] [--mode fix|improve|both] [--out <dir>] [--no-ground] [--skip-dedup] [--skip-transcribe] [--force]
 ```
 
 - `<video-path>` (required) — local screencast (`.mp4`, `.mov`, `.webm`, `.gif`).
 - `issue-label` (optional) — short name → output filename slug; else derived from the validated intent.
 - `interval` (optional, default `2`) — seconds between extracted frames.
+- `--mode fix|improve|both` (default `both`) — `fix` = defects only; `improve` = lean into
+  enhancements; `both` = calibrated (a framing beat sets the altitude so quick bugs stay lean).
 - `--out <dir>` (default `./plans`) — where the plan is written.
 - `--no-ground` — skip codebase grounding (video + narration only).
 - `--skip-dedup` / `--skip-transcribe` / `--force` — as in the skill.
@@ -31,19 +33,22 @@ Invoke the `ui-issue-to-plan` skill and forward `$ARGUMENTS`. The skill will:
 
 1. **Preprocess** — extract frames, dedup, transcribe the narration (with word timestamps).
 2. **Analyze** — parallel `ui-frame-analyst` agents read the frames + narration → an
-   observed-UI map and a list of candidate asks (fix / change / create) with evidence.
+   observed-UI map and an issue summary (candidate fixes **plus** the narrator's vision and
+   observed opportunity signals).
 3. **Ground** — parallel `Explore` agents map each observed component to real source
    `file:line` in the current repo (unless `--no-ground`).
-4. **Interview** — AskUserQuestion batches confirm each ask, clarify the desired outcome,
-   confirm uncertain source locations, and set priority — eliciting a clear vision of
-   what to fix/create/update.
-5. **Plan** — write `./plans/<slug>.md`: context, on-screen evidence (frame + quote),
-   affected files (`file:line`), proposed changes, an ordered task checklist, open
-   questions, and a verification section. Wiki-ingested if a vault exists.
+4. **Opportunities** — unless `--mode fix`, synthesize a curated 3–5 grounded improvement
+   proposals (`opportunities.md`).
+5. **Interview** — AskUserQuestion batches: a framing/vision beat (fix vs improve), confirm each
+   fix, confirm uncertain source locations, set priority, and opt into enhancements.
+6. **Plan** — write `./plans/<slug>.md`: context, on-screen evidence (frame + quote),
+   affected files (`file:line`), **separate Defect-fix and Enhancement sections**, a grouped
+   task checklist, deferred opportunities, open questions, and verification. Wiki-ingested if a
+   vault exists.
 
 ## Output
 
-`{OUT_DIR}/<issue-slug>.md` (the implementation plan), plus intermediate artifacts under
-`ui-issue-analysis/` (observed-ui-map, issue-summary, component-source-map,
-interview-answers). Ends with a summary and an offer to start the P0 task — but does not
-edit code until you say so.
+`{OUT_DIR}/<issue-slug>.md` (the implementation plan, fixes + enhancements), plus intermediate
+artifacts under `ui-issue-analysis/` (observed-ui-map, issue-summary, component-source-map,
+opportunities, interview-answers). Ends with a summary and an offer to start the P0 task — but
+does not edit code until you say so.

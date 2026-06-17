@@ -6,15 +6,18 @@ session) can execute. Every claim should trace to either a frame (what was shown
 
 ## Inputs
 
-- `{ANALYSIS_DIR}/interview-answers.md` — the contract. Build ONLY the confirmed asks; honor every
+- `{ANALYSIS_DIR}/interview-answers.md` — the contract, in two buckets (`Confirmed fixes`,
+  `Confirmed enhancements`) plus `Deferred`. Build ONLY what's in the first two buckets; honor every
   recorded constraint and priority. Do not add requirements that aren't here.
 - `{ANALYSIS_DIR}/issue-summary.md` and `observed-ui-map.md` — for evidence (quotes, frame timestamps).
 - `{ANALYSIS_DIR}/component-source-map.md` — for the affected source files.
+- `{ANALYSIS_DIR}/opportunities.md` (if it exists) — for enhancement detail and the deferred list.
 
 ## Derive the slug (if not provided)
 
-If `ISSUE_SLUG` is empty, derive it from the primary (P0) confirmed ask's title — kebab-case, short,
-e.g. `filter-dropdown-reset`. Reuse this exact slug for the filename.
+If `ISSUE_SLUG` is empty, derive it from the primary (P0) confirmed **fix's** title — kebab-case,
+short, e.g. `filter-dropdown-reset`. (If the run is improve-led with no defect, use the top
+enhancement.) Reuse this exact slug for the filename.
 
 ## Write `{OUT_DIR}/{ISSUE_SLUG}.md`
 
@@ -25,11 +28,16 @@ Use the template at `assets/templates/implementation-plan.md`. Fill it from the 
 - **Observed UI & evidence** — per ask, the component(s) involved, the frame timestamp(s) where the
   issue is visible, and the narrator's verbatim quote. This lets a reader re-watch the exact moment.
 - **Affected source files** — the grounded `file:line` list from `component-source-map.md`, including
-  handler/state locations (where the fix usually lands). Mark any unconfirmed location as such.
-- **Proposed changes** — per confirmed ask, in priority order: what changes, in which file, and how
-  (the approach — not necessarily the final diff). State acceptance criteria from the interview.
-- **Task checklist** — ordered, actionable `- [ ]` items a developer can work through. Each task names
-  its file(s). Keep tasks small enough to verify individually.
+  handler/state locations (where work usually lands). Mark any unconfirmed location as such.
+- **Defect fixes** — per confirmed fix, in priority order: what changes, in which file, and how (the
+  approach — not necessarily the final diff). State acceptance criteria from the interview.
+- **Enhancements (opt-in)** — per confirmed enhancement, in its own priority order, same shape (change
+  / where / how / acceptance). Keep this section visibly separate from the fixes so must-fix vs.
+  nice-to-have stays obvious. Omit the section only if there are zero confirmed enhancements.
+- **Task checklist** — ordered, actionable `- [ ]` items, **grouped under Fixes and Enhancements**.
+  Each task names its file(s). Keep tasks small enough to verify individually.
+- **Opportunities considered but deferred** — the un-selected/deferred items from `interview-answers.md`
+  + `opportunities.md`, one line each, so the user can promote them later. Skip if none.
 - **Open questions & assumptions** — anything deferred in the interview, any low-confidence grounding,
   and assumptions made when narration was missing.
 - **Verification** — how to confirm the fix end-to-end: how to run the app, what to click, and what

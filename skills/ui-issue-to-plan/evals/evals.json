@@ -10,8 +10,31 @@
         "runs Phase 0: extracts frames, dedups, transcribes narration",
         "launches parallel ui-frame-analyst agents to read the frames + narration",
         "runs Phase 2 grounding: searches THIS repo for the dropdown/clear-button source and cites file:line",
-        "runs an AskUserQuestion interview to confirm the ask and desired reset behavior before writing",
-        "writes a single implementation plan to ./plans/ with a task checklist and a verification section"
+        "interview opens with the framing/altitude beat (fix only vs improve too) before narrowing",
+        "stays calibrated: a single focused bug yields 0-1 enhancements, not a pile of suggestions",
+        "writes a plan to ./plans/ with a Defect-fix section, a task checklist, and a verification section"
+      ]
+    },
+    {
+      "id": "improve-mode-elicits-enhancements",
+      "prompt": "Here's a 3-min walkthrough of our AI generation flow — it technically works but I want it to feel way better. Can you turn it into a plan? ./recordings/ai-flow.mp4",
+      "expect": [
+        "framing beat detects improve intent (not just a fix) and asks for the ideal end-state",
+        "runs Phase 2.5 opportunity synthesis: writes opportunities.md with a curated 3-5 grounded proposals, each tied to a real file:line",
+        "opportunity proposals are calibrated and relevant to the demonstrated flow (e.g. progress %, ETA, cancel) — not generic filler",
+        "interview includes the opportunities round (multiSelect) so enhancements are opt-in",
+        "plan has a separate, prioritized Enhancements (opt-in) section distinct from any Defect fixes",
+        "un-selected opportunities are listed under 'considered but deferred', not dropped"
+      ]
+    },
+    {
+      "id": "fix-mode-skips-opportunities",
+      "prompt": "/bespokeagentics:ui-issue-to-plan ./bug.mp4 modal-focus-trap --mode fix",
+      "expect": [
+        "skips Phase 2.5 opportunity synthesis entirely (no opportunities.md)",
+        "interview skips the framing beat and the opportunities round",
+        "plan is fix-only: a Defect-fix section with no Enhancements section",
+        "does not nag the user about improvements"
       ]
     },
     {

@@ -12,8 +12,8 @@
 
 ## Observed UI & evidence
 
-{{#each ASKS}}
-### {{this.title}} — {{this.kind}} · {{this.priority}}
+{{#each FIXES}}
+### {{this.title}} — fix · {{this.priority}}
 
 - **Component(s):** {{this.components}}
 - **Seen at:** frame {{this.timestamps}} in the recording
@@ -33,9 +33,9 @@
 > Unconfirmed locations (verify before editing): {{UNCONFIRMED}}
 {{/if}}
 
-## Proposed changes
+## Defect fixes
 
-{{#each ASKS}}
+{{#each FIXES}}
 ### {{this.priority}} — {{this.title}}
 
 - **Change:** {{this.change}}
@@ -44,10 +44,38 @@
 - **Acceptance criteria:** {{this.acceptance}}
 {{/each}}
 
+## Enhancements (opt-in)
+
+<!-- Omit this whole section if zero enhancements were selected. Enhancements are improvements the
+     user opted into beyond restoring intended behavior — kept separate so must-fix vs nice-to-have
+     stays obvious, and prioritized independently of the fixes. -->
+{{#each ENHANCEMENTS}}
+### {{this.priority}} — {{this.title}}
+
+- **Improvement:** {{this.change}}
+- **Where:** `{{this.where}}`
+- **How:** {{this.how}}
+- **Acceptance criteria:** {{this.acceptance}}
+- **Why:** {{this.value}}
+{{/each}}
+
 ## Task checklist
 
-{{#each TASKS}}
+**Fixes**
+{{#each FIX_TASKS}}
 - [ ] {{this}}
+{{/each}}
+
+**Enhancements**
+{{#each ENHANCEMENT_TASKS}}
+- [ ] {{this}}
+{{/each}}
+
+## Opportunities considered but deferred
+
+<!-- Un-selected / deferred improvements, one line each, so they can be promoted later. Skip if none. -->
+{{#each DEFERRED}}
+- {{this.title}} — {{this.value}} ({{this.lands_at}})
 {{/each}}
 
 ## Open questions & assumptions
@@ -60,5 +88,6 @@
 
 {{VERIFICATION_STEPS}}
 
-<!-- How to confirm the fix end-to-end: run the app ({{RUN_COMMAND}}), reproduce the original path,
-     and confirm the corrected behavior. Reference the original frame for the "before" state. -->
+<!-- How to confirm end-to-end: run the app ({{RUN_COMMAND}}), reproduce the original path, and
+     confirm both the corrected behavior (fixes) and the new behavior (any selected enhancements)
+     against their acceptance criteria. Reference the original frame for the "before" state. -->

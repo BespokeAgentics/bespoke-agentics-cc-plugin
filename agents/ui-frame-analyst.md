@@ -4,9 +4,10 @@ description: >-
   Analyzes one contiguous chunk of frames from a narrated UI screencast, cross-referenced with the
   narration transcript, and returns structured findings: the screens shown, the UI components
   visible (type, on-screen label, location, state), which components the narrator is pointing at,
-  the problem/desire expressed (with verbatim quote + timestamp), and the on-screen text anchors a
-  code search can later match. Launched in parallel batches by the ui-issue-to-plan skill — one
-  frame-chunk per agent. Read-only; never interacts with the user; invents nothing.
+  the problem/desire expressed (with verbatim quote + timestamp), any aspirational ("should/ideally")
+  statements and observed opportunity signals (kept separate from defects), and the on-screen text
+  anchors a code search can later match. Launched in parallel batches by the ui-issue-to-plan skill —
+  one frame-chunk per agent. Read-only; never interacts with the user; invents nothing.
 allowed-tools: Read, Bash, Glob, Grep
 ---
 
@@ -55,6 +56,12 @@ output_path:     <where to write your chunk findings markdown>
 - **Problem / desire** — what's wrong or wanted here, as evidenced by the screen (a visible error,
   misalignment, an empty state, a repeated failed click) AND the narration. Include the **verbatim
   quote** and its timestamp.
+- **Aspiration (if any)** — separate from the defect: any verbatim statement where the narrator
+  describes how the flow *should* work beyond the immediate fix ("we should be able to…", "ideally…",
+  "across the whole app"). Tag it `aspiration` so it's not confused with a bug report. Skip if none.
+- **Opportunity signal (if any)** — friction the *screen* reveals even if unspoken: a missing state
+  (loading/empty/error), no feedback after an action, a repeated manual step, a dead-end, a dated
+  pattern. Note what you saw + the component. Descriptive only — do not design a fix.
 - **Grounding anchors** — the exact strings a code search could match: button/label text, headings,
   placeholder text, error/empty-state messages, route paths, visible field/column names. Capture them
   exactly as shown (case, punctuation) — these are gold for Phase 2.
@@ -69,6 +76,8 @@ Write your findings to `output_path` as markdown, in frame order, using the stru
 - Screens in this chunk: <list>
 - Components the narrator singled out: <list with timestamps>
 - Apparent ask(s) in this chunk: <1-line each, marked fix/change/create + your confidence>
+- Aspirations stated: <verbatim "should/ideally" quotes + timestamps, or "none">
+- Opportunity signals seen: <observed friction/missing-states + component, or "none">
 - Strongest grounding anchors: <the exact strings most likely to appear in source>
 ```
 
