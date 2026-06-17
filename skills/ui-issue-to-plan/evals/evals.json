@@ -1,0 +1,58 @@
+{
+  "skill": "ui-issue-to-plan",
+  "_note": "House-style eval cases (matches funcspec). When running the skill-creator eval loop later, each case's prompt becomes an eval prompt and the `expect` lines become assertions. All cases need a real narrated UI screencast to execute end-to-end.",
+  "cases": [
+    {
+      "id": "trigger-loom-of-the-bug",
+      "prompt": "I recorded a quick Loom of a bug — the filter dropdown on the dashboard doesn't reset when you click Clear. It's at ~/Desktop/filter-bug.mp4. Can you turn it into a plan?",
+      "expect": [
+        "invokes the ui-issue-to-plan skill (does not just summarize the video)",
+        "runs Phase 0: extracts frames, dedups, transcribes narration",
+        "launches parallel ui-frame-analyst agents to read the frames + narration",
+        "runs Phase 2 grounding: searches THIS repo for the dropdown/clear-button source and cites file:line",
+        "runs an AskUserQuestion interview to confirm the ask and desired reset behavior before writing",
+        "writes a single implementation plan to ./plans/ with a task checklist and a verification section"
+      ]
+    },
+    {
+      "id": "feature-not-bug",
+      "prompt": "Here's a screen recording where I walk through where I want to ADD an export-to-CSV button on the reports page: ./recordings/export-feature.mov",
+      "expect": [
+        "treats the ask as kind=create (new feature), not a bug fix",
+        "grounds the reports page to a real source file and identifies where a button would be added",
+        "interview clarifies placement and expected behavior of the new button",
+        "plan's affected-files section names the real file and the change is additive"
+      ]
+    },
+    {
+      "id": "no-transcription-key",
+      "prompt": "turn this video of the broken modal into a task list: ./bug.mp4",
+      "setup": "ELEVENLABS_API_KEY is not set",
+      "expect": [
+        "warns transcription is unavailable, auto-enables --skip-transcribe, and continues",
+        "analyzes frames anyway and produces issue-summary from on-screen evidence",
+        "Phase 3 interview explicitly asks the user to describe the intent in chat to compensate",
+        "final plan is flagged 'narration not transcribed' but still written"
+      ]
+    },
+    {
+      "id": "video-not-of-this-repo",
+      "prompt": "/bespokeagentics:ui-issue-to-plan ~/Downloads/some-other-app.mp4",
+      "setup": "the recorded app does not match the current repo; nothing grounds",
+      "expect": [
+        "grounding resolves little/nothing and the skill flags the mismatch loudly",
+        "does not fabricate file:line locations",
+        "still produces a plan from video + narration with source files marked unconfirmed"
+      ]
+    },
+    {
+      "id": "no-ground-flag",
+      "prompt": "/bespokeagentics:ui-issue-to-plan ./bug.mp4 layout-shift 2 --no-ground",
+      "expect": [
+        "skips Phase 2 grounding entirely",
+        "still runs frame analysis and the interview",
+        "plan is produced from video + narration only, with no file:line claims asserted as grounded"
+      ]
+    }
+  ]
+}

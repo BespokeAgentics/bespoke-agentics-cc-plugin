@@ -91,6 +91,14 @@ The Knowledge Loop skill is the project's *learning layer*: a lightweight facts 
 
 The Repo Audit command runs a **read-only**, principal-engineer review in four phases — Discovery & Mapping → evidence-based Audit (every finding severity-rated and `file:line`-cited) → Improvement Strategy → milestone Task Plan — and emits a single graded report (A–F) with a strengths section, flagged quick wins, and open questions. It calibrates rigor to project maturity (`--depth`), prioritizes the core 20% of code that does 80% of the work, and **never modifies anything except the report it writes** (via `--out` or after you accept the save offer). Pair it with `/disclosure:audit` (context-layer health) and the `ux-audit` skill (interface quality) for full-stack coverage.
 
+### When to Use the UI-Issue-to-Plan Command
+
+| Situation | Command |
+|-----------|---------|
+| Turn a narrated screen recording of a UI bug or desired change into a code-grounded implementation plan | `/bespokeagentics:ui-issue-to-plan '<video>' [issue-label] [interval] [--out <dir>] [--no-ground]` |
+
+The UI-Issue-to-Plan command takes an `.mp4`/`.mov`/`.webm`/`.gif` screencast in which someone narrates a problem or desired change in the UI of the project **open in this session**, and produces an implementation plan in `./plans/`. It reuses the shared video pipeline (`extract-video-frames` → `dedupe-frames` → `elevenlabs-transcribe`), launches parallel `ui-frame-analyst` agents to read the frames + narration and identify the exact UI components being referenced, then — the key differentiator from `video-to-deliverables`/`workflow-analyzer` — **grounds every observed component in the real codebase** via parallel `Explore` agents (`file:line` evidence). It then runs an **AskUserQuestion** interview (confirm asks → clarify desired outcome → confirm uncertain source locations → set priority) to elicit a clear vision of what to fix/create/update, and writes a scannable plan: context, on-screen evidence (frame + verbatim quote), affected files, proposed changes, an ordered task checklist, open questions, and a runnable verification section. Degrades gracefully (no `ELEVENLABS_API_KEY` → frames-only + interview; `--no-ground` → video-only). Wiki-ingested when a vault exists. It stops at a validated plan and offers to start the P0 task rather than editing code unprompted.
+
 ### Agent Workflow Integration
 
 **Before starting any analysis task:**
@@ -140,7 +148,8 @@ When assessing features or making decisions, use the standard color system:
     │  ├─ progressive-disclosure/     # Layered CLAUDE.md/AGENTS.md + large-codebase config
     │  ├─ claude-design-to-app-workflow/  # Design zip → component library + Storybook
     │  ├─ funcspec/                   # Storybook pages → validated implementation plan
-    │  └─ knowledge-loop/             # Self-improving facts → hypotheses → rules loop
+    │  ├─ knowledge-loop/             # Self-improving facts → hypotheses → rules loop
+    │  └─ ui-issue-to-plan/           # Narrated UI screencast → code-grounded implementation plan
     ├─ commands/                      # Slash commands
     │  ├─ wiki/                       # Wiki commands (namespaced)
     │  │  ├─ init.md                  # /wiki:init
@@ -174,8 +183,10 @@ When assessing features or making decisions, use the standard color system:
     │  ├─ funcspec-plan.md            # /bespokeagentics:funcspec-plan
     │  ├─ funcspec-status.md          # /bespokeagentics:funcspec-status
     │  ├─ repo-audit.md               # /bespokeagentics:repo-audit
+    │  ├─ ui-issue-to-plan.md         # /bespokeagentics:ui-issue-to-plan
     │  └─ wiki-*.md                   # Flat command aliases
     ├─ agents/
+    │  ├─ ui-frame-analyst.md         # UI screencast frame + narration analyst
     │  └─ wiki-pipeline.md            # Wiki orchestration agent (3 workflows)
     └─ CLAUDE.md                      # THIS FILE — read first
 
@@ -192,6 +203,7 @@ When assessing features or making decisions, use the standard color system:
 9. **Turn a Storybook into an implementation plan**: Run `/bespokeagentics:funcspec-evaluate <workspace>` to infer the functionality the pages imply (page-by-page, with interviews), then `/bespokeagentics:funcspec-plan` to validate findings and generate the spec, plan, backlog, and gap register.
 10. **Make the project learn from every task**: Run `/knowledge:init` to scaffold the facts → hypotheses → rules store (inside `wiki/knowledge/`), install the before/after-task mandate in `CLAUDE.md`, and add a SessionStart hook. Then `/knowledge:review` before a task, `/knowledge:extract` after, `/knowledge:promote` to bridge confirmed rules into the wiki, and `/knowledge:audit` to keep the store honest.
 11. **Audit a repository before investing in it**: Run `/bespokeagentics:repo-audit` for a read-only, four-phase principal-engineer review that grades the repo A–F and returns severity-rated, `file:line`-cited findings plus a milestone fix plan with quick wins — without touching a line of code.
+12. **Turn a screen recording of a UI bug into a plan**: Run `/bespokeagentics:ui-issue-to-plan '<video>'` — it reads the frames + narration to identify the UI components being referenced, grounds them in this repo's source (`file:line`), runs an interview to confirm exactly what to fix/create/update, and writes a code-grounded implementation plan to `./plans/`.
 
 ## Quality Standards
 
