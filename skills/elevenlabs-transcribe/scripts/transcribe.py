@@ -83,7 +83,20 @@ def main():
         transcription = client.speech_to_text.convert(file=audio_file, **kwargs)
 
     if args.json:
-        output = json.dumps(transcription.__dict__ if hasattr(transcription, '__dict__') else str(transcription), indent=2, default=str)
+        # The SDK returns a pydantic model whose `words` are themselves models.
+        # model_dump(mode="json") recurses so each word becomes a real dict
+        # ({text, start, end, type, speaker_id, ...}) — without it, json.dumps's
+        # default=str fallback serializes each word as a useless repr string,
+        # which breaks any downstream timestamp/word alignment.
+        if hasattr(transcription, "model_dump"):
+            payload = transcription.model_dump(mode="json")  # pydantic v2
+        elif hasattr(transcription, "dict") and callable(getattr(transcription, "dict")):
+            payload = transcription.dict()                   # pydantic v1
+        elif hasattr(transcription, "__dict__"):
+            payload = transcription.__dict__
+        else:
+            payload = {"text": str(transcription)}
+        output = json.dumps(payload, indent=2, default=str)
     else:
         lines = []
         if hasattr(transcription, 'language_code'):
