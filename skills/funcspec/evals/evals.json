@@ -1,0 +1,107 @@
+{
+  "skill": "funcspec",
+  "cases": [
+    {
+      "id": "trigger-implementation-plan-from-storybook",
+      "prompt": "Here's the storybook workspace we generated from the design zip — turn it into an implementation plan",
+      "expect": [
+        "invokes the funcspec skill (full pipeline)",
+        "runs Phase 0 inventory before any analysis",
+        "conducts Stage-1 AskUserQuestion interview before evaluating pages",
+        "launches page-evaluator agents (composites first, then ALL pages in one simultaneous fan-out)",
+        "conducts Stage-2 validation interview before writing deliverables",
+        "drafts the four documents via parallel deliverable-writer agents, traceability main-thread",
+        "runs the cross-document consistency check before the closing summary",
+        "writes all five deliverables to docs/funcspec/"
+      ]
+    },
+    {
+      "id": "trigger-what-does-ui-need-to-do",
+      "prompt": "Go through the pages in ./foundry-workspace and figure out what functionality the UI implies",
+      "expect": [
+        "invokes funcspec in evaluate mode (Phases 0-4)",
+        "produces schema-valid page profiles in docs/funcspec/profiles/",
+        "produces synthesis.json with feature inventory and ambiguity register",
+        "does NOT generate the plan deliverables without the Stage-2 interview",
+        "ends by pointing to /bespokeagentics:funcspec-plan"
+      ]
+    },
+    {
+      "id": "fast-path-analysis-json",
+      "prompt": "/bespokeagentics:funcspec-evaluate ./foundry-workspace",
+      "setup": "workspace contains an analysis.json produced by design-zip-to-library",
+      "expect": [
+        "detects analysis.json and uses screens + component inventory as the page list",
+        "page-inventory.json has fast_path: true",
+        "does not re-derive the page list from story globs"
+      ]
+    },
+    {
+      "id": "generic-storybook-no-manifest",
+      "prompt": "/bespokeagentics:funcspec-evaluate ./some-other-storybook",
+      "setup": "an arbitrary Storybook repo with no analysis.json",
+      "expect": [
+        "falls back to story-glob scanning",
+        "classifies Pages/ and fullscreen stories as pages, shell-like stories as composites",
+        "confirms the inventory with the user before evaluating"
+      ]
+    },
+    {
+      "id": "visual-degrades-gracefully",
+      "prompt": "/bespokeagentics:funcspec-evaluate ./ws --visual on",
+      "setup": "no browser tool available or storybook fails to boot",
+      "expect": [
+        "skips visual verification with a one-line note instead of failing",
+        "profiles keep visual_verified: false",
+        "pipeline continues to synthesis"
+      ]
+    },
+    {
+      "id": "ambiguities-recorded-not-guessed",
+      "prompt": "evaluate this single page with an icon-only trash button and no confirmation dialog",
+      "expect": [
+        "page-evaluator records a delete operation with an ambiguities entry (soft vs hard delete)",
+        "does not silently pick a reading",
+        "ambiguity question is phrased so it can be asked verbatim in Stage-2"
+      ]
+    },
+    {
+      "id": "blocking-ambiguity-gates-plan",
+      "prompt": "/bespokeagentics:funcspec-plan",
+      "setup": "synthesis contains one blocking ambiguity, user defers it in Stage-2",
+      "expect": [
+        "ambiguity lands 🔴 in gap-register.md",
+        "affected plan section is labeled BLOCKED — needs decision",
+        "closing summary calls the plan a draft"
+      ]
+    },
+    {
+      "id": "traceability-verification",
+      "prompt": "/bespokeagentics:funcspec-plan",
+      "expect": [
+        "every story in backlog.md has a Traces: line with page/affordance or operation ids",
+        "traceability.md orphan-check appendix is generated",
+        "verification pass runs before the closing summary and reports honestly"
+      ]
+    },
+    {
+      "id": "push-is-offered-never-automatic",
+      "prompt": "/bespokeagentics:funcspec-plan",
+      "setup": "Atlassian MCP connected",
+      "expect": [
+        "offers to push epics/stories to Jira and the plan to Confluence",
+        "does not create any Jira/Confluence artifact without explicit confirmation",
+        "files are written regardless of the push decision"
+      ]
+    },
+    {
+      "id": "status-readonly",
+      "prompt": "/bespokeagentics:funcspec-status ./ws",
+      "expect": [
+        "reads inventory/profiles/synthesis and reports counts, ambiguity breakdown, deliverable checklist",
+        "suggests the correct next command",
+        "writes nothing"
+      ]
+    }
+  ]
+}

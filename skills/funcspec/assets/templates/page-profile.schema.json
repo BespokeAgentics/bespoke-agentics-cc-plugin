@@ -1,0 +1,158 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "page-profile.schema.json",
+  "title": "Page Functional Profile",
+  "description": "The inter-agent contract for funcspec. Every page-evaluator agent returns one document conforming to this schema. The orchestrator merges profiles in Phase 4 (synthesis). Keep additions backward-compatible: synthesis keys off `id` fields.",
+  "type": "object",
+  "required": ["page", "summary", "affordances", "entities", "operations", "navigation", "states", "ambiguities"],
+  "properties": {
+    "page": {
+      "type": "object",
+      "required": ["id", "title", "source_path", "kind"],
+      "properties": {
+        "id": { "type": "string", "description": "kebab-case page id, e.g. 'invoice-list'" },
+        "title": { "type": "string", "description": "Human title, e.g. 'Invoice List'" },
+        "source_path": { "type": "string", "description": "Path to the page/composite source file evaluated" },
+        "story_id": { "type": "string", "description": "Storybook story id (e.g. 'pages-invoicelist--default') when known" },
+        "kind": { "enum": ["page", "composite"], "description": "Full screen vs. layout composite (Shell/Sidebar/TopBar)" },
+        "visual_verified": { "type": "boolean", "default": false, "description": "True when Phase 3 visual verification ran against the rendered story" }
+      }
+    },
+    "summary": {
+      "type": "string",
+      "description": "2-4 sentences: what this page is for and who uses it"
+    },
+    "user_goals": {
+      "type": "array",
+      "items": { "type": "string" },
+      "description": "Jobs the user accomplishes here, e.g. 'find an overdue invoice and send a reminder'"
+    },
+    "affordances": {
+      "type": "array",
+      "description": "Every interactive or state-bearing element and the behavior it implies. This is the core evidence table.",
+      "items": {
+        "type": "object",
+        "required": ["id", "element", "interaction", "implied_behavior", "confidence", "source"],
+        "properties": {
+          "id": { "type": "string", "description": "Unique within page, e.g. 'aff-export-csv'" },
+          "element": { "type": "string", "description": "What + where, e.g. 'Export CSV button, table toolbar'" },
+          "component": { "type": "string", "description": "Library primitive rendering it, e.g. 'Button', 'Table', 'SearchInput'" },
+          "interaction": { "enum": ["click", "submit", "input", "select", "toggle", "drag", "navigate", "upload", "scroll", "hover", "other"] },
+          "implied_behavior": { "type": "string", "description": "The functionality the element implies, stated as a requirement, e.g. 'Generates a CSV of the current filtered invoice set and downloads it'" },
+          "operation_refs": { "type": "array", "items": { "type": "string" }, "description": "ids of operations this affordance triggers" },
+          "confidence": { "enum": ["high", "medium", "low"], "description": "high = label/handler/mock data agree; medium = plausible inference; low = guess, must surface in ambiguities" },
+          "evidence": { "type": "string", "description": "The code or visual fact backing the inference, e.g. \"onClick={handleExport}, mock rows have 12 columns\"" },
+          "source": { "enum": ["code", "visual", "both"], "description": "Where the evidence came from" }
+        }
+      }
+    },
+    "entities": {
+      "type": "array",
+      "description": "Data objects inferred from props, mock data shapes, and rendered fields.",
+      "items": {
+        "type": "object",
+        "required": ["name", "fields"],
+        "properties": {
+          "name": { "type": "string", "description": "PascalCase entity name, e.g. 'Invoice'" },
+          "fields": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "required": ["name", "type"],
+              "properties": {
+                "name": { "type": "string" },
+                "type": { "type": "string", "description": "string | number | boolean | date | enum | ref:<Entity> | array<...>" },
+                "enum_values": { "type": "array", "items": { "type": "string" }, "description": "For status badges etc. — the values actually seen" },
+                "nullable": { "type": "boolean" },
+                "evidence": { "type": "string" }
+              }
+            }
+          },
+          "relations": { "type": "array", "items": { "type": "string" }, "description": "e.g. 'belongsTo Customer', 'hasMany LineItem'" },
+          "evidence": { "type": "string", "description": "Where the shape came from, e.g. 'mockInvoices in data.ts'" }
+        }
+      }
+    },
+    "operations": {
+      "type": "array",
+      "description": "Implied API surface. Each operation is something a backend must support.",
+      "items": {
+        "type": "object",
+        "required": ["id", "intent", "crud"],
+        "properties": {
+          "id": { "type": "string", "description": "kebab-case, e.g. 'op-list-invoices'" },
+          "intent": { "type": "string", "description": "Plain-language statement, e.g. 'Fetch invoices filtered by status and date range'" },
+          "crud": { "enum": ["create", "read", "update", "delete", "action", "query"], "description": "'action' = domain verb (send, approve, archive); 'query' = parameterized read (search/filter/sort/paginate)" },
+          "entity": { "type": "string", "description": "Primary entity acted on" },
+          "endpoint_sketch": { "type": "string", "description": "e.g. 'GET /api/invoices?status=&from=&to=&page='" },
+          "payload_sketch": { "type": "object", "description": "Loose request/response field sketch" },
+          "triggered_by": { "type": "array", "items": { "type": "string" }, "description": "affordance ids" },
+          "realtime": { "type": "boolean", "description": "True if the UI implies live updates (presence, streaming counts, notifications)" },
+          "auth_required": { "type": "boolean" }
+        }
+      }
+    },
+    "navigation": {
+      "type": "array",
+      "description": "Route and transition cues: links, breadcrumbs, sidebar items, row-click drill-downs, post-action redirects.",
+      "items": {
+        "type": "object",
+        "required": ["from_element", "target"],
+        "properties": {
+          "from_element": { "type": "string", "description": "What navigates, e.g. 'invoice table row'" },
+          "target": { "type": "string", "description": "Inferred destination page id or route, e.g. 'invoice-detail' / '/invoices/:id'" },
+          "params": { "type": "array", "items": { "type": "string" } },
+          "kind": { "enum": ["link", "drill-down", "modal", "drawer", "tab", "redirect", "external"] },
+          "evidence": { "type": "string" }
+        }
+      }
+    },
+    "states": {
+      "type": "array",
+      "description": "UI states the page must handle. Record both states present in the design AND states the design omits but the functionality requires.",
+      "items": {
+        "type": "object",
+        "required": ["state", "present_in_design"],
+        "properties": {
+          "state": { "enum": ["loading", "empty", "error", "success", "partial", "disabled", "readonly", "unauthorized", "offline"] },
+          "present_in_design": { "type": "boolean", "description": "False = the design never shows it; flag as a gap" },
+          "notes": { "type": "string" }
+        }
+      }
+    },
+    "roles": {
+      "type": "array",
+      "description": "Permission/visibility cues: admin-only buttons, 'assigned to me' filters, owner labels.",
+      "items": {
+        "type": "object",
+        "required": ["role", "cue"],
+        "properties": {
+          "role": { "type": "string", "description": "e.g. 'admin', 'viewer', 'owner'" },
+          "cue": { "type": "string", "description": "The evidence, e.g. 'Delete button only in mock data where role === admin'" },
+          "affects": { "type": "array", "items": { "type": "string" }, "description": "affordance ids gated by this role" }
+        }
+      }
+    },
+    "ambiguities": {
+      "type": "array",
+      "description": "Anything with two plausible readings or no evidence. These feed the Stage-2 interview and the gap register — record, never guess silently.",
+      "items": {
+        "type": "object",
+        "required": ["id", "question", "status"],
+        "properties": {
+          "id": { "type": "string", "description": "e.g. 'amb-invoice-archive'" },
+          "question": { "type": "string", "description": "The question to put to the user, e.g. 'Does Archive soft-delete or permanently remove?'" },
+          "readings": { "type": "array", "items": { "type": "string" }, "description": "The plausible interpretations, first = evaluator's best guess" },
+          "blocking": { "type": "boolean", "description": "True if the implementation plan cannot proceed sensibly without an answer" },
+          "status": { "enum": ["open", "resolved", "deferred"] },
+          "resolution": { "type": "string", "description": "Filled in after the Stage-2 interview" },
+          "related": { "type": "array", "items": { "type": "string" }, "description": "affordance/operation/entity ids involved" }
+        }
+      }
+    },
+    "notes": {
+      "type": "string",
+      "description": "Anything the evaluator observed that fits nowhere else (perf cues, accessibility flags, design inconsistencies)"
+    }
+  }
+}

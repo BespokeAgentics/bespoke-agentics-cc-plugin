@@ -1,0 +1,33 @@
+{
+  "name": "@<scope>/ui",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts",
+    "./styles.css": "./src/styles/index.css"
+  },
+  "dependencies": {
+    "@<scope>/tokens": "workspace:*",
+    "lucide-react": "^0.460.0",
+    "clsx": "^2.1.1",
+    "tailwind-merge": "^3.0.0",
+    "react": "^19.2.0",
+    "react-dom": "^19.2.0"
+  },
+  "comment-dep-matrix": "Default deps above suit --library custom AND the adapted untitled-ui-react path (sortCx/cx via clsx+tailwind-merge). Add per library: untitled-ui-react (full RAC) -> react-aria-components, tailwindcss-react-aria-components, @untitledui/icons; shadcn -> class-variance-authority (+ @radix-ui/* per component). scaffold_workspace.py injects the right set from --library.",
+  "devDependencies": {
+    "@types/react": "^19.2.0",
+    "@types/react-dom": "^19.2.0",
+    "@storybook/react-vite": "10.4.2",
+    "typescript": "^5.9.0"
+  },
+  "comment-storybook-devdep": "@storybook/react-vite is required here because *.stories.tsx are co-located in this package; without it the package can't typecheck its own stories (import type { Meta, StoryObj }).",
+  "peerDependencies": {
+    "react": ">=18",
+    "react-dom": ">=18"
+  },
+  "scripts": {
+    "typecheck": "tsc --noEmit"
+  }
+}

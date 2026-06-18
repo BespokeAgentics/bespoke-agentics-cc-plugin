@@ -1,0 +1,11 @@
+{
+  "name": "<name>-workspace",
+  "private": true,
+  "type": "module",
+  "workspaces": ["packages/*", "apps/*"],
+  "scripts": {
+    "storybook": "bun --filter @<scope>/storybook storybook",
+    "build-storybook": "bun --filter @<scope>/storybook build-storybook",
+    "typecheck": "bun --filter '*' typecheck"
+  }
+}

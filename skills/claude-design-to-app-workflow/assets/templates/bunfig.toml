@@ -1,0 +1,6 @@
+# Bun workspace config.
+[install]
+# Hoisted (flat) node_modules — fast, matches npm intuition.
+# If two packages pin incompatible majors of a peer dep (e.g. React),
+# switch to isolated linking instead:
+# linker = "isolated"

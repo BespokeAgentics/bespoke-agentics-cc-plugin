@@ -1,0 +1,68 @@
+{
+  "skill_name": "design-zip-to-library",
+  "evals": [
+    {
+      "id": 0,
+      "name": "foundry-default-untitled-ui",
+      "prompt": "I exported a prototype from Claude as a zip — it's at \"/Users/quintinhenry/Documents/Projects/FOUNDRY_SCOPE_CURRENT/Foundry Scope - Prototype.zip\". Turn it into a real component library with Storybook so my team can build on it. Cover every component in the design and show the pages too.",
+      "expected_output": "A Bun workspace monorepo with a tokens package (source tokens.css copied verbatim + generated Tailwind v4 @theme layer), a UI library package containing all ~13 exported primitives (+ promoted form controls + Shell/Sidebar/TopBar) as typed React/TS components in the Untitled UI authoring idiom, a per-component .stories.tsx for each, and a Storybook app (v10 + @tailwindcss/vite) with all 8 pages rebuilt as full-viewport stories and a dark-default [data-theme] toggle.",
+      "files": ["/Users/quintinhenry/Documents/Projects/FOUNDRY_SCOPE_CURRENT/Foundry Scope - Prototype.zip"],
+      "assertions": [
+        {"text": "A Bun workspace root package.json exists with a \"workspaces\" array (packages/*, apps/*)"},
+        {"text": "A component-library package exists with one source file per exported primitive (Button, Badge, Card, Progress, StatusDot, Avatar, FileIcon, ConfidencePip, FindingTypePill, CodeBlock, SectionHeader, Kbd, Overline)"},
+        {"text": "The source tokens.css is copied verbatim (preserving :root + [data-theme=dark] + [data-theme=light]) AND a tailwind-theme.css with an @theme block was generated"},
+        {"text": "Each library component has a co-located stories file (*.stories.tsx)"},
+        {"text": "Storybook is configured with .storybook/main.ts (framework @storybook/react-vite, @tailwindcss/vite wired) and preview.ts importing the token CSS"},
+        {"text": "A dark-default light/dark theme toggle is wired via [data-theme] (withThemeByDataAttribute or equivalent)"},
+        {"text": "All 8 source pages (list, wizard, overview, upload, analyze, review, codebase, report) are rebuilt as Storybook stories composed from the ported components"},
+        {"text": "Components reference semantic token utilities (e.g. bg-accent / text-fg), not hard-coded hex values, so theming works"},
+        {"text": "bun install completed (a bun.lock / lockfile is present) [full-depth runs only]"},
+        {"text": "The project type-checks or builds: tsc --noEmit passes or build-storybook succeeds [full-depth runs only]"}
+      ]
+    },
+    {
+      "id": 1,
+      "name": "svelte-framework-flag",
+      "prompt": "Take this Claude design export (\"/Users/quintinhenry/Documents/Projects/FOUNDRY_SCOPE_CURRENT/Foundry Scope - Prototype.zip\") and build a Svelte component library plus Storybook from it. Use Svelte, not React. --framework svelte",
+      "expected_output": "Same monorepo shape, but the library components are Svelte 5 runes components (.svelte with $props), Storybook uses @storybook/svelte-vite, tokens are carried over with the [data-theme] toggle preserved, and pages are rebuilt as Svelte stories.",
+      "files": ["/Users/quintinhenry/Documents/Projects/FOUNDRY_SCOPE_CURRENT/Foundry Scope - Prototype.zip"],
+      "assertions": [
+        {"text": "Library components are .svelte files using Svelte 5 runes ($props), not React/.tsx"},
+        {"text": "Storybook is configured for Svelte (@storybook/svelte-vite framework)"},
+        {"text": "All exported primitives from the design are present as Svelte components"},
+        {"text": "The source tokens.css is carried over and a [data-theme] dark/light toggle is wired"},
+        {"text": "Tailwind v4 utilities (semantic token classes) are used for styling the components"},
+        {"text": "The design's pages are rebuilt as Svelte page stories"}
+      ]
+    },
+    {
+      "id": 2,
+      "name": "custom-lean-react-page-subset",
+      "prompt": "From the design zip at \"/Users/quintinhenry/Documents/Projects/FOUNDRY_SCOPE_CURRENT/Foundry Scope - Prototype.zip\", build a lean plain-React component library — I don't want Untitled UI or React Aria, just simple typed components with Tailwind. And in Storybook I only need the report and review pages, not all of them. --library custom --pages report,review",
+      "expected_output": "Monorepo with a custom-React library: components use a small cn() helper (clsx + tailwind-merge) and native elements, with NO react-aria-components dependency. All primitives present with stories. Only the report and review pages are rebuilt as page stories.",
+      "files": ["/Users/quintinhenry/Documents/Projects/FOUNDRY_SCOPE_CURRENT/Foundry Scope - Prototype.zip"],
+      "assertions": [
+        {"text": "The UI package has a cn()/clsx + tailwind-merge helper and does NOT depend on react-aria-components"},
+        {"text": "All exported primitives are present as typed React/TS components"},
+        {"text": "Only the report and review pages are rebuilt as page stories (not the other 6 pages)"},
+        {"text": "Components use literal-union props derived from the source's variant/size keys"},
+        {"text": "A Storybook (react-vite + tailwind v4) is configured with the component + the two page stories"}
+      ]
+    },
+    {
+      "id": 3,
+      "name": "ultracode-parallel-waves",
+      "prompt": "Here's the Claude design export at \"/Users/quintinhenry/Documents/Projects/FOUNDRY_SCOPE_CURRENT/Foundry Scope - Prototype.zip\" — build the component library with Storybook.",
+      "expected_output": "Same deliverable as the default eval, but produced via the ultracode wave protocol: a main-thread golden reference port + conventions.md contract, dependency-wave fan-out of component-porter agents (full fan-out within each wave), tsc gates between waves, a parallel page wave, and a library-reconciler sweep before final verification.",
+      "files": ["/Users/quintinhenry/Documents/Projects/FOUNDRY_SCOPE_CURRENT/Foundry Scope - Prototype.zip"],
+      "assertions": [
+        {"text": "The most-used primitive is ported in the main thread FIRST and a conventions.md contract is written before any fan-out"},
+        {"text": "Remaining components are dispatched to parallel component-porter subagents in dependency waves (leaf primitives before compound components before composites), full fan-out within each wave"},
+        {"text": "A tsc --noEmit gate runs between waves; failures are fixed or re-dispatched before the next wave"},
+        {"text": "Pages are rebuilt by a simultaneous page wave of porter agents composing only ported library exports"},
+        {"text": "A library-reconciler sweep runs at the start of Phase 8 and idiom drift (casing, stray inline var(--x), one-off class helpers) is fixed or reported"},
+        {"text": "The main thread does not bulk-port components itself outside the golden reference and failure takeovers"}
+      ]
+    }
+  ]
+}

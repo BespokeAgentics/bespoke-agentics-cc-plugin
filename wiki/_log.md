@@ -1,11 +1,29 @@
 ---
 type: log
-updated: 2026-04-06
+updated: 2026-05-30
 ---
 
 # Wiki Operation Log
 
 Chronological record of all bootstrap, maintenance, and schema evolution operations.
+
+---
+
+## 2026-05-30 — Plugin scaffold — progressive-disclosure skill
+
+**Operation**: Added the `progressive-disclosure` skill + `/disclosure:{map,audit,refresh}` commands to the bespoke-agentics plugin.
+
+**What it does**: Deploys parallel read-only subagents to profile every subsystem of a project/monorepo, then plans (dry-run, with diffs) and — on approval — writes a layered CLAUDE.md/AGENTS.md context hierarchy plus large-codebase config (Read deny rules, `additionalDirectories`, `claudeMdExcludes`, a SessionStart hook, code-intelligence recommendations). Implements the canonical "Set up Claude Code in a monorepo or large codebase" guidance. CLAUDE.md is the per-directory source of truth; AGENTS.md is a thin pointer. Idempotent via `progressive-disclosure:managed` sentinels. Reviews any `wiki/` for context and logs its own runs here.
+
+**Files added**:
+- `skills/progressive-disclosure/SKILL.md` (6-phase pipeline)
+- `skills/progressive-disclosure/references/` — `large-codebases.md`, `settings-recipes.md`, `wiki-integration.md`
+- `skills/progressive-disclosure/templates/` — `root-claude.md`, `subsystem-claude.md`, `agents-pointer.md`, `sessionstart-hook.sh`, `disclosure-plan.md`
+- `commands/disclosure/` — `map.md`, `audit.md`, `refresh.md`
+
+**Registration**: `CLAUDE.md` (command table + structure + getting-started), `.claude-plugin/plugin.json` and `marketplace.json` (description, keywords, version → 1.3.0).
+
+**Relationship to existing skills**: Complements `architect-agents` (which builds the agent/command layer); this builds the context/memory layer. Defers deep wiki work to the `/wiki:*` commands.
 
 ---
 
