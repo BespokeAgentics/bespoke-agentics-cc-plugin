@@ -1,0 +1,78 @@
+{
+  "skill": "plan-review",
+  "_note": "House-style eval cases (matches ui-issue-to-plan / funcspec). When running the skill-creator eval loop, each case's prompt becomes an eval prompt and the `expect` lines become assertions. Two flawed fixtures are bundled in evals/fixtures/ so the cases are runnable without external inputs. Note: the fixtures intentionally reference files that may not exist in the run repo — correctly reporting NOT FOUND / unconfirmed (instead of fabricating file:line) is a tested behavior, not a failure. The document-only lenses (completeness, clarity, scope) find the missing rollback/tests/migration/vague-acceptance gaps regardless of repo.",
+  "cases": [
+    {
+      "id": "trigger-review-a-plan",
+      "prompt": "Before I start building, can you review this plan and tell me what's missing or wrong? skills/plan-review/evals/fixtures/sample-plan.md",
+      "files": ["skills/plan-review/evals/fixtures/sample-plan.md"],
+      "expect": [
+        "invokes the plan-review skill (does not just summarize or start implementing the plan)",
+        "Phase 0: decomposes the plan into tasks, claims, assumptions, acceptance criteria, and referenced components",
+        "Phase 1 grounding: tries to locate src/middleware/auth.ts and SettingsPage.tsx in THIS repo and verify the 'all auth handled in auth.ts' claim",
+        "does NOT fabricate file:line — reports anchors as NOT FOUND / unconfirmed when the repo doesn't contain them",
+        "completeness lens flags missing tests, missing rollback, and the implied-but-absent DB migration for the new `theme` column",
+        "clarity lens flags the untestable acceptance criteria ('it should be fast', 'the toggle works')",
+        "scope lens flags step 5 (notifications + language + delete-account) as scope creep beyond the dark-mode goal",
+        "runs the AskUserQuestion interview to validate/prioritize findings before writing the report",
+        "writes a READ-ONLY review to ./reviews/ with a readiness verdict, strengths, severity-grouped findings, and a gap register",
+        "does NOT modify the original sample-plan.md"
+      ]
+    },
+    {
+      "id": "issue-report-thin",
+      "prompt": "/bespokeagentics:plan-review skills/plan-review/evals/fixtures/sample-issue.md --type issue",
+      "files": ["skills/plan-review/evals/fixtures/sample-issue.md"],
+      "expect": [
+        "resolves type=issue and tunes lenses toward a bug report",
+        "flags the absent reproduction steps, missing expected-vs-actual, and no environment/version info as gaps",
+        "flags 'probably something in the filter code' as an unverified suspected root cause (not a confirmed claim)",
+        "flags the vague severity ('pretty bad') and absence of acceptance criteria for the fix",
+        "produces a concise review — does not pad a 3-line bug report into fifteen findings"
+      ]
+    },
+    {
+      "id": "deep-mode-adversarial",
+      "prompt": "/bespokeagentics:plan-review skills/plan-review/evals/fixtures/sample-plan.md --depth deep",
+      "files": ["skills/plan-review/evals/fixtures/sample-plan.md"],
+      "expect": [
+        "runs Phase 2.5: spawns skeptic agents to adversarially refute each blocker/major finding",
+        "drops or downgrades findings that don't survive refutation rather than reporting them all",
+        "report notes which findings survived adversarial review",
+        "blockers in the final report are evidence-backed and defensible, not speculative"
+      ]
+    },
+    {
+      "id": "no-ground-flag",
+      "prompt": "/bespokeagentics:plan-review skills/plan-review/evals/fixtures/sample-plan.md --no-ground",
+      "files": ["skills/plan-review/evals/fixtures/sample-plan.md"],
+      "expect": [
+        "skips Phase 1 grounding entirely (no Explore agents launched against the repo)",
+        "still runs the document-only lenses and finds the missing-tests/rollback/migration and vague-acceptance gaps",
+        "report flags that feasibility findings are UNCONFIRMED / document-only",
+        "makes no asserted-as-grounded file:line claims"
+      ]
+    },
+    {
+      "id": "read-only-guarantee",
+      "prompt": "review skills/plan-review/evals/fixtures/sample-plan.md and find the gaps",
+      "files": ["skills/plan-review/evals/fixtures/sample-plan.md"],
+      "expect": [
+        "the original fixtures/sample-plan.md is byte-for-byte unchanged after the run",
+        "all output is written under ./reviews/ and plan-review-analysis/ — never over the input",
+        "if improvements are warranted, the skill OFFERS to apply them to a copy rather than editing the original"
+      ]
+    },
+    {
+      "id": "solid-plan-stays-lean",
+      "prompt": "/bespokeagentics:plan-review ./plans/some-tight-plan.md --depth quick",
+      "setup": "the target plan is genuinely solid (clear scope, testable criteria, rollback present)",
+      "expect": [
+        "returns a 🟢 Ready (or near-ready) verdict instead of manufacturing blockers",
+        "findings list is short and honest — minor polish at most",
+        "interview collapses to a single short confirmation rather than a long interrogation",
+        "does not pad the review to look thorough"
+      ]
+    }
+  ]
+}

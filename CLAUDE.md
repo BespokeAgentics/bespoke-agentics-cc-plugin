@@ -99,6 +99,14 @@ The Repo Audit command runs a **read-only**, principal-engineer review in four p
 
 The UI-Issue-to-Plan command takes an `.mp4`/`.mov`/`.webm`/`.gif` screencast in which someone narrates a problem, a desired change, or how a flow **should** work better in the UI of the project **open in this session**, and produces an implementation plan in `./plans/`. It treats the video as a **design starting point, not just a bug report**. It reuses the shared video pipeline (`extract-video-frames` → `dedupe-frames` → `elevenlabs-transcribe`), launches parallel `ui-frame-analyst` agents to read the frames + narration and identify the exact UI components referenced (plus the narrator's vision and observed friction), then — the key differentiator from `video-to-deliverables`/`workflow-analyzer` — **grounds every observed component in the real codebase** via parallel `Explore` agents (`file:line` evidence). Unless `--mode fix`, it synthesizes a **curated set of grounded improvement opportunities**. It then runs an **AskUserQuestion** interview that **frames intent** (fix only vs. improve too), confirms each fix, grounds, prioritizes, and lets you **opt into enhancements** — so it elicits what you actually want the flow to become, not just the reported defect. The plan separates **Defect fixes** from **Enhancements (opt-in)**, each prioritized, with on-screen evidence (frame + quote), affected files, a grouped task checklist, deferred opportunities, open questions, and runnable verification. Calibrated so a terse bug video stays lean; degrades gracefully (no `ELEVENLABS_API_KEY` → frames-only + interview; `--no-ground` → video-only). Wiki-ingested when a vault exists. Stops at a validated plan and offers to start the P0 task rather than editing code unprompted.
 
+### When to Use the Plan-Review Command
+
+| Situation | Command |
+|-----------|---------|
+| Pressure-test a written implementation plan, spec, or issue/bug report **before** building it — find the gaps, ambiguities, and risks, grounded in the real code | `/bespokeagentics:plan-review '<artifact>' [--type plan\|issue\|spec\|auto] [--depth quick\|standard\|deep] [--out <dir>] [--no-ground]` |
+
+The Plan-Review command takes a **local** plan, spec, design doc, or issue/bug-report markdown and reviews it as a skeptical principal engineer would before any code is written. It is the read-only **document** reviewer that complements the others: `repo-audit` audits the codebase, `ux-audit` audits a UI, and `funcspec`/`ui-issue-to-plan` *produce* plans — `plan-review` is the only one that **audits a written plan or issue against the code**. It decomposes the artifact into tasks, **claims about the codebase**, assumptions, and acceptance criteria; **grounds** every referenced (and *implied*) component in this repo's real source via parallel `Explore` agents (`file:line`) — verifying each checkable claim and surfacing what the plan likely *missed* (other callers of a changed API, a second implementation, an implied-but-absent migration or error state); then reviews across five lenses (**completeness, feasibility, risk, clarity, scope**), separating **gaps** (missing & needed) from **improvements** (better-with) from **errors** (code contradicts the plan), each severity-rated with an artifact quote *and* a `file:line`. On `--depth deep` it adversarially refutes each finding before it survives. An **AskUserQuestion** interview then validates which gaps are real and in-scope and sets priority — so the report reflects your intent, not raw model suspicion. It writes a **read-only** review to `./reviews/` with a readiness verdict (🟢/🟡/🔴), a strengths section, severity-grouped findings, a color-coded gap & ambiguity register, open questions, and a "definition of ready" checklist — **never modifying the original**. It then *offers* (doesn't assume) to apply the P0 fixes into a revised copy. Calibrated so a tight plan gets a short 🟢 review; degrades gracefully (`--no-ground` → document-only, feasibility findings flagged unconfirmed). Wiki-ingested when a vault exists.
+
 ### Agent Workflow Integration
 
 **Before starting any analysis task:**
@@ -149,7 +157,8 @@ When assessing features or making decisions, use the standard color system:
     │  ├─ claude-design-to-app-workflow/  # Design zip → component library + Storybook
     │  ├─ funcspec/                   # Storybook pages → validated implementation plan
     │  ├─ knowledge-loop/             # Self-improving facts → hypotheses → rules loop
-    │  └─ ui-issue-to-plan/           # Narrated UI screencast → code-grounded plan (fixes + UX enhancements)
+    │  ├─ ui-issue-to-plan/           # Narrated UI screencast → code-grounded plan (fixes + UX enhancements)
+    │  └─ plan-review/                # Plan/spec/issue → read-only, code-grounded gap review
     ├─ commands/                      # Slash commands
     │  ├─ wiki/                       # Wiki commands (namespaced)
     │  │  ├─ init.md                  # /wiki:init
@@ -184,6 +193,7 @@ When assessing features or making decisions, use the standard color system:
     │  ├─ funcspec-status.md          # /bespokeagentics:funcspec-status
     │  ├─ repo-audit.md               # /bespokeagentics:repo-audit
     │  ├─ ui-issue-to-plan.md         # /bespokeagentics:ui-issue-to-plan
+    │  ├─ plan-review.md              # /bespokeagentics:plan-review
     │  └─ wiki-*.md                   # Flat command aliases
     ├─ agents/
     │  ├─ ui-frame-analyst.md         # UI screencast frame + narration analyst
@@ -204,6 +214,7 @@ When assessing features or making decisions, use the standard color system:
 10. **Make the project learn from every task**: Run `/knowledge:init` to scaffold the facts → hypotheses → rules store (inside `wiki/knowledge/`), install the before/after-task mandate in `CLAUDE.md`, and add a SessionStart hook. Then `/knowledge:review` before a task, `/knowledge:extract` after, `/knowledge:promote` to bridge confirmed rules into the wiki, and `/knowledge:audit` to keep the store honest.
 11. **Audit a repository before investing in it**: Run `/bespokeagentics:repo-audit` for a read-only, four-phase principal-engineer review that grades the repo A–F and returns severity-rated, `file:line`-cited findings plus a milestone fix plan with quick wins — without touching a line of code.
 12. **Turn a screen recording into a plan (fix + improve)**: Run `/bespokeagentics:ui-issue-to-plan '<video>'` — it reads the frames + narration to identify the UI components being referenced, grounds them in this repo's source (`file:line`), surfaces curated improvement opportunities, runs an interview that frames intent (fix vs improve) and lets you opt into enhancements, and writes a code-grounded plan to `./plans/` with separate Defect-fix and Enhancement sections. Use `--mode fix` for a quick bug-only pass.
+13. **Pressure-test a plan or issue before you build it**: Run `/bespokeagentics:plan-review '<artifact>'` — it decomposes a local plan/spec/issue into tasks, claims, assumptions, and acceptance criteria, grounds every referenced (and implied) component in this repo's real source (`file:line`) to surface the gaps the document hides, reviews it across completeness/feasibility/risk/clarity/scope, validates and prioritizes the findings via an interview, and writes a **read-only** review + color-coded gap register to `./reviews/` (the original is never modified). Use `--depth deep` for adversarially-verified findings on a high-stakes plan, or `--no-ground` for a document-only pass.
 
 ## Quality Standards
 

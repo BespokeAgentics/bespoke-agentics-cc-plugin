@@ -1,0 +1,46 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "plan-review finding",
+  "description": "One finding returned by a Phase 2 review-lens agent. Reviewers return an array of these.",
+  "type": "object",
+  "required": ["id", "lens", "kind", "severity", "title", "artifact_evidence", "why", "recommendation"],
+  "properties": {
+    "id": { "type": "string", "description": "Stable id within this lens, e.g. F1" },
+    "lens": {
+      "type": "string",
+      "enum": ["completeness", "feasibility", "risk", "clarity", "scope"],
+      "description": "Which review lens produced this finding"
+    },
+    "kind": {
+      "type": "string",
+      "enum": ["gap", "improvement", "error"],
+      "description": "gap = missing & needed; improvement = better-with; error = code contradicts the plan"
+    },
+    "severity": {
+      "type": "string",
+      "enum": ["blocker", "major", "minor"],
+      "description": "Anchored to consequence, not to confidence"
+    },
+    "title": { "type": "string", "description": "One-line summary of the finding" },
+    "artifact_evidence": {
+      "type": "string",
+      "description": "Verbatim quote from the artifact (what it says or fails to say), with a section pointer"
+    },
+    "code_evidence": {
+      "type": "string",
+      "description": "file:line from the repo that grounds the finding, with a note. Empty if not grounded."
+    },
+    "why": { "type": "string", "description": "The consequence of shipping/building as-written" },
+    "recommendation": { "type": "string", "description": "Concrete, actionable next step" },
+    "status_color": {
+      "type": "string",
+      "enum": ["🟢", "🔵", "🟡", "🔴", "⚪", "🟣"],
+      "description": "Gap-register color: 🟢 OOTB · 🔵 Config · 🟡 Custom Dev · 🔴 Gap · ⚪ TBD · 🟣 3rd Party"
+    },
+    "confidence": {
+      "type": "string",
+      "enum": ["high", "medium", "low"],
+      "description": "How sure the reviewer is. Low-confidence + high-consequence => report as open question, not blocker."
+    }
+  }
+}
