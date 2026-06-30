@@ -1,0 +1,5 @@
+// Tiny class-merge helper. Only written if the project has no existing `cn`/`clsx`/`twMerge`.
+// If the project already has one, set {{CN}} to it (e.g. "@/lib/utils") and delete this file.
+export function cn(...parts: Array<string | false | null | undefined>): string {
+  return parts.filter(Boolean).join(" ");
+}

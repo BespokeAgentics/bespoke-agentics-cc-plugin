@@ -1,0 +1,35 @@
+import { cn } from "{{CN}}";
+
+/**
+ * Pillar 1 — Data drives the form.
+ * A table row that encodes record STATE visually, so inactive/disabled records don't look
+ * identical to live ones. Pair with <StatusChip> for the explicit label; the shading is the
+ * at-a-glance cue.
+ *
+ * Renders a <tr>. Spread the rest of your row's <td> cells as children.
+ */
+export function DataRow({
+  state = "active",
+  className,
+  children,
+  ...rest
+}: React.HTMLAttributes<HTMLTableRowElement> & {
+  state?: "active" | "inactive" | "disabled";
+}) {
+  return (
+    <tr
+      className={cn(
+        "border-b border-gray-100",
+        state === "active" && "hover:bg-gray-50",
+        // de-emphasized but still legible — it's dimmed, not hidden
+        state === "inactive" && "bg-gray-50/60 text-gray-400 [&_a]:text-gray-400",
+        state === "disabled" && "bg-gray-50 text-gray-300 [&_a]:text-gray-300 [&_button]:pointer-events-none",
+        className,
+      )}
+      aria-disabled={state === "disabled" || undefined}
+      {...rest}
+    >
+      {children}
+    </tr>
+  );
+}

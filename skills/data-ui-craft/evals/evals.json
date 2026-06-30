@@ -1,0 +1,23 @@
+{
+  "skill_name": "data-ui-craft",
+  "evals": [
+    {
+      "id": 1,
+      "prompt": "Our admin dashboard's users table looks rough. The numbers (seat counts, MRR) are left-aligned and hard to scan, status is just plain text like 'active'/'deactivated', and the notes column stretches some rows really tall. It's a React + Tailwind app using TanStack Table — can you audit src/components/UsersTable.tsx and tell me what's wrong and how to fix it?",
+      "expected_output": "Detects React/Tailwind + TanStack Table; audits the surface; produces a severity-rated report (markdown + HTML) with DF1 (numeric right-align/tabular-nums, applied at the column def), DF2 (status → StatusChip), DF3 (truncate notes + reveal), each with file:line, user-impact phrasing, and a concrete fix. One finding per root cause. Ends with the implement command.",
+      "files": []
+    },
+    {
+      "id": 2,
+      "prompt": "Audit and then fix my dashboard at app/(dashboard)/page.tsx. Every row in the projects table shows Edit / Duplicate / Archive / Delete buttons all the time which is super cluttered, the icon-only buttons have no labels so I can never remember which is which, and when there are no projects the page just renders an empty card with nothing in it. Next.js App Router, Tailwind, lucide-react icons.",
+      "expected_output": "Runs audit-and-implement: flags PD1/PD2 (defer secondary + destructive row actions to hover/overflow), IU1 (icon-only buttons need tooltip + aria-label), IU4 (empty state with a next step). Interviews before editing, then applies in-place fixes and scaffolds HoverActions, Tooltip, EmptyState into a primitives kit matching the stack (lucide-react, Tailwind). Reuses any existing components rather than duplicating.",
+      "files": []
+    },
+    {
+      "id": 3,
+      "prompt": "We show a customer's account activity as a table sorted by timestamp (logins, plan changes, support tickets) and people say it's hard to follow what actually happened. Also new users get a giant modal on first load listing all 12 features and everyone just closes it. What would you change?",
+      "expected_output": "Recommends DF5 (the time-sequenced activity belongs in a timeline, not a time-sorted table; offers sidebar/second-column/wide-panel placements) and PD5 (replace the feature-dump modal with a sequenced OnboardingChecklist / contextual tips). Explains the reasoning from the pillars; offers to implement with the timeline pattern + OnboardingChecklist primitive.",
+      "files": []
+    }
+  ]
+}

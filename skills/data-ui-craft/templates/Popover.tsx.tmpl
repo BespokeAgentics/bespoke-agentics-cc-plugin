@@ -1,0 +1,66 @@
+import { useEffect, useRef, useState } from "react";
+import { cn } from "{{CN}}";
+
+/**
+ * Pillar 2 — Progressive disclosure.
+ * Defers a medium-frequency action behind one interaction (e.g. Share, Filter) instead of
+ * spending always-visible real estate on it. Closes on outside-click and Escape, and FOCUSES its
+ * first focusable child on open — so the disclosure leads with its primary action (put the search
+ * box / main input first). If the project ships a popover (shadcn/ui, Radix, MUI), prefer that.
+ */
+export function Popover({
+  trigger,
+  children,
+  align = "start",
+  className,
+}: {
+  /** Render-prop for the trigger; receives props you must spread onto a focusable element. */
+  trigger: (props: { onClick: () => void; "aria-expanded": boolean }) => React.ReactNode;
+  children: React.ReactNode;
+  align?: "start" | "end";
+  className?: string;
+}) {
+  const [open, setOpen] = useState(false);
+  const ref = useRef<HTMLDivElement>(null);
+  const panelRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!open) return;
+    // Lead with the primary action: focus the first focusable element in the panel.
+    panelRef.current
+      ?.querySelector<HTMLElement>("input,button,a,select,textarea,[tabindex]")
+      ?.focus();
+
+    function onDown(e: MouseEvent) {
+      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
+    }
+    function onKey(e: KeyboardEvent) {
+      if (e.key === "Escape") setOpen(false);
+    }
+    document.addEventListener("mousedown", onDown);
+    document.addEventListener("keydown", onKey);
+    return () => {
+      document.removeEventListener("mousedown", onDown);
+      document.removeEventListener("keydown", onKey);
+    };
+  }, [open]);
+
+  return (
+    <div className="relative inline-flex" ref={ref}>
+      {trigger({ onClick: () => setOpen((v) => !v), "aria-expanded": open })}
+      {open && (
+        <div
+          ref={panelRef}
+          role="dialog"
+          className={cn(
+            "absolute top-full z-50 mt-1.5 min-w-56 rounded-lg border border-gray-200 bg-white p-2 shadow-lg",
+            align === "end" ? "right-0" : "left-0",
+            className,
+          )}
+        >
+          {children}
+        </div>
+      )}
+    </div>
+  );
+}

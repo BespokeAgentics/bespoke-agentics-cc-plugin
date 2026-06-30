@@ -1,0 +1,36 @@
+import { cn } from "{{CN}}";
+
+/**
+ * Pillar 1 — Data drives the form.
+ * Renders a categorical value as a chip so the eye can group by shape/color instead of
+ * reading words. For semantic status values (active/pending/error…) prefer <StatusChip>.
+ */
+export function Chip({
+  children,
+  color = "gray",
+  className,
+}: {
+  children: React.ReactNode;
+  color?: "gray" | "blue" | "green" | "amber" | "red" | "violet";
+  className?: string;
+}) {
+  const styles: Record<string, string> = {
+    gray: "bg-gray-100 text-gray-700 ring-gray-500/20",
+    blue: "bg-blue-100 text-blue-800 ring-blue-600/20",
+    green: "bg-green-100 text-green-800 ring-green-600/20",
+    amber: "bg-amber-100 text-amber-800 ring-amber-600/20",
+    red: "bg-red-100 text-red-800 ring-red-600/20",
+    violet: "bg-violet-100 text-violet-800 ring-violet-600/20",
+  };
+  return (
+    <span
+      className={cn(
+        "inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium ring-1 ring-inset",
+        styles[color],
+        className,
+      )}
+    >
+      {children}
+    </span>
+  );
+}

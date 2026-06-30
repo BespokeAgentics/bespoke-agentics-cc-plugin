@@ -107,6 +107,14 @@ The UI-Issue-to-Plan command takes an `.mp4`/`.mov`/`.webm`/`.gif` screencast in
 
 The Plan-Review command takes a **local** plan, spec, design doc, or issue/bug-report markdown and reviews it as a skeptical principal engineer would before any code is written. It is the read-only **document** reviewer that complements the others: `repo-audit` audits the codebase, `ux-audit` audits a UI, and `funcspec`/`ui-issue-to-plan` *produce* plans — `plan-review` is the only one that **audits a written plan or issue against the code**. It decomposes the artifact into tasks, **claims about the codebase**, assumptions, and acceptance criteria; **grounds** every referenced (and *implied*) component in this repo's real source via parallel `Explore` agents (`file:line`) — verifying each checkable claim and surfacing what the plan likely *missed* (other callers of a changed API, a second implementation, an implied-but-absent migration or error state); then reviews across five lenses (**completeness, feasibility, risk, clarity, scope**), separating **gaps** (missing & needed) from **improvements** (better-with) from **errors** (code contradicts the plan), each severity-rated with an artifact quote *and* a `file:line`. On `--depth deep` it adversarially refutes each finding before it survives. An **AskUserQuestion** interview then validates which gaps are real and in-scope and sets priority — so the report reflects your intent, not raw model suspicion. It writes a **read-only** review to `./reviews/` with a readiness verdict (🟢/🟡/🔴), a strengths section, severity-grouped findings, a color-coded gap & ambiguity register, open questions, and a "definition of ready" checklist — **never modifying the original**. It then *offers* (doesn't assume) to apply the P0 fixes into a revised copy. Calibrated so a tight plan gets a short 🟢 review; degrades gracefully (`--no-ground` → document-only, feasibility findings flagged unconfirmed). Wiki-ingested when a vault exists.
 
+### When to Use the Data-UI Craft Command
+
+| Situation | Command |
+|-----------|---------|
+| Audit and/or implement the craft details that make a data-dense UI (dashboard, table, admin panel, data grid, list/detail view) actually work | `/bespokeagentics:data-ui-craft [mode: audit\|implement\|audit-and-implement] [path]` |
+
+The Data-UI Craft command operates on data-display surfaces across **three pillars** distilled from a dashboard-design teaching: **(1) data drives the form** (let each field's *type* choose its representation — categorical → chips, numeric → right-aligned tabular figures with consistent precision/units, long text → truncate **with a reveal**, inactive records → shaded rows, time-sequenced data → a timeline/chart rather than a time-sorted table); **(2) the right things are hidden until needed** — the **spectrum of explicitness** places every control by *frequency × importance* (always-visible → popover/menu → revealed on hover/swipe) and **progressive disclosure** sequences onboarding into a checklist/contextual tips instead of one feature-dump modal; **(3) invisible UI makes it all function** — tooltips on icon-only controls, click-to-copy chips, comment/annotation indicators, and the complete set of empty/loading/error/hover/focus states, implemented in-place (popover/drawer/inline) rather than as new pages. It is **stack-aware** (detects framework, styling primitive, data-grid library, and existing utilities so fixes match and nothing is duplicated) with **React + Tailwind** worked examples. In `audit` it writes a severity-rated report in **both** markdown and HTML (`./data-ui-craft-audit.{md,html}`), every finding carrying a rule ID (`DF*`/`PD*`/`IU*`), a `file:line`, user-impact phrasing, and a fix pointer. In `audit-and-implement` (default) an **AskUserQuestion** interview frames intent and confirms which findings are real and in-scope before any edit; it then applies in-place fixes (preferring column-def changes when a data layer exists) and offers a reusable **React/Tailwind primitives kit** (`src/components/data-ui/`: NumericCell, Chip, StatusChip, TruncatedText, DataRow, Popover, HoverActions, OnboardingChecklist, Tooltip, CopyChip, CommentIndicator, TableStates). The destructive step is always gated behind your explicit choice. It complements `ux-audit` (Nielsen/Norman heuristics) — this is the data-display craft layer — and pairs with `ui-issue-to-plan` (when the audit is driven by a screen recording). Wiki-logged when a vault exists.
+
 ### Agent Workflow Integration
 
 **Before starting any analysis task:**
@@ -158,7 +166,8 @@ When assessing features or making decisions, use the standard color system:
     │  ├─ funcspec/                   # Storybook pages → validated implementation plan
     │  ├─ knowledge-loop/             # Self-improving facts → hypotheses → rules loop
     │  ├─ ui-issue-to-plan/           # Narrated UI screencast → code-grounded plan (fixes + UX enhancements)
-    │  └─ plan-review/                # Plan/spec/issue → read-only, code-grounded gap review
+    │  ├─ plan-review/                # Plan/spec/issue → read-only, code-grounded gap review
+    │  └─ data-ui-craft/              # Data-dense UI audit + fixes + React/Tailwind primitives kit
     ├─ commands/                      # Slash commands
     │  ├─ wiki/                       # Wiki commands (namespaced)
     │  │  ├─ init.md                  # /wiki:init
@@ -194,6 +203,7 @@ When assessing features or making decisions, use the standard color system:
     │  ├─ repo-audit.md               # /bespokeagentics:repo-audit
     │  ├─ ui-issue-to-plan.md         # /bespokeagentics:ui-issue-to-plan
     │  ├─ plan-review.md              # /bespokeagentics:plan-review
+    │  ├─ data-ui-craft.md            # /bespokeagentics:data-ui-craft
     │  └─ wiki-*.md                   # Flat command aliases
     ├─ agents/
     │  ├─ ui-frame-analyst.md         # UI screencast frame + narration analyst
@@ -215,6 +225,7 @@ When assessing features or making decisions, use the standard color system:
 11. **Audit a repository before investing in it**: Run `/bespokeagentics:repo-audit` for a read-only, four-phase principal-engineer review that grades the repo A–F and returns severity-rated, `file:line`-cited findings plus a milestone fix plan with quick wins — without touching a line of code.
 12. **Turn a screen recording into a plan (fix + improve)**: Run `/bespokeagentics:ui-issue-to-plan '<video>'` — it reads the frames + narration to identify the UI components being referenced, grounds them in this repo's source (`file:line`), surfaces curated improvement opportunities, runs an interview that frames intent (fix vs improve) and lets you opt into enhancements, and writes a code-grounded plan to `./plans/` with separate Defect-fix and Enhancement sections. Use `--mode fix` for a quick bug-only pass.
 13. **Pressure-test a plan or issue before you build it**: Run `/bespokeagentics:plan-review '<artifact>'` — it decomposes a local plan/spec/issue into tasks, claims, assumptions, and acceptance criteria, grounds every referenced (and implied) component in this repo's real source (`file:line`) to surface the gaps the document hides, reviews it across completeness/feasibility/risk/clarity/scope, validates and prioritizes the findings via an interview, and writes a **read-only** review + color-coded gap register to `./reviews/` (the original is never modified). Use `--depth deep` for adversarially-verified findings on a high-stakes plan, or `--no-ground` for a document-only pass.
+14. **Make a data-dense UI actually work**: Run `/bespokeagentics:data-ui-craft` — it audits a dashboard, table, admin panel, or data grid against the three pillars (data drives the form · the right things hidden until needed · invisible UI), writes a severity-rated report in markdown + HTML with `DF*`/`PD*`/`IU*` findings cited to `file:line`, then — after an interview confirms what's in scope — applies the fixes in place and scaffolds a reusable React/Tailwind primitives kit. Use `audit` for a read-only pass.
 
 ## Quality Standards
 

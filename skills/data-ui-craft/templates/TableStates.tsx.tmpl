@@ -1,0 +1,95 @@
+import { AlertTriangle, Inbox, RefreshCw } from "{{ICON_IMPORT}}";
+import { cn } from "{{CN}}";
+
+/**
+ * Pillar 3 — Invisible UI.
+ * The three states every data container needs besides the happy path. A container with only a
+ * happy path feels broken the moment the data doesn't cooperate.
+ *
+ *   if (isLoading) return <TableSkeleton rows={6} cols={5} />;
+ *   if (error)     return <ErrorState onRetry={refetch} />;
+ *   if (!rows.length) return <EmptyState title="No records yet" action={<button…/>} />;
+ *   return <YourTable rows={rows} />;
+ */
+
+export function TableSkeleton({
+  rows = 6,
+  cols = 4,
+  className,
+}: {
+  rows?: number;
+  cols?: number;
+  className?: string;
+}) {
+  return (
+    <div className={cn("animate-pulse space-y-2 p-2", className)} aria-busy="true" aria-live="polite">
+      <span className="sr-only">Loading…</span>
+      {Array.from({ length: rows }).map((_, r) => (
+        <div key={r} className="flex gap-3">
+          {Array.from({ length: cols }).map((_, c) => (
+            <div
+              key={c}
+              className={cn("h-4 rounded bg-gray-200", c === 0 ? "w-1/4" : "flex-1")}
+            />
+          ))}
+        </div>
+      ))}
+    </div>
+  );
+}
+
+export function EmptyState({
+  title,
+  description,
+  action,
+  icon,
+  className,
+}: {
+  title: string;
+  description?: string;
+  /** A primary next-step control — an empty state should tell the user what to do. */
+  action?: React.ReactNode;
+  icon?: React.ReactNode;
+  className?: string;
+}) {
+  return (
+    <div className={cn("flex flex-col items-center justify-center gap-2 px-6 py-12 text-center", className)}>
+      <div className="text-gray-300">{icon ?? <Inbox className="h-8 w-8" aria-hidden />}</div>
+      <h3 className="text-sm font-medium text-gray-900">{title}</h3>
+      {description && <p className="max-w-sm text-sm text-gray-500">{description}</p>}
+      {action && <div className="mt-2">{action}</div>}
+    </div>
+  );
+}
+
+export function ErrorState({
+  title = "Something went wrong",
+  message = "We couldn't load this data.",
+  onRetry,
+  className,
+}: {
+  title?: string;
+  message?: string;
+  onRetry?: () => void;
+  className?: string;
+}) {
+  return (
+    <div
+      role="alert"
+      className={cn("flex flex-col items-center justify-center gap-2 px-6 py-12 text-center", className)}
+    >
+      <AlertTriangle className="h-8 w-8 text-red-400" aria-hidden />
+      <h3 className="text-sm font-medium text-gray-900">{title}</h3>
+      <p className="max-w-sm text-sm text-gray-500">{message}</p>
+      {onRetry && (
+        <button
+          type="button"
+          onClick={onRetry}
+          className="mt-2 inline-flex items-center gap-1.5 rounded-md border border-gray-300 px-3 py-1.5 text-sm font-medium hover:bg-gray-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500"
+        >
+          <RefreshCw className="h-3.5 w-3.5" aria-hidden /> Try again
+        </button>
+      )}
+    </div>
+  );
+}

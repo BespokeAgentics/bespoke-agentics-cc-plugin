@@ -1,0 +1,59 @@
+import { useState } from "react";
+import { Check, Copy } from "{{ICON_IMPORT}}";
+import { cn } from "{{CN}}";
+
+/**
+ * Pillar 3 — Invisible UI.
+ * Click-to-copy for fiddly values (IDs, emails, API keys, hashes, order numbers). Always confirms
+ * the copy (icon swap) so the user isn't left guessing. Pass onCopied to also fire a toast.
+ */
+export function CopyChip({
+  value,
+  display,
+  maxChars = 16,
+  onCopied,
+  className,
+}: {
+  value: string;
+  /** What to show (defaults to the value, truncated to maxChars). */
+  display?: string;
+  maxChars?: number;
+  onCopied?: (value: string) => void;
+  className?: string;
+}) {
+  const [copied, setCopied] = useState(false);
+  const shown = display ?? value;
+
+  async function copy() {
+    try {
+      await navigator.clipboard.writeText(value);
+      setCopied(true);
+      onCopied?.(value);
+      setTimeout(() => setCopied(false), 1200);
+    } catch {
+      // Clipboard can reject (permissions / insecure context); fail quietly.
+    }
+  }
+
+  return (
+    <button
+      type="button"
+      onClick={copy}
+      aria-label={copied ? "Copied" : `Copy ${value}`}
+      className={cn(
+        "inline-flex items-center gap-1 rounded bg-gray-100 px-1.5 py-0.5 font-mono text-xs",
+        "hover:bg-gray-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500",
+        className,
+      )}
+    >
+      <span className="truncate" style={{ maxWidth: `${maxChars}ch` }}>
+        {shown}
+      </span>
+      {copied ? (
+        <Check className="h-3 w-3 shrink-0 text-green-600" aria-hidden />
+      ) : (
+        <Copy className="h-3 w-3 shrink-0 opacity-60" aria-hidden />
+      )}
+    </button>
+  );
+}

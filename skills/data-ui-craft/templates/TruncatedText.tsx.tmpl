@@ -1,0 +1,48 @@
+import { useState } from "react";
+import { cn } from "{{CN}}";
+import { Tooltip } from "./Tooltip";
+
+/**
+ * Pillar 1 — Data drives the form (+ Pillar 3 reveal).
+ * Truncates long free-text so rows stay even, and ALWAYS provides a path to the full value.
+ * Truncation without a reveal is its own bug — this component bakes the reveal in.
+ *
+ * reveal="tooltip" (default): hover/focus shows the full text.
+ * reveal="expand": click toggles between clamped and full.
+ */
+export function TruncatedText({
+  text,
+  lines = 1,
+  reveal = "tooltip",
+  className,
+}: {
+  text: string;
+  /** 1 = single-line ellipsis; >1 = multi-line clamp. */
+  lines?: number;
+  reveal?: "tooltip" | "expand";
+  className?: string;
+}) {
+  const [expanded, setExpanded] = useState(false);
+
+  const clampClass = lines === 1 ? "truncate" : `line-clamp-${lines}`;
+
+  if (reveal === "expand") {
+    return (
+      <button
+        type="button"
+        onClick={() => setExpanded((v) => !v)}
+        className={cn("block w-full text-left", !expanded && clampClass, className)}
+        aria-expanded={expanded}
+        title={expanded ? undefined : text}
+      >
+        {text}
+      </button>
+    );
+  }
+
+  return (
+    <Tooltip content={text}>
+      <span className={cn("block", clampClass, className)}>{text}</span>
+    </Tooltip>
+  );
+}

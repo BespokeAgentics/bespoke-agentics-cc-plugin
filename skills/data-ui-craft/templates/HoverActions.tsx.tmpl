@@ -1,0 +1,44 @@
+import { cn } from "{{CN}}";
+
+/**
+ * Pillar 2 — Progressive disclosure / spectrum of explicitness.
+ * Keeps per-row secondary actions OFF the default view and reveals them on hover/focus, so the
+ * row stays calm and the primary action isn't drowned out. On touch / small screens (no hover)
+ * the actions stay visible, so nothing becomes unreachable.
+ *
+ * Requirements:
+ *  - The parent <tr>/<li>/<div> MUST have the `group` class for the hover reveal to work.
+ *  - Put each action in an icon <button> with a <Tooltip> + aria-label (icon-only needs a name).
+ *  - `invisible` (not `hidden`) reserves space → no layout shift when the actions appear.
+ *
+ * Example:
+ *   <tr className="group">
+ *     …cells…
+ *     <td className="text-right">
+ *       <HoverActions>
+ *         <Tooltip content="Edit"><button aria-label="Edit" …><Pencil/></button></Tooltip>
+ *         <Tooltip content="Archive"><button aria-label="Archive" …><Archive/></button></Tooltip>
+ *       </HoverActions>
+ *     </td>
+ *   </tr>
+ */
+export function HoverActions({
+  children,
+  className,
+}: {
+  children: React.ReactNode;
+  className?: string;
+}) {
+  return (
+    <div
+      className={cn(
+        "flex items-center justify-end gap-1",
+        // visible by default (touch/small screens); hover-revealed from sm up
+        "sm:invisible sm:group-hover:visible sm:group-focus-within:visible",
+        className,
+      )}
+    >
+      {children}
+    </div>
+  );
+}

@@ -1,0 +1,50 @@
+import { cn } from "{{CN}}";
+
+/**
+ * Pillar 1 — Data drives the form.
+ * Right-aligns numbers and formats them consistently so digits line up by place value
+ * and a column can be compared at a glance. Use for any numeric / currency / percent column.
+ *
+ * Remember to also right-align the column HEADER (`text-right`) for the alignment to read.
+ */
+type Format = "number" | "currency" | "percent";
+
+export function NumericCell({
+  value,
+  format = "number",
+  currency = "USD",
+  unit,
+  decimals = format === "currency" ? 2 : 0,
+  locale = "en-US",
+  className,
+}: {
+  value: number | null | undefined;
+  format?: Format;
+  currency?: string;
+  /** Optional suffix unit, e.g. "ms", "GB". Ignored for currency/percent. */
+  unit?: string;
+  decimals?: number;
+  locale?: string;
+  className?: string;
+}) {
+  // An explicit em-dash for missing values reads better than "0" or blank.
+  if (value == null || Number.isNaN(value)) {
+    return <span className={cn("block text-right tabular-nums text-gray-400", className)}>—</span>;
+  }
+
+  const fmt = new Intl.NumberFormat(locale, {
+    style: format === "currency" ? "currency" : format === "percent" ? "percent" : "decimal",
+    currency: format === "currency" ? currency : undefined,
+    minimumFractionDigits: decimals,
+    maximumFractionDigits: decimals,
+  });
+
+  const display = format === "percent" ? fmt.format(value / 100) : fmt.format(value);
+
+  return (
+    <span className={cn("block text-right tabular-nums", className)}>
+      {display}
+      {unit && format === "number" ? <span className="ml-0.5 text-gray-400">{unit}</span> : null}
+    </span>
+  );
+}
