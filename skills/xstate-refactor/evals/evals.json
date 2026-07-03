@@ -1,0 +1,19 @@
+{
+  "skill_name": "xstate-refactor",
+  "evals": [
+    {
+      "id": 0,
+      "name": "uploader-full-refactor",
+      "prompt": "This FileUploader component (src/FileUploader.tsx) has gotten out of hand — 8 useState hooks, retry via setTimeout buried in a useEffect, an isMountedRef, and we once shipped a bug where it showed 'Uploaded!' and an error banner at the same time. I want it refactored onto an XState state machine. We do NOT have xstate installed in this project yet. Make sure every state the machine can be in has corresponding UI, add deterministic tests for the machine, and get rid of the old state code when you're done. If you would normally interview me: assume sensible defaults, fix the impossible-state bugs, and delete old code outright.",
+      "expected_output": "A behavior analysis + migration plan, xstate v5 (+ @xstate/react) added to package.json, a .machine.ts file using setup() with typed context/events and fromPromise/fromCallback actors for slot-request and upload, deterministic tests (path coverage via createTestModel from xstate/graph and/or createActor unit tests), the component rewired via useMachine/state.matches with every machine state visually represented (including retrying, which had no UI), and the old useState/useEffect/isMountedRef code removed.",
+      "files": ["fixtures/uploader"]
+    },
+    {
+      "id": 1,
+      "name": "wizard-plan-only",
+      "prompt": "src/SignupWizard.tsx is a 3-step signup wizard driven by a step number plus ~10 boolean flags. I want a plan for converting it into an XState v5 statechart (xstate and @xstate/react are already installed) — analysis and migration plan only, do NOT modify the component yet. I especially care about: which impossible flag combinations exist today, whether 'sending the verification code' is modeled correctly (it currently fires inside handleCreateAccount), and what UI is missing for any states your model introduces.",
+      "expected_output": "No changes to SignupWizard.tsx. An analysis (behavior map) enumerating implicit states and impossible flag combinations with file:line evidence, a statechart design (hierarchical, likely with the code-send as an invoked actor) with a mermaid diagram, a state-to-UI coverage matrix flagging states lacking UI, a test plan, and a deprecation checklist — written as an executable migration plan document.",
+      "files": ["fixtures/wizard"]
+    }
+  ]
+}

@@ -115,6 +115,43 @@ The Plan-Review command takes a **local** plan, spec, design doc, or issue/bug-r
 
 The Data-UI Craft command operates on data-display surfaces across **three pillars** distilled from a dashboard-design teaching: **(1) data drives the form** (let each field's *type* choose its representation — categorical → chips, numeric → right-aligned tabular figures with consistent precision/units, long text → truncate **with a reveal**, inactive records → shaded rows, time-sequenced data → a timeline/chart rather than a time-sorted table); **(2) the right things are hidden until needed** — the **spectrum of explicitness** places every control by *frequency × importance* (always-visible → popover/menu → revealed on hover/swipe) and **progressive disclosure** sequences onboarding into a checklist/contextual tips instead of one feature-dump modal; **(3) invisible UI makes it all function** — tooltips on icon-only controls, click-to-copy chips, comment/annotation indicators, and the complete set of empty/loading/error/hover/focus states, implemented in-place (popover/drawer/inline) rather than as new pages. It is **stack-aware** (detects framework, styling primitive, data-grid library, and existing utilities so fixes match and nothing is duplicated) with **React + Tailwind** worked examples. In `audit` it writes a severity-rated report in **both** markdown and HTML (`./data-ui-craft-audit.{md,html}`), every finding carrying a rule ID (`DF*`/`PD*`/`IU*`), a `file:line`, user-impact phrasing, and a fix pointer. In `audit-and-implement` (default) an **AskUserQuestion** interview frames intent and confirms which findings are real and in-scope before any edit; it then applies in-place fixes (preferring column-def changes when a data layer exists) and offers a reusable **React/Tailwind primitives kit** (`src/components/data-ui/`: NumericCell, Chip, StatusChip, TruncatedText, DataRow, Popover, HoverActions, OnboardingChecklist, Tooltip, CopyChip, CommentIndicator, TableStates). The destructive step is always gated behind your explicit choice. It complements `ux-audit` (Nielsen/Norman heuristics) — this is the data-display craft layer — and pairs with `ui-issue-to-plan` (when the audit is driven by a screen recording). Wiki-logged when a vault exists.
 
+### When to Use the XState Refactor Command
+
+| Situation | Command |
+|-----------|---------|
+| Refactor a feature's ad-hoc state logic + UI into an explicit XState v5 machine, statechart, or actor system — with a validated plan, full state↔UI coverage, deterministic tests, and deprecation of the old code | `/bespokeagentics:xstate-refactor '<target>' [--mode plan\|implement\|full] [--style machine\|statechart\|actors\|auto] [--out <dir>] [--no-tests] [--force]` |
+
+The XState Refactor command takes a pointer at a slice of the app (file, directory, component name, or a description like "the checkout flow") whose state logic has outgrown its implementation — boolean-flag soup, `useEffect` orchestration, impossible-but-representable states — and migrates it onto **XState v5**. Its premise: the statechart already exists *implicitly*, so Phase 1 is archaeology, not invention — parallel `Explore` agents inventory every state variable and flag combination, every event/effect, and **every UI dependency** (conditional renders, disabled props, consumers outside the target) into a `file:line`-cited behavior map, honestly enumerating the impossible states the types allow. Phase 2 designs the statechart (flat machine vs hierarchical/parallel statechart vs actor system per a decision guide — including the credibility-preserving "don't use XState, use a reducer" recommendation for trivial targets), with a mermaid diagram, an impossible-states-eliminated table, and a draft **state↔UI coverage matrix** where every machine state must end up with a *decided* visual answer (mapped UI, user-approved "intentionally invisible", or an explicit deferred gap). An **AskUserQuestion** interview validates every inferred state, behavioral divergence ("the code allows loading+error simultaneously — bug or intended?"), and UI-gap resolution, plus the deprecation appetite (delete / deprecate-then-delete / flag). The validated, self-contained migration plan goes to `./plans/`; **no application code is edited before the explicit approval gate**. On approval it implements in behavior-preserving order — XState v5 installed if missing, machine written in isolation with `setup()`, **deterministic tests green before UI wiring** (model-based path coverage via `createTestModel` from `xstate/graph` + guard-boundary unit tests + per-state UI coverage tests mirroring the matrix), UI swapped onto `useMachine`/`useSelector`/`state.matches`/`state.can` one touchpoint at a time — then retires the old state code behind a **grep-verified deprecation checklist** and runs the project's own typecheck/lint/tests. Complements the others: `ui-issue-to-plan` starts from a video, `plan-review` audits a document, `data-ui-craft` fixes display craft — this one restructures state **logic**. Wiki-ingested when a vault exists.
+
+### When to Use the Orchestrate Command
+
+| Situation | Command |
+|-----------|---------|
+| Execute an implementation plan (or a raw task) through a managed, gated, multi-agent build — the session model orchestrates, Opus/Sonnet subagents implement and smoke-test | `/bespokeagentics:orchestrate '<plan-path-or-task>' [--depth quick\|standard\|deep] [--dry-run] [--no-confirm] [--no-smoke] [--no-review] [--single-model <m>] [--resume [<slug>]]` |
+
+The Orchestrate command turns the session's most capable model (Fable) into a **hands-off
+engineering orchestrator** that never writes production code itself. Given a plan file it first
+**grounds** every `file:line` anchor and claim against current source via read-only agents (anchors
+are hints, not gospel), synthesizes a **work order** — waves of work items, each with an assigned
+model (Opus for contract-shaped/high-risk work and adversarial review, Sonnet for well-specified
+mechanical work and browser smoke-driving) and **exact file ownership** (one owner per file per
+wave; parallelism only when file sets are disjoint and no unpublished interface dependency exists)
+— and confirms it in one AskUserQuestion gate alongside the plan's open questions. Implementers
+receive verbatim packets (plan slice, corrected anchors, guardrails, structured return contract);
+after each wave the **orchestrator runs the gates itself** (typecheck/lint/tests discovered from
+the repo's own conventions) and routes exact failure output back to the owning agent (max 2
+round-trips, then it stops and reports). A Sonnet smoke agent then drives the running app
+(claude-in-chrome for UI) with evidence-backed pass/fail — including the **default-path
+compatibility invariant** when the plan introduces opt-in behavior — and a read-only Opus reviewer
+pressure-tests the diff's invariants (`--depth deep` adversarially verifies findings before they
+route back). Given a **raw prompt** instead of a plan, it drafts a plan, saves it per the project's
+plans convention, and gets confirmation first. Runs are **resumable**: state, work order, and
+verbatim agent reports persist under `.orchestrate/<slug>/`. It closes out per project conventions
+(wiki log when a vault exists) and reports faithfully — deviations, residual risks, failures
+included — without ever committing or pushing unprompted. Complements the others: `plan-review`
+critiques a plan without building it, `funcspec` produces one from a UI — `orchestrate` **executes**
+one through subagents.
+
 ### Agent Workflow Integration
 
 **Before starting any analysis task:**
@@ -167,7 +204,9 @@ When assessing features or making decisions, use the standard color system:
     │  ├─ knowledge-loop/             # Self-improving facts → hypotheses → rules loop
     │  ├─ ui-issue-to-plan/           # Narrated UI screencast → code-grounded plan (fixes + UX enhancements)
     │  ├─ plan-review/                # Plan/spec/issue → read-only, code-grounded gap review
-    │  └─ data-ui-craft/              # Data-dense UI audit + fixes + React/Tailwind primitives kit
+    │  ├─ data-ui-craft/              # Data-dense UI audit + fixes + React/Tailwind primitives kit
+    │  ├─ xstate-refactor/            # Feature state logic + UI → XState v5 machine/statechart/actors
+    │  └─ orchestrate/                # Plan/task → gated multi-agent implementation (Fable orchestrates, Opus/Sonnet implement)
     ├─ commands/                      # Slash commands
     │  ├─ wiki/                       # Wiki commands (namespaced)
     │  │  ├─ init.md                  # /wiki:init
@@ -204,6 +243,8 @@ When assessing features or making decisions, use the standard color system:
     │  ├─ ui-issue-to-plan.md         # /bespokeagentics:ui-issue-to-plan
     │  ├─ plan-review.md              # /bespokeagentics:plan-review
     │  ├─ data-ui-craft.md            # /bespokeagentics:data-ui-craft
+    │  ├─ xstate-refactor.md          # /bespokeagentics:xstate-refactor
+    │  ├─ orchestrate.md              # /bespokeagentics:orchestrate
     │  └─ wiki-*.md                   # Flat command aliases
     ├─ agents/
     │  ├─ ui-frame-analyst.md         # UI screencast frame + narration analyst
@@ -226,6 +267,8 @@ When assessing features or making decisions, use the standard color system:
 12. **Turn a screen recording into a plan (fix + improve)**: Run `/bespokeagentics:ui-issue-to-plan '<video>'` — it reads the frames + narration to identify the UI components being referenced, grounds them in this repo's source (`file:line`), surfaces curated improvement opportunities, runs an interview that frames intent (fix vs improve) and lets you opt into enhancements, and writes a code-grounded plan to `./plans/` with separate Defect-fix and Enhancement sections. Use `--mode fix` for a quick bug-only pass.
 13. **Pressure-test a plan or issue before you build it**: Run `/bespokeagentics:plan-review '<artifact>'` — it decomposes a local plan/spec/issue into tasks, claims, assumptions, and acceptance criteria, grounds every referenced (and implied) component in this repo's real source (`file:line`) to surface the gaps the document hides, reviews it across completeness/feasibility/risk/clarity/scope, validates and prioritizes the findings via an interview, and writes a **read-only** review + color-coded gap register to `./reviews/` (the original is never modified). Use `--depth deep` for adversarially-verified findings on a high-stakes plan, or `--no-ground` for a document-only pass.
 14. **Make a data-dense UI actually work**: Run `/bespokeagentics:data-ui-craft` — it audits a dashboard, table, admin panel, or data grid against the three pillars (data drives the form · the right things hidden until needed · invisible UI), writes a severity-rated report in markdown + HTML with `DF*`/`PD*`/`IU*` findings cited to `file:line`, then — after an interview confirms what's in scope — applies the fixes in place and scaffolds a reusable React/Tailwind primitives kit. Use `audit` for a read-only pass.
+15. **Make a feature's state logic explicit**: Run `/bespokeagentics:xstate-refactor '<target>'` — it recovers the statechart the code already implements implicitly (parallel agents map every state variable, flag combination, event, effect, and UI dependency to `file:line`), designs the XState v5 machine/statechart/actor model with a mermaid diagram and a state↔UI coverage matrix, validates every inference via an interview, writes an executable migration plan to `./plans/`, then — only on approval — implements the machine, generates deterministic path-coverage + UI state-coverage tests, wires the UI so every state has a decided visual answer, installs XState if missing, and retires the old state code behind a grep-verified checklist. Use `--mode plan` to stop at the plan.
+16. **Execute a plan through a managed multi-agent build**: Run `/bespokeagentics:orchestrate '<plan.md>'` — the session model acts as orchestrator (it never writes production code): read-only agents re-ground every `file:line` anchor, a confirmed work order assigns each work item to Opus (contract-shaped/high-risk) or Sonnet (mechanical/smoke) with exact file ownership, waves run with orchestrator-executed gates between them, a smoke agent drives the running app with evidence-backed pass/fail, and a read-only Opus reviewer pressure-tests the diff before a faithful final report. Pass a raw task instead of a plan and it drafts + confirms one first; interrupted runs continue with `--resume`.
 
 ## Quality Standards
 
