@@ -1,0 +1,23 @@
+[
+  {"query": "starting a brand new foundry app called Ledger — can you spin up the workspace from our base design system so I've got storybook + all our components ready to go?", "should_trigger": true},
+  {"query": "I've got the claude design export for our new pricing tool in ~/Downloads/pricing.zip. bootstrap a foundry project from it but reuse our existing @foundry/ui buttons/cards, only build what's genuinely new", "should_trigger": true},
+  {"query": "kick off a new Foundry product from the foundry-base repo and port these screens on top of the existing canon", "should_trigger": true},
+  {"query": "we're building another Foundry app (an internal audit tool). seed it from the base and only add the audit-specific components", "should_trigger": true},
+  {"query": "use the foundry base to scaffold a new project called Sift, then wire up the new pages from this design export", "should_trigger": true},
+  {"query": "new foundry storybook please — clone our canonical design system and I'll build the app on top", "should_trigger": true},
+  {"query": "here's a foundry design zip, stand up the app but don't regenerate the whole component library, we already have @foundry/ui", "should_trigger": true},
+  {"query": "/foundry-project --name beacon --design 'Beacon - Prototype.zip'", "should_trigger": true},
+  {"query": "spin up a fresh foundry workspace for the new dashboard, reuse canon, and only port the net-new chart components", "should_trigger": true},
+  {"query": "add a data-table component to our foundry app — check the component index first so we don't duplicate something already in @foundry/ui", "should_trigger": true},
+
+  {"query": "turn this claude design zip into a react component library from scratch — it's a brand new design system, there's no existing base to build on", "should_trigger": false},
+  {"query": "our foundry app's storybook build is failing with a tailwind v4 viteFinal error, can you debug it?", "should_trigger": false},
+  {"query": "bump the accent color token in @foundry/tokens and regenerate the tailwind theme", "should_trigger": false},
+  {"query": "write a functional spec from this foundry storybook — what backend does the UI imply?", "should_trigger": false},
+  {"query": "review my implementation plan for the new foundry billing feature before I start coding", "should_trigger": false},
+  {"query": "the Button in @foundry/ui has a hover bug in the ghost variant, fix it", "should_trigger": false},
+  {"query": "deploy the foundry-scope app to vercel production", "should_trigger": false},
+  {"query": "audit the accessibility of our foundry dashboard's forms and report WCAG issues", "should_trigger": false},
+  {"query": "convert this figma export into tailwind components for a marketing site", "should_trigger": false},
+  {"query": "write the README for the foundry-base repo explaining the folder layout", "should_trigger": false}
+]

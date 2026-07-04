@@ -1,0 +1,23 @@
+{
+  "skill_name": "foundry-project",
+  "evals": [
+    {
+      "id": 1,
+      "prompt": "I'm kicking off a new Foundry app called Ledger. Spin it up from our base so I've got the whole design system + Storybook ready to build on — no design zip yet, I just want the scaffold.",
+      "expected_output": "A new ledger-workspace seeded from foundry-base: renamed root package, bun install clean, typecheck + index:check + build-storybook green, canon + docbook reference intact, report of how to run Storybook. No components ported (no design provided).",
+      "files": []
+    },
+    {
+      "id": 2,
+      "prompt": "Here's the design export for our new pricing tool. Bootstrap a Foundry project from it and only build what's NOT already in @foundry/ui — reuse our existing buttons, cards, inputs etc.",
+      "expected_output": "Seeds base, runs analyze_zip + plan_ports, presents a reuse/port/pages plan that reuses canon primitives (Button/Card/Input/Icon) and only ports the genuinely new pricing components into apps/pricing/, builds pricing pages, regenerates the index, verifies green.",
+      "files": ["<a claude.ai design export .zip>"]
+    },
+    {
+      "id": 3,
+      "prompt": "Add a data-table component to this Foundry app — a sortable table with a header row and selectable rows.",
+      "expected_output": "Runs /foundry-component-check against foundry.index.json first: reports whether an existing component/composition covers it (e.g. TreeRow/Card + existing primitives), and only if genuinely new adds it under apps/<app>/ (or canon/ if reusable), reusing canon atoms, then regenerates the index.",
+      "files": []
+    }
+  ]
+}
