@@ -1,6 +1,6 @@
 {
   "name": "bespoke-agentics",
-  "version": "1.9.0",
+  "version": "1.10.0",
   "description": "AI transparency auditing, agent architecture generation, progressive-disclosure context layering for large codebases, UX evaluation, Pi harness customization, video-to-deliverables pipelines, workflow analysis, and Biome AI guardrails for Claude Code",
   "author": {
     "name": "Bespoke Agentics"
@@ -64,6 +64,11 @@
     "subagent-delegation",
     "verification-gates",
     "smoke-testing",
-    "fable"
+    "fable",
+    "agent-loop-audit",
+    "event-loop",
+    "managed-agents",
+    "stop-reason",
+    "streaming-events"
   ]
 }
