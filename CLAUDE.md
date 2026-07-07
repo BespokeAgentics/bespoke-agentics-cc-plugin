@@ -152,6 +152,34 @@ included — without ever committing or pushing unprompted. Complements the othe
 critiques a plan without building it, `funcspec` produces one from a UI — `orchestrate` **executes**
 one through subagents.
 
+### When to Use the Agent-Loop Audit Command
+
+| Situation | Command |
+|-----------|---------|
+| Audit (and optionally fix) an AI API/SDK integration for the event-loop defects that cause silent hangs, stalls, and deadlocks in managed-agent architectures | `/bespokeagentics:agent-loop-audit [mode: audit\|implement\|audit-and-implement] [path]` |
+
+The Agent-Loop Audit command targets the failure class unique to **managed agents**: the
+tool-execution loop runs on the provider's servers, so the **bidirectional event stream is the
+only control surface** — and most "the API is broken / my app hangs" reports are actually one of a
+small set of client-side event-loop defects that never throw. Its rule catalog is **tiered**: a
+stack-agnostic core (`EL*` lifecycle — payload-before-listener races, fire-and-forget dispatch,
+teardown that deadlocks the server by leaving tool approvals unanswered; `SR*` stop-reason
+semantics — idle treated as done instead of branching on the stop reason, requires-action never
+answered; `RS*` resilience & steering — undifferentiated transient-vs-hard errors, no silence
+watchdog, no reconnect/resume, no interrupt+redirect path; `OB*` observability — event families
+undecoded, no layered debug/production surfacing) plus an **Anthropic pack** (`user.message` /
+`user.interrupt` input events, `session.status.idle`, `stop_reason` payload semantics,
+agent/session/fan output families) that activates when an Anthropic SDK is detected — unknown
+vendors get core rules with vendor vocabulary flagged `unconfirmed-vendor`. Detection heuristics
+cover **TypeScript/JavaScript and Python**. It writes a severity-rated report
+(`./agent-loop-audit.md`) with a 🟢/🟡/🔴 verdict, every finding cited to `file:line` and phrased
+as the **user-visible symptom** it produces, plus a per-surface loop-health matrix — then, in
+`audit-and-implement` (default), an **AskUserQuestion** interview frames intent and confirms each
+finding before any edit; fixes follow the reference patterns in the skill, adapted to the
+project's conventions. Complements `ai-transparency` (UI state coverage for AI ops) and
+`ai-waiting-ux` (Next.js waiting-UX implementation) — this is the protocol/control-loop
+correctness layer beneath both. Wiki-ingested when a vault exists.
+
 ### Agent Workflow Integration
 
 **Before starting any analysis task:**
@@ -206,7 +234,8 @@ When assessing features or making decisions, use the standard color system:
     │  ├─ plan-review/                # Plan/spec/issue → read-only, code-grounded gap review
     │  ├─ data-ui-craft/              # Data-dense UI audit + fixes + React/Tailwind primitives kit
     │  ├─ xstate-refactor/            # Feature state logic + UI → XState v5 machine/statechart/actors
-    │  └─ orchestrate/                # Plan/task → gated multi-agent implementation (Fable orchestrates, Opus/Sonnet implement)
+    │  ├─ orchestrate/                # Plan/task → gated multi-agent implementation (Fable orchestrates, Opus/Sonnet implement)
+    │  └─ agent-loop-audit/           # AI API/SDK integration → event-loop defect audit + gated fixes (silent hangs, stop_reason, deadlocks)
     ├─ commands/                      # Slash commands
     │  ├─ wiki/                       # Wiki commands (namespaced)
     │  │  ├─ init.md                  # /wiki:init
@@ -245,6 +274,7 @@ When assessing features or making decisions, use the standard color system:
     │  ├─ data-ui-craft.md            # /bespokeagentics:data-ui-craft
     │  ├─ xstate-refactor.md          # /bespokeagentics:xstate-refactor
     │  ├─ orchestrate.md              # /bespokeagentics:orchestrate
+    │  ├─ agent-loop-audit.md         # /bespokeagentics:agent-loop-audit
     │  └─ wiki-*.md                   # Flat command aliases
     ├─ agents/
     │  ├─ ui-frame-analyst.md         # UI screencast frame + narration analyst
@@ -269,6 +299,7 @@ When assessing features or making decisions, use the standard color system:
 14. **Make a data-dense UI actually work**: Run `/bespokeagentics:data-ui-craft` — it audits a dashboard, table, admin panel, or data grid against the three pillars (data drives the form · the right things hidden until needed · invisible UI), writes a severity-rated report in markdown + HTML with `DF*`/`PD*`/`IU*` findings cited to `file:line`, then — after an interview confirms what's in scope — applies the fixes in place and scaffolds a reusable React/Tailwind primitives kit. Use `audit` for a read-only pass.
 15. **Make a feature's state logic explicit**: Run `/bespokeagentics:xstate-refactor '<target>'` — it recovers the statechart the code already implements implicitly (parallel agents map every state variable, flag combination, event, effect, and UI dependency to `file:line`), designs the XState v5 machine/statechart/actor model with a mermaid diagram and a state↔UI coverage matrix, validates every inference via an interview, writes an executable migration plan to `./plans/`, then — only on approval — implements the machine, generates deterministic path-coverage + UI state-coverage tests, wires the UI so every state has a decided visual answer, installs XState if missing, and retires the old state code behind a grep-verified checklist. Use `--mode plan` to stop at the plan.
 16. **Execute a plan through a managed multi-agent build**: Run `/bespokeagentics:orchestrate '<plan.md>'` — the session model acts as orchestrator (it never writes production code): read-only agents re-ground every `file:line` anchor, a confirmed work order assigns each work item to Opus (contract-shaped/high-risk) or Sonnet (mechanical/smoke) with exact file ownership, waves run with orchestrator-executed gates between them, a smoke agent drives the running app with evidence-backed pass/fail, and a read-only Opus reviewer pressure-tests the diff before a faithful final report. Pass a raw task instead of a plan and it drafts + confirms one first; interrupted runs continue with `--resume`.
+17. **Stop your AI integration from silently hanging**: Run `/bespokeagentics:agent-loop-audit` — it detects your stack (TS/JS, Python; Anthropic pack when the SDK is present), discovers every place the code dispatches a task and consumes (or fails to consume) the event stream, audits each surface against the `EL*`/`SR*`/`RS*`/`OB*` catalog (listener-before-payload sequencing, `stop_reason` branching on idle, unanswered tool approvals, error differentiation, reconnect/resume, interrupt+redirect steering), and writes a severity-rated `file:line`-cited report with a loop-health matrix — then, after an interview confirms scope, applies the accepted fixes in place. Use `audit` for a read-only pass.
 
 ## Quality Standards
 
