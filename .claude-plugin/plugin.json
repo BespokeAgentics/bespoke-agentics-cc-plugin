@@ -1,7 +1,7 @@
 {
   "name": "bespoke-agentics",
-  "version": "1.10.0",
-  "description": "AI transparency auditing, agent architecture generation, progressive-disclosure context layering for large codebases, UX evaluation, Pi harness customization, video-to-deliverables pipelines, workflow analysis, and Biome AI guardrails for Claude Code",
+  "version": "1.12.0",
+  "description": "AI transparency auditing, agent architecture generation, progressive-disclosure context layering for large codebases, UX evaluation, Pi harness customization, video-to-deliverables pipelines, workflow analysis, Biome AI guardrails, and the Agent-Native Engineering suite (fast CI, label-triggered agents, chore crons, agent evidence, hermetic deploys, simulation data) for Claude Code",
   "author": {
     "name": "Bespoke Agentics"
   },
@@ -69,6 +69,29 @@
     "event-loop",
     "managed-agents",
     "stop-reason",
-    "streaming-events"
+    "streaming-events",
+    "agent-native",
+    "fast-ci",
+    "typescript-7",
+    "oxlint",
+    "oxfmt",
+    "uv",
+    "merge-queue",
+    "issue-to-agent",
+    "label-triggered",
+    "auto-repro",
+    "chore-crons",
+    "scheduled-agents",
+    "proof-of-work",
+    "agent-browser",
+    "screenshots",
+    "evidence",
+    "hermetic-deploy",
+    "docker-compose",
+    "parallel-instances",
+    "sim-data",
+    "seed-data",
+    "anonymization",
+    "synthetic-data"
   ]
 }

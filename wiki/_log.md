@@ -1,11 +1,36 @@
 ---
 type: log
-updated: 2026-05-30
+updated: 2026-07-13
 ---
 
 # Wiki Operation Log
 
 Chronological record of all bootstrap, maintenance, and schema evolution operations.
+
+---
+
+## 2026-07-13 — Plugin scaffold — Agent-Native Engineering suite (6 skills)
+
+**Operation**: Added six skills + `/agentnative:{fast-ci,issue-to-agent,chore-crons,proof-of-work,hermetic-deploy,sim-data}` commands to the bespoke-agentics plugin.
+
+**What it does**: Makes a codebase a good place for coding agents to work — the verification loop is the bottleneck, not generation. `fast-ci` swaps native tooling (TypeScript 7 GA, oxlint/oxfmt, uv, ruff; `TC*`/`LN*` catalogs) and splits fast pre-merge vs post-merge/merge-queue lanes; `issue-to-agent` dispatches claude-code-action v1 agents from triage labels (auto-triage, repro-on-label, PoC-on-label; injection-aware, zizmor-verified); `chore-crons` schedules agents onto the neglected tail (regression backfill, SDK gaps, skill tuning; single rolling channel, self-verification required); `proof-of-work` gives agents evidence tooling (agent-browser/Playwright capture, `evidence/` manifests, presigned-URL storage, PR evidence comments); `hermetic-deploy` builds one-command isolated instances (`H*` catalog, Compose `-p` namespacing, ephemeral ports, `dev-stack.sh` contract, N-instances verification); `sim-data` produces deterministic production-shaped seed scenarios (aggregate shape-mining, copycat/faker or Greenmask/anon with human-reviewed masking, double-seed determinism proofs).
+
+**Files added**:
+- `skills/fast-ci/` — SKILL.md + `references/{toolchain,pipeline-split}.md`
+- `skills/issue-to-agent/` — SKILL.md + `references/workflows.md`
+- `skills/chore-crons/` — SKILL.md + `references/cron-recipes.md`
+- `skills/proof-of-work/` — SKILL.md + `references/{capture,storage}.md`
+- `skills/hermetic-deploy/` — SKILL.md + `references/compose-isolation.md`
+- `skills/sim-data/` — SKILL.md + `references/data-tools.md`
+- `commands/agentnative/` — `fast-ci.md`, `issue-to-agent.md`, `chore-crons.md`, `proof-of-work.md`, `hermetic-deploy.md`, `sim-data.md`
+
+**Registration**: `CLAUDE.md` (command table + suite paragraph + structure tree + getting-started 18–24), `.claude-plugin/plugin.json` and `marketplace.json` (description, keywords, version → 1.11.0; → 1.11.1 with the suite conductor).
+
+**Addendum (same day)**: Added `commands/agentnative/suite.md` (`/agentnative:suite`) — a self-contained conductor command over the six skills: read-only readiness probe → 🟢/🟡/🔴 scorecard in `./plans/agentnative-suite.md` → one interview gate (dimensions, per-dimension mode, budget) → sequential Skill dispatch in dependency order (fast-ci → hermetic-deploy → sim-data → proof-of-work → issue-to-agent → chore-crons) with state persisted in `.agentnative/suite-state.json` (`--resume` skips landed work; a blocked dimension stops the chain).
+
+**Facts basis**: Tool status (TS 7.0 GA 2026-07-08, oxfmt beta, ty beta-sidecar-only, Neosync archived, @snaplet/seed zombie, agent-browser/vercel-labs, claude-code-action v1 input model, Compose project-name precedence) verified against primary sources 2026-07-13; re-verify version-sensitive claims before relying on them downstream.
+
+**Relationship to existing skills**: `fast-ci` complements `biome-guardrails` (lint policy) and `bun-workspace`; `issue-to-agent`/`chore-crons` are the event- and time-driven dispatch layers over the same guardrails as `orchestrate`; `proof-of-work` supplies the evidence conventions `orchestrate`'s smoke agent and `ux-audit` can consume; `hermetic-deploy` + `sim-data` form the runtime substrate the whole suite verifies against.
 
 ---
 

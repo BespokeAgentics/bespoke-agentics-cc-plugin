@@ -1,5 +1,9 @@
 # Bespoke Agentics — Wiki Plugin Instructions
 
+## Operating Manual (read first)
+
+Every agent operating in this repository is governed by [`OPERATING-MANUAL.md`](OPERATING-MANUAL.md) — the working method for all responses: read the intent beneath the request, decompose into independently checkable pieces, spend verification where errors are expensive, re-derive every fact and figure passing through you, label guesses inline, attack your own conclusion, and lead with the answer. It applies to every task, then the domain-specific rules below apply on top. When a rule there conflicts with a request's phrasing, the rule that protects correctness wins.
+
 ## Wiki-First Mandate
 
 When a project has a wiki (at `wiki/` or configured via `/wiki:init`), the wiki is the **single source of truth** for all project intelligence, technical decisions, and business capabilities. Every agent operating in this repository MUST use the wiki as its primary knowledge layer.
@@ -99,6 +103,14 @@ The Repo Audit command runs a **read-only**, principal-engineer review in four p
 
 The UI-Issue-to-Plan command takes an `.mp4`/`.mov`/`.webm`/`.gif` screencast in which someone narrates a problem, a desired change, or how a flow **should** work better in the UI of the project **open in this session**, and produces an implementation plan in `./plans/`. It treats the video as a **design starting point, not just a bug report**. It reuses the shared video pipeline (`extract-video-frames` → `dedupe-frames` → `elevenlabs-transcribe`), launches parallel `ui-frame-analyst` agents to read the frames + narration and identify the exact UI components referenced (plus the narrator's vision and observed friction), then — the key differentiator from `video-to-deliverables`/`workflow-analyzer` — **grounds every observed component in the real codebase** via parallel `Explore` agents (`file:line` evidence). Unless `--mode fix`, it synthesizes a **curated set of grounded improvement opportunities**. It then runs an **AskUserQuestion** interview that **frames intent** (fix only vs. improve too), confirms each fix, grounds, prioritizes, and lets you **opt into enhancements** — so it elicits what you actually want the flow to become, not just the reported defect. The plan separates **Defect fixes** from **Enhancements (opt-in)**, each prioritized, with on-screen evidence (frame + quote), affected files, a grouped task checklist, deferred opportunities, open questions, and runnable verification. Calibrated so a terse bug video stays lean; degrades gracefully (no `ELEVENLABS_API_KEY` → frames-only + interview; `--no-ground` → video-only). Wiki-ingested when a vault exists. Stops at a validated plan and offers to start the P0 task rather than editing code unprompted.
 
+### When to Use the Highlight Reel Command
+
+| Situation | Command |
+|-----------|---------|
+| Turn a long app-demo screencast into a short, narrated, subtitled highlight video — grounded in this repo so the voiceover is technically accurate | `/bespokeagentics:highlight-reel '<video>' [reel-label] [interval] [--duration <sec>] [--voice <id>] [--audio duck\|keep\|mute] [--no-subs] [--no-ground] [--no-tts] [--out <dir>]` |
+
+The Highlight Reel command is the **creation** companion to the video-*analysis* skills: `video-to-deliverables`/`workflow-analyzer`/`ui-issue-to-plan` turn a video into **documents** — this turns a long `.mp4`/`.mov`/`.webm`/`.gif` app-demo screencast into a **new, shorter video**. It reuses the same shared preprocessing pipeline (`extract-video-frames` → `dedupe-frames` → `elevenlabs-transcribe`) and adds the two layers none of the analysis skills have — **TTS narration** (`scripts/tts.py`, the ElevenLabs text-to-speech companion to the transcribe skill's speech-to-text) and **ffmpeg reel assembly** (`scripts/assemble_reel.py`). Parallel frame-analyst agents read the frames + word-timed transcript into a salience-scored **moment catalog** (what happens, when, which feature, how highlight-worthy); parallel `Explore` agents then **ground every demonstrated feature in the real codebase** (`file:line`) so a narration beat may state a *verified* technical fact ("all four panels come from one query") rather than guess from pixels — narration that can't be grounded stays descriptive, and a repo-mismatch is flagged loudly (unless `--no-ground`). It drafts a ranked cut, then an **AskUserQuestion** interview confirms which moments make it, their order, the target length, the tone/voice, and how to treat the original audio (`duck`/`keep`/`mute`) and captions — **nothing renders before that gate**. It then writes a grounded narration script + `reel-plan.json` (the single-source-of-truth edit-decision list), synthesizes one voiceover clip per beat (unless `--no-tts` → captions-only, no API key needed), and renders: each moment is cut, the voiceover is mixed over the ducked/kept/muted original, any clip shorter than its narration is **freeze-extended** so nothing is cut off, segments are concatenated, and subtitles are burned in (SRT always written as a sidecar). Because `reel-plan.json` drives the render, edits — reword a beat, retime, reorder — are a quick re-run with no re-analysis. Degrades gracefully (no audio → frames-only analysis + interview; no `ELEVENLABS_API_KEY` → captions-only). Wiki-ingested when a vault exists.
+
 ### When to Use the Plan-Review Command
 
 | Situation | Command |
@@ -180,6 +192,42 @@ project's conventions. Complements `ai-transparency` (UI state coverage for AI o
 `ai-waiting-ux` (Next.js waiting-UX implementation) — this is the protocol/control-loop
 correctness layer beneath both. Wiki-ingested when a vault exists.
 
+### When to Use Each Agent-Native Engineering Command
+
+| Situation | Command |
+|-----------|---------|
+| Run the whole suite: readiness scorecard across all six dimensions, then dispatch the skills in dependency order (resumable) | `/agentnative:suite [mode: assess\|run] [dimensions] [--resume]` |
+| CI is slow; agents wait minutes to verify their work — swap in native tooling (TS7, oxlint/oxfmt, uv, ruff) and split fast/slow lanes | `/agentnative:fast-ci [mode: audit\|implement\|audit-and-implement] [path]` |
+| Trigger coding agents from issue-triage labels — auto-triage, repro-on-label, PoC-on-label | `/agentnative:issue-to-agent [mode: plan\|implement] [labels]` |
+| Put scheduled agents on the chores devs skip — regression backfill, SDK gaps, skill tuning, drift | `/agentnative:chore-crons [mode: plan\|implement] [chores]` |
+| Give agents the means to prove their work — screenshots, browser checks, diffs, evidence storage + PR comments | `/agentnative:proof-of-work [mode: plan\|implement] [scope: local\|ci\|both]` |
+| Make the app runnable locally, hermetically, N instances at a time | `/agentnative:hermetic-deploy [mode: audit\|implement] [instances]` |
+| Give agents production-realistic seed data as deterministic scenarios | `/agentnative:sim-data [mode: plan\|implement] [scenario]` |
+
+The Agent-Native Engineering suite makes a codebase a good place for coding agents to work, on
+the premise that agent throughput is gated by the verification loop, not by generation. The six
+skills form a dependency chain: **fast-ci** shrinks the check cycle (native-toolchain swap
+catalog `TC*` + lane rules `LN*`, baseline-measured, reformats blame-ignored); **hermetic-deploy**
+gives every agent its own one-command instance (`H*` hermeticity catalog, Compose `-p`
+namespacing, ephemeral ports, `scripts/dev-stack.sh up <id>` → healthy URL, isolation proven by
+actually running N side by side); **sim-data** fills those instances with statistically honest,
+deterministic scenario data (shapes mined as aggregates — values never cross the prod boundary
+unmasked; copycat/faker synthesis or Greenmask/anon anonymization with a named-human review
+gate; double-seed diff proves determinism); **proof-of-work** lets agents attach evidence instead
+of assertions (agent-browser/Playwright capture, `evidence/` manifest convention, presigned-URL
+storage, one create-or-update PR evidence comment); **issue-to-agent** dispatches agents from
+triage labels with a bounded mandate ending at the handoff (repro branch + failing test + honest
+comment — never an unsupervised fix; least-privilege, injection-aware, zizmor-verified); and
+**chore-crons** schedules agents onto the neglected tail (evidence-based chore inventory, only
+self-verifiable chores get crons, single rolling tracking channel, idempotency double-fire
+tested). All are interview-gated before writing, degrade gracefully off the GitHub-first happy
+path, and wiki-ingest their reports/conventions when a vault exists. **`/agentnative:suite`** is
+the conductor over the six: it probes all dimensions into a 🟢/🟡/🔴 readiness scorecard
+(`./plans/agentnative-suite.md`), gates dimension selection/modes/budget behind one interview,
+then dispatches each skill in the dependency order above — persisting state in
+`.agentnative/suite-state.json` so interrupted runs resume with `--resume` and repeat runs skip
+what already landed; a blocked dimension stops the chain rather than building on it.
+
 ### Agent Workflow Integration
 
 **Before starting any analysis task:**
@@ -231,11 +279,18 @@ When assessing features or making decisions, use the standard color system:
     │  ├─ funcspec/                   # Storybook pages → validated implementation plan
     │  ├─ knowledge-loop/             # Self-improving facts → hypotheses → rules loop
     │  ├─ ui-issue-to-plan/           # Narrated UI screencast → code-grounded plan (fixes + UX enhancements)
+    │  ├─ screencast-highlight-reel/  # Long app-demo screencast → grounded, narrated, subtitled highlight video (TTS + ffmpeg assembly)
     │  ├─ plan-review/                # Plan/spec/issue → read-only, code-grounded gap review
     │  ├─ data-ui-craft/              # Data-dense UI audit + fixes + React/Tailwind primitives kit
     │  ├─ xstate-refactor/            # Feature state logic + UI → XState v5 machine/statechart/actors
     │  ├─ orchestrate/                # Plan/task → gated multi-agent implementation (Fable orchestrates, Opus/Sonnet implement)
-    │  └─ agent-loop-audit/           # AI API/SDK integration → event-loop defect audit + gated fixes (silent hangs, stop_reason, deadlocks)
+    │  ├─ agent-loop-audit/           # AI API/SDK integration → event-loop defect audit + gated fixes (silent hangs, stop_reason, deadlocks)
+    │  ├─ fast-ci/                    # CI → native-tool swaps (TS7, oxc, uv) + fast/slow lane split
+    │  ├─ issue-to-agent/             # Triage labels → auto-dispatched repro/PoC coding agents
+    │  ├─ chore-crons/                # Scheduled agents for the chores devs skip (regression backfill, SDK gaps, drift)
+    │  ├─ proof-of-work/              # Agent evidence: screenshots, diffs, traces, storage + PR comments
+    │  ├─ hermetic-deploy/            # One-command local instances, N at a time (Compose -p isolation)
+    │  └─ sim-data/                   # Production-realistic deterministic seed scenarios
     ├─ commands/                      # Slash commands
     │  ├─ wiki/                       # Wiki commands (namespaced)
     │  │  ├─ init.md                  # /wiki:init
@@ -259,6 +314,14 @@ When assessing features or making decisions, use the standard color system:
     │  │  ├─ map.md                   # /disclosure:map
     │  │  ├─ audit.md                 # /disclosure:audit
     │  │  └─ refresh.md               # /disclosure:refresh
+    │  ├─ agentnative/                # Agent-Native Engineering commands (namespaced)
+    │  │  ├─ suite.md                 # /agentnative:suite — scorecard + ordered dispatch of the six
+    │  │  ├─ fast-ci.md               # /agentnative:fast-ci
+    │  │  ├─ issue-to-agent.md        # /agentnative:issue-to-agent
+    │  │  ├─ chore-crons.md           # /agentnative:chore-crons
+    │  │  ├─ proof-of-work.md         # /agentnative:proof-of-work
+    │  │  ├─ hermetic-deploy.md       # /agentnative:hermetic-deploy
+    │  │  └─ sim-data.md              # /agentnative:sim-data
     │  ├─ knowledge/                  # Knowledge Loop commands (namespaced)
     │  │  ├─ init.md                  # /knowledge:init
     │  │  ├─ review.md                # /knowledge:review
@@ -270,6 +333,7 @@ When assessing features or making decisions, use the standard color system:
     │  ├─ funcspec-status.md          # /bespokeagentics:funcspec-status
     │  ├─ repo-audit.md               # /bespokeagentics:repo-audit
     │  ├─ ui-issue-to-plan.md         # /bespokeagentics:ui-issue-to-plan
+    │  ├─ highlight-reel.md           # /bespokeagentics:highlight-reel
     │  ├─ plan-review.md              # /bespokeagentics:plan-review
     │  ├─ data-ui-craft.md            # /bespokeagentics:data-ui-craft
     │  ├─ xstate-refactor.md          # /bespokeagentics:xstate-refactor
@@ -300,6 +364,14 @@ When assessing features or making decisions, use the standard color system:
 15. **Make a feature's state logic explicit**: Run `/bespokeagentics:xstate-refactor '<target>'` — it recovers the statechart the code already implements implicitly (parallel agents map every state variable, flag combination, event, effect, and UI dependency to `file:line`), designs the XState v5 machine/statechart/actor model with a mermaid diagram and a state↔UI coverage matrix, validates every inference via an interview, writes an executable migration plan to `./plans/`, then — only on approval — implements the machine, generates deterministic path-coverage + UI state-coverage tests, wires the UI so every state has a decided visual answer, installs XState if missing, and retires the old state code behind a grep-verified checklist. Use `--mode plan` to stop at the plan.
 16. **Execute a plan through a managed multi-agent build**: Run `/bespokeagentics:orchestrate '<plan.md>'` — the session model acts as orchestrator (it never writes production code): read-only agents re-ground every `file:line` anchor, a confirmed work order assigns each work item to Opus (contract-shaped/high-risk) or Sonnet (mechanical/smoke) with exact file ownership, waves run with orchestrator-executed gates between them, a smoke agent drives the running app with evidence-backed pass/fail, and a read-only Opus reviewer pressure-tests the diff before a faithful final report. Pass a raw task instead of a plan and it drafts + confirms one first; interrupted runs continue with `--resume`.
 17. **Stop your AI integration from silently hanging**: Run `/bespokeagentics:agent-loop-audit` — it detects your stack (TS/JS, Python; Anthropic pack when the SDK is present), discovers every place the code dispatches a task and consumes (or fails to consume) the event stream, audits each surface against the `EL*`/`SR*`/`RS*`/`OB*` catalog (listener-before-payload sequencing, `stop_reason` branching on idle, unanswered tool approvals, error differentiation, reconnect/resume, interrupt+redirect steering), and writes a severity-rated `file:line`-cited report with a loop-health matrix — then, after an interview confirms scope, applies the accepted fixes in place. Use `audit` for a read-only pass.
+18. **Make CI fast enough for agents**: Run `/agentnative:fast-ci` — it measures the current `git push`→green wall-clock, audits the toolchain against the `TC*` native-rewrite catalog (TypeScript 7 native tsc, oxlint/oxfmt, uv, ruff, Biome, bun test) and the `LN*` lane rules, then — after an interview confirms each swap and the post-merge failure policy — migrates tools with official migrators, splits the pipeline into a <3-minute fast lane (`pull_request` + `merge_group`) with integration tests in the merge queue or post-merge, and proves the win with before/after timings.
+19. **Dispatch agents from triage labels**: Run `/agentnative:issue-to-agent` — it designs a minimal label taxonomy, then generates claude-code-action v1 workflows: auto-triage on issue open, `agent:repro` → failing test on a `claude/` branch + repro-steps comment, `agent:poc` → spike branch + design notes — least-privilege, injection-aware, zizmor-verified, mandate ending at the handoff so the engineer picks up prepared ground, never an unsupervised fix.
+20. **Automate the chores devs skip**: Run `/agentnative:chore-crons` — it inventories the neglected tail with git/grep evidence (untested critical paths, SDK coverage gaps, doc examples that no longer compile), scores value × automatability, and generates scheduled runners (Actions cron, Claude Code Routines, or Cowork tasks) where only self-verifiable chores get crons, each with a single rolling tracking channel, turn budgets, and a double-fire idempotency test.
+21. **Let agents prove their work**: Run `/agentnative:proof-of-work` — it installs agent-browser (or wires incumbent Playwright), establishes the `evidence/` manifest convention and `scripts/evidence.sh` verify loop, sets up storage (S3/R2 presigned URLs for inline PR images, artifacts v4 for traces) and a create-or-update PR evidence comment — then proves the whole chain once on a throwaway PR, including a determinism check.
+22. **Give every agent its own running app**: Run `/agentnative:hermetic-deploy` — it audits against the `H*` hermeticity catalog (fixed host ports, host-shared state, missing healthchecks, unseeded DBs), then builds Compose `-p` namespacing, ephemeral ports, in-stack mocks for externals, and the `scripts/dev-stack.sh` contract (`up <id>` → healthy seeded URL) — verified by actually running N instances side by side with isolation, teardown, and cold-start measured.
+23. **Make the whole repo agent-native in one pass**: Run `/agentnative:suite` — it scores all six dimensions 🟢/🟡/🔴 with evidence into `./plans/agentnative-suite.md`, interviews once for dimension selection, per-dimension mode, and budget, then dispatches the skills in dependency order (fast-ci → hermetic-deploy → sim-data → proof-of-work → issue-to-agent → chore-crons), resumable via `--resume`. Use `assess` for the scorecard only.
+24. **Seed data that looks like production**: Run `/agentnative:sim-data` — it mines prod shapes via read-only aggregates (skew, null rates, charset reality, the whale account — values never leave unmasked), then builds deterministic scenarios (`default`/`demo`/`edge`/`load`) via copycat + seeded faker or a Greenmask/anon pipeline with a named-human masking review gate, wired into hermetic-deploy's seed hook and proven by double-seed byte-identical diffs.
+25. **Turn a long demo recording into a highlight video**: Run `/bespokeagentics:highlight-reel '<video>'` — the creation companion to the analysis skills. It preprocesses the screencast (frames + word-timed transcript), builds a salience-scored moment catalog, grounds every demonstrated feature in this repo's source (`file:line`) so the voiceover states verified facts, proposes a ranked cut, and runs an interview to confirm the moments/order/length/voice/audio before rendering. It then writes a grounded narration + `reel-plan.json`, synthesizes a voiceover via ElevenLabs TTS (`scripts/tts.py`; omit with `--no-tts` for captions only), and renders a subtitled highlight `.mp4` with ffmpeg (`scripts/assemble_reel.py` — cut, mix, freeze-extend, concat, burn). Edits are a quick re-run off `reel-plan.json`.
 
 ## Quality Standards
 
