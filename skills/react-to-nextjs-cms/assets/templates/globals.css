@@ -1,0 +1,23 @@
+@import "tailwindcss";
+
+/* Phase 4: copy the prototype's design-system token sheets here (or @import them), then
+   map them into Tailwind's @theme so utilities like bg-flame / text-ink resolve to the
+   design's CSS vars. See claude-design-to-app-workflow/references/tokens-and-tailwind.md
+   for the @theme inline model. Placeholder mapping below — replace with the real tokens. */
+
+@theme {
+  /* --color-flame: #ee6234; */
+  /* --color-ink:   #102133; */
+  /* --color-cool:  #2e9bd1; */
+}
+
+/* Carry over the prototype's non-token CSS here: keyframes (the enhance.js reveal/hero
+   motion), base element rules, fonts. Respect prefers-reduced-motion as the original did. */
+:root {
+  color-scheme: light;
+}
+
+html,
+body {
+  margin: 0;
+}

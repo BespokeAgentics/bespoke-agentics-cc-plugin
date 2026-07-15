@@ -1,6 +1,6 @@
 {
   "name": "bespoke-agentics",
-  "version": "1.0.4",
+  "version": "1.0.5",
   "description": "AI transparency auditing, agent architecture generation, UX evaluation, Pi harness customization, video-to-deliverables pipelines, workflow analysis, and Biome AI guardrails for Codex.",
   "author": {
     "name": "Bespoke Agentics",
@@ -37,11 +37,7 @@
     "longDescription": "Use Bespoke Agentics to audit AI operations for transparent user states, generate agent architecture, evaluate UX, transform videos into structured deliverables, analyze workflows, manage Karpathy-style project wikis, and work with Pi harness customization.",
     "developerName": "Bespoke Agentics",
     "category": "Coding",
-    "capabilities": [
-      "Interactive",
-      "Read",
-      "Write"
-    ],
+    "capabilities": ["Interactive", "Read", "Write"],
     "websiteURL": "https://github.com/BespokeAgentics/bespoke-agentics-cc-plugin",
     "privacyPolicyURL": "[TODO: https://example.com/privacy]",
     "termsOfServiceURL": "[TODO: https://example.com/terms]",

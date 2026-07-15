@@ -1,0 +1,39 @@
+{
+  "name": "<name>",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "TINA_PUBLIC_IS_LOCAL=true tinacms dev -c \"next dev\"",
+    "build": "tinacms build && next build",
+    "start": "next start",
+    "lint": "next lint"
+  },
+  "comment-versions": "Mid-2026 tested set. Tina stack + next-auth v4 are load-bearing pins. Next held at 15.x for stability (tina-self-hosted-demo tracks 16 — bump if you want). Run the Phase 8 build and bump anything that fails. react-dnd(+html5-backend) are Tina admin peers — keep them.",
+  "dependencies": {
+    "next": "^15.5.0",
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0",
+    "tinacms": "^3.10.0",
+    "@tinacms/datalayer": "^2.0.27",
+    "tinacms-authjs": "^24.0.0",
+    "tinacms-gitprovider-github": "^4.1.14",
+    "next-auth": "^4.24.14",
+    "upstash-redis-level": "^1.1.1",
+    "react-dnd": "^16.0.1",
+    "react-dnd-html5-backend": "^16.0.1",
+    "lucide-react": "^0.460.0"
+  },
+  "comment-db": "Default --db upstash: provision Upstash for Redis via the Vercel Marketplace (Vercel KV was sunset Dec 2024). For --db mongodb the scaffolder swaps upstash-redis-level -> mongodb-level (^0.0.4) + set MONGODB_URI (Atlas). Both work on Vercel's Node runtime.",
+  "devDependencies": {
+    "@tinacms/cli": "^2.5.3",
+    "typescript": "^5.6.0",
+    "@types/node": "^22.0.0",
+    "@types/react": "^19.0.0",
+    "@types/react-dom": "^19.0.0",
+    "tailwindcss": "^4.0.0",
+    "@tailwindcss/postcss": "^4.0.0",
+    "postcss": "^8.4.0",
+    "eslint": "^9.0.0",
+    "eslint-config-next": "^15.5.0"
+  }
+}

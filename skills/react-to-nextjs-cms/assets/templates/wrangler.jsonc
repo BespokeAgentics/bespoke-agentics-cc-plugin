@@ -1,0 +1,14 @@
+{
+  // Cloudflare Workers config for the OpenNext-built Next.js app. See
+  // references/deploy-cloudflare.md. `nodejs_compat` is required by the Tina backend;
+  // compatibility_date must be >= 2024-09-23 for it to take effect.
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "main": ".open-next/worker.js",
+  "name": "<name>",
+  "compatibility_date": "2025-03-01",
+  "compatibility_flags": ["nodejs_compat", "global_fetch_strictly_public"],
+  "assets": { "directory": ".open-next/assets", "binding": "ASSETS" },
+  "services": [{ "binding": "WORKER_SELF_REFERENCE", "service": "<name>" }]
+  // Optional R2 incremental cache for ISR (bind + enable in open-next.config.ts):
+  // "r2_buckets": [{ "binding": "NEXT_INC_CACHE_R2_BUCKET", "bucket_name": "<name>-cache" }]
+}

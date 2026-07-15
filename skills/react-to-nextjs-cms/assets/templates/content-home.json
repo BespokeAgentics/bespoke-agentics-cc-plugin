@@ -1,0 +1,26 @@
+{
+  "title": "Home",
+  "blocks": [
+    {
+      "_template": "hero",
+      "eyebrow": "REPLACE WITH THE PROTOTYPE'S EYEBROW",
+      "headline": "Replace with the prototype's hero headline",
+      "sub": "Replace with the prototype's hero subhead — lift the real copy verbatim from the page JSX.",
+      "image": "/uploads/hero.jpg",
+      "imageAlt": "",
+      "accent": "cool",
+      "layout": "overlay",
+      "cta": { "text": "Primary call to action", "url": "/book" }
+    },
+    {
+      "_template": "services",
+      "heading": "What we do",
+      "items": [
+        { "title": "Service one", "body": "Describe it.", "icon": "wrench" },
+        { "title": "Service two", "body": "Describe it.", "icon": "wind" },
+        { "title": "Service three", "body": "Describe it.", "icon": "gauge" }
+      ]
+    },
+    { "_template": "cta", "text": "Book a visit", "url": "/book" }
+  ]
+}

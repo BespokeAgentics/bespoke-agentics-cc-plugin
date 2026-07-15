@@ -1,0 +1,65 @@
+{
+  "skill_name": "react-to-nextjs-cms",
+  "evals": [
+    {
+      "id": 0,
+      "name": "protec-cloudflare-default",
+      "prompt": "Turn the ProTec prototype at \"/Users/quintinhenry/Documents/Projects/Protec-Hvac/Protec website planning/site\" into a real Next.js app with a CMS so the client can edit the copy in place. Keep it on Cloudflare.",
+      "expected_output": "A Next.js App-Router app with self-hosted TinaCMS, deployed via OpenNext on Cloudflare with an Upstash Redis datalayer. The _ds design system's tokens become a Tailwind v4 @theme; the site/*.jsx pages are ported to Next components; every hardcoded headline/subhead/service/CTA/image is externalized into content/pages/*.json and modeled as Tina blocks; on-page click-to-edit works via useTina + tinaField; wrangler.jsonc + open-next.config.ts + the pages/api/tina/[...routes].ts backend are wired.",
+      "files": ["/Users/quintinhenry/Documents/Projects/Protec-Hvac/Protec website planning/site"],
+      "assertions": [
+        {"text": "analyze_prototype.py ran and produced an analysis.json listing the pages, the _ds design system, and content_candidates"},
+        {"text": "The app is Next.js App Router (app/ dir) with self-hosted Tina: tina/config.tsx uses contentApiUrlOverride and pages/api/tina/[...routes].ts exists (a Pages-Router file coexisting with app/)"},
+        {"text": "The deploy target is Cloudflare: wrangler.jsonc (nodejs_compat + .open-next/worker.js) and open-next.config.ts are present, using @opennextjs/cloudflare (NOT next-on-pages)"},
+        {"text": "The datalayer is Upstash Redis (upstash-redis-level) in tina/database.ts, not MongoDB"},
+        {"text": "next.config.mjs sets transpilePackages for the four Tina packages and a /admin rewrite"},
+        {"text": "The prototype's hardcoded copy is externalized into content/pages/*.json as blocks (hero/services/cta), not left in the JSX"},
+        {"text": "Editable elements carry data-tina-field={tinaField(...)} on real HTML elements, wired through a useTina client component fed the full { data, query, variables }"},
+        {"text": "The design system tokens are carried into a Tailwind v4 @theme layer; components use token utilities, not stray hex"},
+        {"text": "npm install completed and the skeleton builds (tinacms build && next build) or the failure is reported honestly [full-depth runs only]"}
+      ]
+    },
+    {
+      "id": 1,
+      "name": "vercel-mongodb-flag",
+      "prompt": "Bootstrap this React prototype into a Next.js + TinaCMS app but deploy on Vercel and use MongoDB. \"/Users/quintinhenry/Documents/Projects/Protec-Hvac/Protec website planning/site\" --deploy vercel --db mongodb",
+      "expected_output": "Same app shape, but no OpenNext/wrangler files; tina/database.ts uses MongodbLevel (mongoUri from MONGODB_URI); package.json has mongodb-level instead of upstash-redis-level; env guidance says MONGODB_URI (Atlas) and does not mention 'Vercel KV'.",
+      "files": ["/Users/quintinhenry/Documents/Projects/Protec-Hvac/Protec website planning/site"],
+      "assertions": [
+        {"text": "No wrangler.jsonc / open-next.config.ts and no @opennextjs/cloudflare dependency (Vercel target)"},
+        {"text": "tina/database.ts uses MongodbLevel with mongoUri from process.env.MONGODB_URI"},
+        {"text": "package.json depends on mongodb-level and NOT upstash-redis-level"},
+        {"text": "The env/hand-off guidance references MONGODB_URI and Upstash-via-Marketplace, and never tells the user to create a 'Vercel KV' store"},
+        {"text": "The Tina backend route and transpilePackages/admin rewrite are still present"}
+      ]
+    },
+    {
+      "id": 2,
+      "name": "pages-subset-forms-editing",
+      "prompt": "From \"/Users/quintinhenry/Documents/Projects/Protec-Hvac/Protec website planning/site\", make just the home and services pages editable — I'm fine with an admin dashboard, don't need on-page editing. --pages home,services --editing forms",
+      "expected_output": "Only home and services are ported and modeled as collections; the /admin dashboard is wired for form-based editing; on-page tinaField wiring may be omitted per --editing forms; other pages are not ported.",
+      "files": ["/Users/quintinhenry/Documents/Projects/Protec-Hvac/Protec website planning/site"],
+      "assertions": [
+        {"text": "Only the home and services pages are ported and have content/pages entries (not commercial/book)"},
+        {"text": "The /admin route is wired (public/admin rewrite) for dashboard editing"},
+        {"text": "Content is still externalized into content/*.json (editable), even though on-page click-to-edit was not requested"},
+        {"text": "The self-hosted backend + deploy config (Cloudflare default) are present"}
+      ]
+    },
+    {
+      "id": 3,
+      "name": "ultracode-parallel-waves",
+      "prompt": "Here's the prototype at \"/Users/quintinhenry/Documents/Projects/Protec-Hvac/Protec website planning/site\" — build the editable Next.js + Tina app.",
+      "expected_output": "Same default deliverable, produced via the ultracode wave protocol: a main-thread golden reference (one design-system primitive + one fully-externalized page) + conventions.md, dependency-wave fan-out of component-porter agents, content-porter fan-out per page, build gates between waves, and a reconciler sweep before final verification.",
+      "files": ["/Users/quintinhenry/Documents/Projects/Protec-Hvac/Protec website planning/site"],
+      "assertions": [
+        {"text": "A golden reference (most-used primitive + one end-to-end externalized page) is ported in the main thread FIRST and a conventions.md contract is written before any fan-out"},
+        {"text": "Remaining design-system components are dispatched to parallel component-porter subagents in dependency waves (leaf primitives before composites)"},
+        {"text": "Content externalization fans out one content-porter per page against the fixed collection schema"},
+        {"text": "A build/tsc gate runs between waves; failures are fixed or re-dispatched before the next wave"},
+        {"text": "A reconciler sweep runs at the start of Phase 8 and RSC/client-boundary + data-tina-field-placement drift is fixed or reported"},
+        {"text": "The main thread does not bulk-port outside the golden reference and failure takeovers"}
+      ]
+    }
+  ]
+}

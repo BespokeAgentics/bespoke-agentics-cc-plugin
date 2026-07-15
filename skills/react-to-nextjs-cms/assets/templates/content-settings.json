@@ -1,0 +1,16 @@
+{
+  "siteName": "<name>",
+  "logo": "/uploads/logo.svg",
+  "nav": [
+    { "label": "Home", "url": "/" },
+    { "label": "Services", "url": "/services" },
+    { "label": "Book", "url": "/book" }
+  ],
+  "contact": {
+    "phone": "",
+    "email": "",
+    "address": "",
+    "hours": ""
+  },
+  "footerNote": ""
+}

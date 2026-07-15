@@ -1,0 +1,13 @@
+{
+  "users": [
+    {
+      "name": "Admin",
+      "email": "admin@example.com",
+      "username": "admin",
+      "password": {
+        "value": "changeme123",
+        "passwordChangeRequired": true
+      }
+    }
+  ]
+}

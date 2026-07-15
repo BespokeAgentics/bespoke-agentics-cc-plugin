@@ -1,0 +1,45 @@
+{
+  "name": "<name>",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "TINA_PUBLIC_IS_LOCAL=true tinacms dev -c \"next dev\"",
+    "build": "tinacms build && next build",
+    "start": "next start",
+    "lint": "next lint",
+    "preview": "opennextjs-cloudflare build && opennextjs-cloudflare preview",
+    "deploy": "opennextjs-cloudflare build && opennextjs-cloudflare deploy",
+    "cf-typegen": "wrangler types --env-interface CloudflareEnv cloudflare-env.d.ts"
+  },
+  "comment-versions": "Mid-2026 tested set. Tina stack + next-auth v4 are load-bearing pins; Next is held at 15.x as the safe OpenNext baseline (the tina-self-hosted-demo tracks Next 16 — bump if your OpenNext version supports it). Run the Phase 8 build and bump anything that fails. react-dnd(+html5-backend) are Tina admin peers — keep them.",
+  "dependencies": {
+    "next": "^15.5.0",
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0",
+    "tinacms": "^3.10.0",
+    "@tinacms/datalayer": "^2.0.27",
+    "tinacms-authjs": "^24.0.0",
+    "tinacms-gitprovider-github": "^4.1.14",
+    "next-auth": "^4.24.14",
+    "upstash-redis-level": "^1.1.1",
+    "react-dnd": "^16.0.1",
+    "react-dnd-html5-backend": "^16.0.1",
+    "lucide-react": "^0.460.0"
+  },
+  "comment-db": "Default --db upstash (works on Workers over HTTP). For --db mongodb the scaffolder swaps upstash-redis-level -> mongodb-level (^0.0.4) — but MongoDB is fragile on Workers; see references/deploy-cloudflare.md.",
+  "comment-opennext": "@opennextjs/cloudflare is the current CF adapter (next-on-pages is deprecated). If install resolves an unexpected major, run `npm i @opennextjs/cloudflare@latest` and `npm i -D wrangler@latest`.",
+  "devDependencies": {
+    "@opennextjs/cloudflare": "^1.3.0",
+    "wrangler": "^4.0.0",
+    "@tinacms/cli": "^2.5.3",
+    "typescript": "^5.6.0",
+    "@types/node": "^22.0.0",
+    "@types/react": "^19.0.0",
+    "@types/react-dom": "^19.0.0",
+    "tailwindcss": "^4.0.0",
+    "@tailwindcss/postcss": "^4.0.0",
+    "postcss": "^8.4.0",
+    "eslint": "^9.0.0",
+    "eslint-config-next": "^15.5.0"
+  }
+}
