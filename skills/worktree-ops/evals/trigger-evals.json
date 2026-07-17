@@ -1,0 +1,80 @@
+[
+  {
+    "query": "i've got like 20 git worktrees going and i genuinely cannot remember which one has the invoice thing and which ones i already pushed. can you sort this out",
+    "should_trigger": true
+  },
+  {
+    "query": "spin up a new worktree for the site-discovery feature off production and give it its own database so the agent can run the app and i can click through it without nuking my local dev data",
+    "should_trigger": true
+  },
+  {
+    "query": "two of my feature branches both generated migration 0031 and i need to merge both of them — what order do i merge them in and how do i keep drizzle from exploding",
+    "should_trigger": true
+  },
+  {
+    "query": "which migration number is actually safe to use next across all my branches? i keep getting collisions when i open PRs",
+    "should_trigger": true
+  },
+  {
+    "query": "the agent in my CUMULATIVE_OS-remove-convex worktree kept writing to my real dev postgres and now my local data is a mess. how do i isolate a worktree's database so this never happens again",
+    "should_trigger": true
+  },
+  {
+    "query": "delete the ../CUMULATIVE_OS-old-experiment worktree, i'm done with it — but don't lose anything i haven't pushed",
+    "should_trigger": true
+  },
+  {
+    "query": "what's the correct merge order for all these parallel branches so i don't get migration conflicts",
+    "should_trigger": true
+  },
+  {
+    "query": "retrofit an isolated test db onto a worktree i made the old way with /worktree — it's still pointing at my shared dev database",
+    "should_trigger": true
+  },
+  {
+    "query": "reset the throwaway database in my funcspec worktree back to a clean seed so i can re-run the manual test",
+    "should_trigger": true
+  },
+  {
+    "query": "give me a dashboard of every worktree: branch, is it dirty, is it behind production, does it have a test db",
+    "should_trigger": true
+  },
+
+  {
+    "query": "generate a new drizzle migration for the projects table — i added a description column and need the SQL",
+    "should_trigger": false
+  },
+  {
+    "query": "my drizzle-kit migrate is failing against azure postgres with an SSL CA verification error, can you debug the connection",
+    "should_trigger": false
+  },
+  {
+    "query": "create a new git branch off production called feat/billing and check it out here",
+    "should_trigger": false
+  },
+  {
+    "query": "run db:seed against my local database, it's empty and i need test data",
+    "should_trigger": false
+  },
+  {
+    "query": "i have a merge conflict in apps/shell/src/lib/funcspec/engine.ts, help me resolve it",
+    "should_trigger": false
+  },
+  {
+    "query": "set up a local postgres in docker for this project and wire DATABASE_URL to it",
+    "should_trigger": false
+  },
+  {
+    "query": "what's the difference between git worktree and git clone, conceptually? just curious",
+    "should_trigger": false
+  },
+  { "query": "squash the last 4 commits on this branch and force push", "should_trigger": false },
+  {
+    "query": "connect to my neon database and show me the projects table schema",
+    "should_trigger": false
+  },
+  {
+    "query": "the app crashes on startup because a migration didn't apply — figure out which one and fix the table",
+    "should_trigger": false
+  }
+]

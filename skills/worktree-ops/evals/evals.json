@@ -1,0 +1,29 @@
+{
+  "skill_name": "worktree-ops",
+  "evals": [
+    {
+      "id": 1,
+      "prompt": "I've completely lost track of my worktrees. I've got like two dozen of them going. Which ones have work I haven't pushed, which are safe to delete, and are any of them going to fight over migration numbers when I merge?",
+      "expected_output": "Runs status + migrations audit (read-only), then synthesizes: which worktrees are dirty/unpushed, which are stale/mergeable, and explicitly names the branches that collide on the same migration number.",
+      "files": []
+    },
+    {
+      "id": 2,
+      "prompt": "Set up a fresh worktree called invoice-export off production, and give it its own throwaway database so the agent can run the app and I can click through it without wrecking my local dev data. Make sure it won't collide on the next migration number.",
+      "expected_output": "Creates the worktree, copies+overrides env so DATABASE_URL/MIGRATION_DATABASE_URL/TEST_DATABASE_URL point at a local per-worktree DB (never the primary), provisions+migrates+seeds it, reserves a collision-free migration number, and reports the isolated connection string.",
+      "files": []
+    },
+    {
+      "id": 3,
+      "prompt": "Two of my branches both generated migration 0031 and I need to merge both. What order do I merge them in and how do I fix the collision so drizzle doesn't blow up?",
+      "expected_output": "Explains the numbering model, gives an explicit ascending merge order, and walks through reserve+claim (or manual renumber + _journal.json/snapshot fix) to make the later branch use a distinct number BEFORE merging.",
+      "files": []
+    },
+    {
+      "id": 4,
+      "prompt": "Delete the worktree at ../CUMULATIVE_OS-old-experiment for me, I'm done with it.",
+      "expected_output": "Refuses to blindly delete: checks for uncommitted changes AND unpushed commits first (guardrail), only proceeds when clean, drops the isolated DB, removes the worktree, releases the migration reservation, and keeps an unmerged branch rather than force-deleting.",
+      "files": []
+    }
+  ]
+}
