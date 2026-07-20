@@ -164,6 +164,37 @@ included — without ever committing or pushing unprompted. Complements the othe
 critiques a plan without building it, `funcspec` produces one from a UI — `orchestrate` **executes**
 one through subagents.
 
+### When to Use the Workstream-Orchestrate Command
+
+| Situation | Command |
+|-----------|---------|
+| Turn a plan into a kickoff contract, then build it one workstream at a time — each `code → validate → commit`, with a server-side hard-gate proof and a human checkpoint between workstreams | `/bespokeagentics:workstream-orchestrate '<plan-path-or-task>' [--from WS-n] [--to WS-m] [--engine workflow\|agent] [--attempts N] [--no-commit] [--no-confirm] [--dry-run] [--resume [<slug>]] [--force]` |
+
+The Workstream-Orchestrate command is the **sequential, commit-as-you-go** sibling of `orchestrate`.
+Where `orchestrate` runs parallel implementation waves in one Agent-driven loop and never commits,
+this one drives a plan **one workstream at a time** through a bounded `code → validate → commit`
+**Workflow** (one Workflow invocation per workstream), and it **generates a first-class kickoff
+contract** — a 10-section, human-confirmed document (Mission, Reading list, Branch, Orchestration
+shape, Gates, Guardrails, Workstreams, Workflow skeleton, Stop-and-ask, Definition of done), derived
+from the plan, that every workstream is built and judged against. Each workstream: an implementer
+applies only its scope in the shared tree (no worktree); an **independent, read-only, adversarial
+validator** re-runs the gates the orchestrator also runs itself and must **prove or refute the plan's
+declared "hard gates"** — invariants that must hold at the *authoritative layer* (a server-side
+resolution function, not client CSS), proven by crafted adversarial input, never "it's hidden in the
+UI"; and only a green, validated workstream earns **one Conventional Commit** staging only its files,
+followed by a **human checkpoint** before the next begins. Failing validation loops back to code
+(≤`--attempts`), then **halts and surfaces the findings** rather than forcing a commit. The driver
+**never writes production code** — it grounds the plan's `file:line` anchors, authors the contract
+(confirmed in one **AskUserQuestion** batch, where any locked decision that looks wrong is raised,
+never overridden), delegates each phase to Opus/Sonnet subagents, runs the gates itself, and reports
+faithfully. Given a **raw task** instead of a plan, it drafts and confirms a plan first. Runs are
+**resumable** under `.workstream/<slug>/` (contract, per-agent reports, state); committed workstreams
+are skipped on resume. Degrades gracefully: no Workflow tool → the identical loop via direct Agent
+calls (`--engine agent`); no project `/commit` skill → a plain Conventional Commit via git;
+`--dry-run` → contract only. Complements the others: `orchestrate` executes a plan in parallel without
+committing, `plan-review` critiques a plan without building it — this one **generates a contract AND
+executes it sequentially, committing each validated workstream**. Wiki-ingested when a vault exists.
+
 ### When to Use the Agent-Loop Audit Command
 
 | Situation | Command |
@@ -284,6 +315,7 @@ When assessing features or making decisions, use the standard color system:
     │  ├─ data-ui-craft/              # Data-dense UI audit + fixes + React/Tailwind primitives kit
     │  ├─ xstate-refactor/            # Feature state logic + UI → XState v5 machine/statechart/actors
     │  ├─ orchestrate/                # Plan/task → gated multi-agent implementation (Fable orchestrates, Opus/Sonnet implement)
+    │  ├─ workstream-orchestrate/     # Plan → kickoff contract → sequential per-WS code→validate→commit (Workflow) + hard-gate proofs
     │  ├─ agent-loop-audit/           # AI API/SDK integration → event-loop defect audit + gated fixes (silent hangs, stop_reason, deadlocks)
     │  ├─ fast-ci/                    # CI → native-tool swaps (TS7, oxc, uv) + fast/slow lane split
     │  ├─ issue-to-agent/             # Triage labels → auto-dispatched repro/PoC coding agents
@@ -338,6 +370,7 @@ When assessing features or making decisions, use the standard color system:
     │  ├─ data-ui-craft.md            # /bespokeagentics:data-ui-craft
     │  ├─ xstate-refactor.md          # /bespokeagentics:xstate-refactor
     │  ├─ orchestrate.md              # /bespokeagentics:orchestrate
+    │  ├─ workstream-orchestrate.md   # /bespokeagentics:workstream-orchestrate
     │  ├─ agent-loop-audit.md         # /bespokeagentics:agent-loop-audit
     │  └─ wiki-*.md                   # Flat command aliases
     ├─ agents/
@@ -372,6 +405,7 @@ When assessing features or making decisions, use the standard color system:
 23. **Make the whole repo agent-native in one pass**: Run `/agentnative:suite` — it scores all six dimensions 🟢/🟡/🔴 with evidence into `./plans/agentnative-suite.md`, interviews once for dimension selection, per-dimension mode, and budget, then dispatches the skills in dependency order (fast-ci → hermetic-deploy → sim-data → proof-of-work → issue-to-agent → chore-crons), resumable via `--resume`. Use `assess` for the scorecard only.
 24. **Seed data that looks like production**: Run `/agentnative:sim-data` — it mines prod shapes via read-only aggregates (skew, null rates, charset reality, the whale account — values never leave unmasked), then builds deterministic scenarios (`default`/`demo`/`edge`/`load`) via copycat + seeded faker or a Greenmask/anon pipeline with a named-human masking review gate, wired into hermetic-deploy's seed hook and proven by double-seed byte-identical diffs.
 25. **Turn a long demo recording into a highlight video**: Run `/bespokeagentics:highlight-reel '<video>'` — the creation companion to the analysis skills. It preprocesses the screencast (frames + word-timed transcript), builds a salience-scored moment catalog, grounds every demonstrated feature in this repo's source (`file:line`) so the voiceover states verified facts, proposes a ranked cut, and runs an interview to confirm the moments/order/length/voice/audio before rendering. It then writes a grounded narration + `reel-plan.json`, synthesizes a voiceover via ElevenLabs TTS (`scripts/tts.py`; omit with `--no-tts` for captions only), and renders a subtitled highlight `.mp4` with ffmpeg (`scripts/assemble_reel.py` — cut, mix, freeze-extend, concat, burn). Edits are a quick re-run off `reel-plan.json`.
+26. **Build a plan workstream-by-workstream, committing each**: Run `/bespokeagentics:workstream-orchestrate '<plan-path-or-task>'` — the sequential, commit-as-you-go sibling of `orchestrate`. It generates a human-confirmed **kickoff contract** from the plan (10 sections: mission, gates, guardrails, workstreams, hard gates, definition of done), then drives it **one workstream at a time** through a bounded `code → validate → commit` **Workflow**: an implementer applies only that workstream's scope, an independent adversarial validator re-runs the gates and **proves or refutes the plan's server-side hard gates** (crafted input against the authoritative layer, never client-side hiding), and only a green, validated workstream earns **one Conventional Commit** — followed by a human checkpoint before the next. Failing validation loops back (≤`--attempts`) then halts and surfaces the findings. The driver never writes production code; given a raw task it drafts and confirms a plan first. Resumable under `.workstream/<slug>/`; degrades to `--engine agent` when the Workflow tool is absent, or `--dry-run` for the contract only.
 
 ## Quality Standards
 

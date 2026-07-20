@@ -1,0 +1,30 @@
+{
+  "skill_name": "workstream-orchestrate",
+  "note": "Scaffold only — assertions are drafted but NOT yet run (author-now-eval-later). Full-execution evals need a real multi-workstream repo to drive; these focus on contract generation + the pre-code gate, which are checkable without one.",
+  "evals": [
+    {
+      "id": 1,
+      "prompt": "Generate the kickoff contract for skills/workstream-orchestrate/evals/sample-plan.md and stop before executing (dry run).",
+      "files": ["skills/workstream-orchestrate/evals/sample-plan.md"],
+      "expected_output": "A 10-section kickoff contract written to the run dir, then a stop at the Phase-A confirm gate — no workstream executed, nothing committed.",
+      "assertions": [
+        {"text": "Contract contains all 10 numbered sections (Mission … Definition of done)", "passed": null, "evidence": null},
+        {"text": "Workstreams WS-0, WS-1, WS-2 are extracted in dependency order (drift → schema → resolution)", "passed": null, "evidence": null},
+        {"text": "A Hard gates block records HG-1 with enforced_at = listProjects (server-side), not the client", "passed": null, "evidence": null},
+        {"text": "The schema workstream's gate expansion names an isolated/disposable DB, never a shared/prod one", "passed": null, "evidence": null},
+        {"text": "The run stops at the confirm gate under --dry-run: no production files edited, no commit created", "passed": null, "evidence": null}
+      ]
+    },
+    {
+      "id": 2,
+      "prompt": "Orchestrate skills/workstream-orchestrate/evals/sample-plan.md workstream by workstream, committing each as it passes.",
+      "files": ["skills/workstream-orchestrate/evals/sample-plan.md"],
+      "expected_output": "The skill reaches the Phase-A AskUserQuestion contract-confirmation gate BEFORE writing any production code — it does not begin coding WS-0 unprompted.",
+      "assertions": [
+        {"text": "An AskUserQuestion contract-confirm gate is reached before any Edit/Write to production files", "passed": null, "evidence": null},
+        {"text": "The plan's locked decisions D1–D3 are surfaced as confirmations, not re-litigated", "passed": null, "evidence": null},
+        {"text": "The proposed loop is sequential and per-workstream (one Workflow per WS), not parallel waves", "passed": null, "evidence": null}
+      ]
+    }
+  ]
+}

@@ -1,0 +1,14 @@
+[
+  {"query": "orchestrate ./plans/archived-projects.md workstream by workstream and commit each one as it passes", "should_trigger": true},
+  {"query": "build WS-0 through WS-6 one at a time, validate each before committing, checkpoint with me between them", "should_trigger": true},
+  {"query": "generate a kickoff contract from docs/plans/rate-limits.md then drive the code→validate→commit loop", "should_trigger": true},
+  {"query": "run a gated sequential build of this plan — one Workflow per workstream, commit as you go", "should_trigger": true},
+  {"query": "i want each workstream committed only after an adversarial validator proves the server-side hard gate", "should_trigger": true},
+  {"query": "drive plans/soft-delete.md as a managed multi-agent build, a conventional commit per validated workstream", "should_trigger": true},
+  {"query": "orchestrate this plan with parallel implementation waves and don't commit anything until I review", "should_trigger": false},
+  {"query": "review this plan for gaps and risks before I build it: plans/checkout.md", "should_trigger": false},
+  {"query": "turn this Storybook into an implementation plan and backlog", "should_trigger": false},
+  {"query": "commit my current staged changes with a conventional commit message", "should_trigger": false},
+  {"query": "audit this repo and grade it A–F with a prioritized fix plan", "should_trigger": false},
+  {"query": "refactor this component's boolean flag soup into an XState v5 machine", "should_trigger": false}
+]
