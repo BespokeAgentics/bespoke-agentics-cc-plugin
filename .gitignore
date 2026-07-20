@@ -10,3 +10,6 @@ apps/spec-interviewer/artifacts/
 # Python bytecode caches
 __pycache__/
 *.pyc
+
+# screencast-capture skill output dir (recordings, reels)
+/screencast-capture/

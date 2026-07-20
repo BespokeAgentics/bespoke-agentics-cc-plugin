@@ -223,6 +223,34 @@ project's conventions. Complements `ai-transparency` (UI state coverage for AI o
 `ai-waiting-ux` (Next.js waiting-UX implementation) — this is the protocol/control-loop
 correctness layer beneath both. Wiki-ingested when a vault exists.
 
+### When to Use the Screencast-Capture Command
+
+| Situation | Command |
+|-----------|---------|
+| Record a browser flow you describe as a screencast — the agent drives Claude-in-Chrome, records it (default gif, or `--engine screen` for native-resolution monitor capture), makes an MP4, and offers to turn it into a narrated highlight reel | `/bespokeagentics:screencast-capture ['<start-url-or-flow>'] [capture-label] [--engine chrome-gif\|screen] [--display <idx>] [--crf <n>] [--overlays clean\|clicks\|full] [--reel] [--no-reel] [--out <dir>]` |
+
+The Screencast-Capture command is the **capture** companion to `screencast-highlight-reel`: that
+skill *polishes* a finished screencast into a narrated reel — this one *produces* the screencast
+agentically, so a human never has to screen-record themselves. Given a start URL and a flow you
+describe, it drives a live **Claude-in-Chrome** session: an **AskUserQuestion** interview turns the
+request into a concrete shot list, it opens a fresh tab and **pauses for you to log in / dismiss
+banners before recording starts** (credentials and consent clicks never enter the footage — the agent
+never types secrets), then records the flow step-by-step with the `gif_creator` tool (**click
+indicators only** by default; `--overlays clean/full` to change the look), taking a screenshot
+between steps so the capture reads smoothly. That default engine is zero-setup but the Chrome capture is
+**hard-capped ~1200px** and the GIF is dithered; for a crisp result, **`--engine screen`** records a
+chosen monitor with ffmpeg at **native resolution + configurable bitrate** (`--display` / `--crf`),
+auto-cropped to the browser window — it needs macOS Screen-Recording permission and records the whole
+monitor. The gif engine exports the GIF and **converts it to a real-duration MP4** (a GIF reports no
+container duration, so the reel's frame-extractor would otherwise drift on frame-index timestamps); the
+screen engine writes MP4 directly. It then presents the MP4 and, per your choice, **hands off to
+`screencast-highlight-reel`** (default:
+produce the MP4, then ask; `--reel`/`--no-reel` to force or skip), forwarding `--no-tts` when there's
+no `ELEVENLABS_API_KEY` and `--no-ground` when the recorded site isn't this repo's app — the reel runs
+its own confirm-before-render gate, so nothing renders unprompted. Degrades gracefully (no ffmpeg →
+stops before recording; a login wall it can't clear → captures what's reachable or stops).
+Wiki-logged when a vault exists.
+
 ### When to Use Each Agent-Native Engineering Command
 
 | Situation | Command |
@@ -311,6 +339,7 @@ When assessing features or making decisions, use the standard color system:
     │  ├─ knowledge-loop/             # Self-improving facts → hypotheses → rules loop
     │  ├─ ui-issue-to-plan/           # Narrated UI screencast → code-grounded plan (fixes + UX enhancements)
     │  ├─ screencast-highlight-reel/  # Long app-demo screencast → grounded, narrated, subtitled highlight video (TTS + ffmpeg assembly)
+    │  ├─ screencast-capture/         # Browser flow → MP4 (gif tab-capture or --engine screen native-res) → hands to screencast-highlight-reel
     │  ├─ plan-review/                # Plan/spec/issue → read-only, code-grounded gap review
     │  ├─ data-ui-craft/              # Data-dense UI audit + fixes + React/Tailwind primitives kit
     │  ├─ xstate-refactor/            # Feature state logic + UI → XState v5 machine/statechart/actors
@@ -366,6 +395,7 @@ When assessing features or making decisions, use the standard color system:
     │  ├─ repo-audit.md               # /bespokeagentics:repo-audit
     │  ├─ ui-issue-to-plan.md         # /bespokeagentics:ui-issue-to-plan
     │  ├─ highlight-reel.md           # /bespokeagentics:highlight-reel
+    │  ├─ screencast-capture.md      # /bespokeagentics:screencast-capture
     │  ├─ plan-review.md              # /bespokeagentics:plan-review
     │  ├─ data-ui-craft.md            # /bespokeagentics:data-ui-craft
     │  ├─ xstate-refactor.md          # /bespokeagentics:xstate-refactor
@@ -406,6 +436,7 @@ When assessing features or making decisions, use the standard color system:
 24. **Seed data that looks like production**: Run `/agentnative:sim-data` — it mines prod shapes via read-only aggregates (skew, null rates, charset reality, the whale account — values never leave unmasked), then builds deterministic scenarios (`default`/`demo`/`edge`/`load`) via copycat + seeded faker or a Greenmask/anon pipeline with a named-human masking review gate, wired into hermetic-deploy's seed hook and proven by double-seed byte-identical diffs.
 25. **Turn a long demo recording into a highlight video**: Run `/bespokeagentics:highlight-reel '<video>'` — the creation companion to the analysis skills. It preprocesses the screencast (frames + word-timed transcript), builds a salience-scored moment catalog, grounds every demonstrated feature in this repo's source (`file:line`) so the voiceover states verified facts, proposes a ranked cut, and runs an interview to confirm the moments/order/length/voice/audio before rendering. It then writes a grounded narration + `reel-plan.json`, synthesizes a voiceover via ElevenLabs TTS (`scripts/tts.py`; omit with `--no-tts` for captions only), and renders a subtitled highlight `.mp4` with ffmpeg (`scripts/assemble_reel.py` — cut, mix, freeze-extend, concat, burn). Edits are a quick re-run off `reel-plan.json`.
 26. **Build a plan workstream-by-workstream, committing each**: Run `/bespokeagentics:workstream-orchestrate '<plan-path-or-task>'` — the sequential, commit-as-you-go sibling of `orchestrate`. It generates a human-confirmed **kickoff contract** from the plan (10 sections: mission, gates, guardrails, workstreams, hard gates, definition of done), then drives it **one workstream at a time** through a bounded `code → validate → commit` **Workflow**: an implementer applies only that workstream's scope, an independent adversarial validator re-runs the gates and **proves or refutes the plan's server-side hard gates** (crafted input against the authoritative layer, never client-side hiding), and only a green, validated workstream earns **one Conventional Commit** — followed by a human checkpoint before the next. Failing validation loops back (≤`--attempts`) then halts and surfaces the findings. The driver never writes production code; given a raw task it drafts and confirms a plan first. Resumable under `.workstream/<slug>/`; degrades to `--engine agent` when the Workflow tool is absent, or `--dry-run` for the contract only.
+27. **Record a browser demo, then make a reel**: Run `/bespokeagentics:screencast-capture '<start-url-or-flow>'` — the **capture** companion to `screencast-highlight-reel`: it *produces* the screencast that skill polishes, so you never have to screen-record yourself. It drives a live **Claude-in-Chrome** session — an AskUserQuestion interview turns your request into a shot list, it opens a fresh tab and **pauses for you to log in before recording** (credentials stay out of the footage; the agent never types secrets), records the flow step-by-step with the `gif_creator` tool (click indicators only by default), and exports the GIF. For higher fidelity, **`--engine screen`** instead records a chosen monitor with ffmpeg at **native resolution + configurable bitrate** (`--display` / `--crf`) — the fix when the default tab capture (hard-capped ~1200px, dithered GIF) looks grainy; it needs macOS Screen-Recording permission and records the whole monitor (auto-cropped to the browser window). The gif engine then **converts the GIF to a real-duration MP4** (`scripts/gif_to_mp4.sh`; the screen engine writes MP4 directly) — a GIF reports no container duration, so the reel would otherwise drift on frame-index timings — presents the MP4, and (by default) asks whether to hand off to `/bespokeagentics:highlight-reel` (`--reel`/`--no-reel` to force/skip), forwarding `--no-tts` (no ElevenLabs key) and `--no-ground` (site isn't this repo's app) as needed. Degrades gracefully (no ffmpeg → stops before recording; unclearable login → captures what's reachable or stops).
 
 ## Quality Standards
 
