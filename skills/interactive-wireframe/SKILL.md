@@ -139,6 +139,16 @@ holding any busy port, and reuses a server already running for that directory.
 If `python3` is missing it says so and stops rather than reporting a URL that
 serves nothing.
 
+The server also accepts **browser comments**: the page's feedback kit POSTs to
+`/__feedback` → `<dir>/.feedback.jsonl`, and replies land in
+`<dir>/.replies.jsonl`, polled by the page's thread panel
+(`references/live-feedback.md`). `start` auto-replaces a live pre-v2 server so
+the endpoint exists after an upgrade. If the target project has no `.mcp.json`
+entry for `wireframe-feedback`, **offer the channel setup once** — with it, the
+user's comments push into the session instantly and you answer via the
+`mcp__wireframe-feedback__reply` tool; that tool's presence is the liveness
+probe (channel live → never also poll with `feedback`/`await-feedback`).
+
 ## Phase 4 — Interview in rounds
 
 **Read `references/interview.md`.**
@@ -152,6 +162,12 @@ serves nothing.
   cheap "reopen any of these?" affordance — never silently re-asked, never
   silently dropped. Carried decisions land in the spec marked
   `carried (<slug>/Dn)`.
+- **Browser comments are first-class interview input.** While the user has the
+  wireframe open, run `await-feedback` as a background task (skip when the
+  channel is live — it pushes instead) and drain `feedback` before composing
+  each round. Triage every comment: change → rebuild, question → `reply` into
+  the page, approval → decision row. Never let one die unanswered — the thread
+  panel shows the user whether you saw it (`references/live-feedback.md`).
 - **Hunt contradictions and surface them.** Answers that are individually
   sensible often cannot coexist — one is architecturally impossible, one renders
   the same string twice, one recreates the collision you just moved. Say what
@@ -208,14 +224,16 @@ Harvest runs even under `--fresh`.
 │     ├─ grounding.md     every value, with its source path
 │     ├─ v1.html          self-contained; opens with no build step
 │     ├─ v2.html          later rounds, when structure changes materially
-│     └─ .serve.json/.log runtime state — add to .gitignore
+│     └─ .serve.* / .feedback.* / .replies.jsonl
+│                         runtime + browser-comment state — gitignore
 └─ plans/<slug>.md        the spec (or the wiki, if the project has one)
 ```
 
 Slugs must not start with `_` — that prefix is reserved for the library.
 
 Wireframes are **committed** by default so the spec's links resolve for anyone
-who reads it later. Add `wireframes/**/.serve.*` to `.gitignore`. If the user
+who reads it later. Add `wireframes/**/.serve.*`, `wireframes/**/.feedback.*`
+and `wireframes/**/.replies.jsonl` to `.gitignore`. If the user
 would rather not track them, `.wireframes/` gitignored works identically — say
 which you chose.
 
@@ -244,5 +262,6 @@ id, the choice, and whether the wireframe validated it.
 | `references/browser-verification.md` | Phase 5 — hidden-tab checklist, the four assertion families |
 | `references/spec-template.md` | Phase 6 — the output shape and where it goes |
 | `references/reuse-library.md` | Phases 1/2/4/6 — cache TTL, fragment markers, decisions ledger, harvest |
+| `references/live-feedback.md` | Phases 3–5 — browser-comment schemas, feedback subcommands, channel setup, triage, degradation matrix |
 | `assets/wireframe-scaffold.html` | Phase 2 — copy this; four marked REPLACE regions |
-| `scripts/serve-wireframe.sh` | Phase 3 — `start` / `status` / `stop` / `url` |
+| `scripts/serve-wireframe.sh` | Phase 3 — `start` / `status` / `stop` / `url` / `feedback` / `await-feedback` / `reply` |

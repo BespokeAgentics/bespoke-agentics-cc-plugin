@@ -1,0 +1,9 @@
+{
+  "name": "wireframe-feedback-channel",
+  "private": true,
+  "type": "module",
+  "description": "Claude Code channel: pushes interactive-wireframe browser comments into the running session and exposes a reply tool that threads answers back into the page.",
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.0.0"
+  }
+}

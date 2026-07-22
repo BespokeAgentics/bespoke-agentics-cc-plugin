@@ -56,13 +56,21 @@ Invoke the `interactive-wireframe` skill and forward `$ARGUMENTS`. The skill wil
    comparison sheet, and the in-page verification kit. Library fragments seed the marked regions
    (wrapped in `▼ FRAGMENT` markers) so only what no fragment covers is authored fresh.
 4. **Serve** — local HTTP on 8791 (required: `file://` URLs fail under browser automation), reusing a
-   live server for the same directory.
+   live server for the same directory. The server also accepts **browser comments** from the page's
+   feedback kit (`POST /__feedback` → `.feedback.jsonl`; replies polled from `.replies.jsonl` into
+   the page's thread panel). Projects with the optional `wireframe-feedback` channel registered get
+   comments pushed into the session instantly (`claude --dangerously-load-development-channels
+   server:wireframe-feedback`); otherwise the skill drains them between rounds and can block on
+   `await-feedback` as a background task.
 5. **Interview** — AskUserQuestion rounds of ≤4, every option carrying a concrete ASCII preview, with
    the wireframe **rebuilt between rounds** so later questions are asked against something real.
    Contradictions between answers are surfaced rather than silently reconciled; aesthetic
    disagreements become switchable variants shown side by side. Round 1 opens with the decisions
    ledger's settled verdicts as fixed context — one "reopen any of these?" affordance, never
-   re-asked, never silently dropped.
+   re-asked, never silently dropped. **Browser comments are first-class interview input**: the user
+   can enter comment mode in the wireframe (✎ or `c`), pick any element, and comment — the comment
+   arrives with its selector, zone, and the exact axis state on screen; every comment is triaged
+   (change → rebuild, question → replied into the page's thread panel, approval → decision row).
 6. **Verify** — drive the served page and assert: band/region geometry contiguity, computed contrast
    ratios, markup validity (`button button`, dangling `aria-controls`, unnamed controls), off-screen
    focusables, and scripted behavioural sequences. Backgrounded-tab caveats are checked first — in a
@@ -81,6 +89,8 @@ Invoke the `interactive-wireframe` skill and forward `$ARGUMENTS`. The skill wil
   `cached — verified <date>`).
 - `wireframes/_index.md` + `wireframes/_library/` — the reuse library (grounding cache, fragments,
   decisions ledger), auto-harvested after each run so the next wireframe starts warm.
+- `wireframes/<slug>/.feedback.jsonl` + `.replies.jsonl` — the browser-comment thread (runtime
+  state, gitignored with `.serve.*`).
 - The spec at `--spec`, the wiki, or `./plans/<slug>.md`.
 
 Ends with the wireframe URL, the decision count, what the verification pass measured, and anything

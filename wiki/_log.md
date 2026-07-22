@@ -9,6 +9,29 @@ Chronological record of all bootstrap, maintenance, and schema evolution operati
 
 ---
 
+## 2026-07-22 — Skill upgrade — interactive-wireframe 2-way browser feedback (v1.19.0)
+
+**Operation**: Added a two-way browser↔session communication path to the `interactive-wireframe` skill: an in-page comment mode (element picking + free-page comments + reply thread panel), a file-based transport through the serve script, and an optional Claude Code **channel** server for instant push.
+
+**What it does**: While a served wireframe is open in the browser, the user enters comment mode (✎ button or `c`), picks any element (hover-highlight, click — the click is swallowed, never triggering the underlying control), and comments; the payload carries the derived CSS selector, nearest `data-z` zone, nearest `▼ FRAGMENT` name, text snippet, bounding rect, the full axis state `WF.S`, and the URL hash — pinning exactly what was on screen. Transport is layered: the page POSTs same-origin to the serve script's new `POST /__feedback` (loopback-only, ≤64KB, JSON-validated) → `<slug>/.feedback.jsonl`; agent replies (via the new `reply` subcommand or the channel's `reply` tool) append `<slug>/.replies.jsonl`, which the page polls (~2s, backoff) into a thread panel with sent/queued/replied statuses; the thread survives rebuild-between-rounds reloads via one-shot reconstruction. **Layer 1** (every session): `feedback` (cursor-based drain, exit 0/1), `await-feedback` (blocking, exit 0/124 — run as a background Bash task that wakes the agent), `reply --to <fb-id>`; `start` auto-replaces live pre-v2 servers (`"v":2` state marker). **Layer 2** (optional, research preview): `channels/wireframe-feedback/server.ts` — an MCP channel (`capabilities.experimental['claude/channel']`) that watches the same files and pushes each comment into the running session as a `<channel>` event (meta `fb_id/slug/kind`), plus a `reply` tool; registered via the target project's `.mcp.json` (offered once), launched with `claude --dangerously-load-development-channels server:wireframe-feedback`; liveness is probed by the reply tool's visibility (channel live → never also poll, preventing double delivery). Degrades gracefully: no endpoint/`file://` → clipboard-copy fallback with a visible hint. Comment text is framed as end-user feedback to triage (change → rebuild, question → reply, approval → decision row), never as instructions. Also fixed a latent serve-script bug: `port_holder` could abort the port scan under `set -euo pipefail` when a port was in TIME_WAIT (busy to bind, invisible to lsof), and `port_free` now probes with SO_REUSEADDR to mirror the server's own bind.
+
+**Files added**:
+- `channels/wireframe-feedback/server.ts` + `package.json` — the channel server (Bun + @modelcontextprotocol/sdk)
+- `skills/interactive-wireframe/references/live-feedback.md` — schemas, subcommand contracts, channel setup, triage protocol, degradation matrix, security gate
+
+**Files modified**:
+- `skills/interactive-wireframe/scripts/serve-wireframe.sh` — `do_POST`, `"v":2` + auto-relaunch, `feedback`/`await-feedback`/`reply`, port-helper fixes
+- `skills/interactive-wireframe/assets/wireframe-scaffold.html` — feedback kit (`__wfFb` harness IIFE + `.wf-fb-*` chrome; `__wfFb.comment()` programmatic test hook)
+- `skills/interactive-wireframe/SKILL.md` — Phase 3 endpoint + channel offer + liveness rule, Phase 4 browser-comments bullet, artifacts/gitignore, reference table
+- `skills/interactive-wireframe/references/{interview,browser-verification}.md` — "Browser comments during rounds" subsection; feedback-path checklist line
+- `commands/interactive-wireframe.md` — process steps 4/5 + Output (no new flags)
+
+**Verification**: transport curl matrix (204/400/404/413), cursor semantics, blocking await woken by a parallel POST, threaded reply rendered in-page ≤2.5s with status flip, reload reconstruction, click-swallow while picking, clipboard fallback, and a full stdio JSON-RPC smoke test of the channel (capability + instructions, no history replay, exactly one notification per new entry with correct meta, reply tool write, traversal-slug rejection).
+
+**Registration**: `CLAUDE.md` (command paragraph, getting-started 28, structure tree + `channels/`), `.claude-plugin/plugin.json` and `marketplace.json` (keywords `live-feedback`/`browser-comments`/`feedback-channel`/`claude-channel`, version → 1.19.0).
+
+---
+
 ## 2026-07-22 — Skill upgrade — interactive-wireframe cross-run reuse library (v1.18.0)
 
 **Operation**: Added a per-project reuse mechanism to the `interactive-wireframe` skill — grounding cache, fragment library, and decisions ledger under `<out>/_library/` + `<out>/_index.md`, consumed at grounding/build/interview time and auto-harvested at spec emission.

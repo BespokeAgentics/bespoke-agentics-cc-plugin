@@ -15,7 +15,7 @@
        4. AXES + render()     — the control overlay and what it drives
 
      Everything else (control-overlay engine, zone guides, verify kit,
-     comparison harness, URL state) is harness — leave it alone.
+     feedback kit, comparison harness, URL state) is harness — leave it alone.
 
      If the target repo has wireframes/_library/, seed regions 1–3 from its
      fragments, wrapped in ▼ FRAGMENT … / ▲ /FRAGMENT markers so a later
@@ -137,6 +137,45 @@ body.wf-guides .wf-zone::after{content:attr(data-z);position:absolute;left:6px;t
   background:#111;color:#fff;padding:5px 8px}
 .wf-cmp-close{position:fixed;right:16px;top:16px;z-index:8001;background:#111;color:#fff;
   border:0;border-radius:4px;padding:7px 12px;font:700 11px system-ui}
+
+/* ── feedback kit (__wfFb) ───────────────────────────────────────────────────
+   Comment mode: pick an element (or comment on the whole page), POST to the
+   serve script's /__feedback; replies polled from /.replies.jsonl render in
+   the thread panel. Chrome is token-independent, same palette as .wf-ctl. */
+#wf-fb-hl{position:fixed;pointer-events:none;z-index:9500;display:none;
+  outline:2px solid #4c8dff;background:rgba(76,141,255,.12);border-radius:2px}
+body.wf-fb-picking,body.wf-fb-picking *{cursor:crosshair !important}
+.wf-fb-box{position:fixed;z-index:9500;width:280px;background:#1d1d1d;color:#eee;border-radius:8px;
+  box-shadow:0 12px 40px rgba(0,0,0,.42);font:12px/1.45 system-ui,sans-serif;
+  padding:10px;display:flex;flex-direction:column;gap:7px}
+.wf-fb-box .wf-fb-target{color:#8ab4ff;font-family:ui-monospace,SFMono-Regular,Menlo,monospace;
+  font-size:10px;word-break:break-all}
+.wf-fb-box textarea{background:#2a2a2a;border:1px solid #3d3d3d;color:#eee;border-radius:4px;
+  padding:6px 7px;font:12px/1.4 system-ui,sans-serif;min-height:56px;resize:vertical}
+.wf-fb-box .wf-fb-btns{display:flex;gap:6px;justify-content:flex-end}
+.wf-fb-box button{background:#2a2a2a;border:1px solid #3d3d3d;color:#eee;border-radius:4px;padding:5px 10px;font:inherit}
+.wf-fb-box button.wf-fb-send{background:#2456b3;border-color:#2456b3;color:#fff;font-weight:700}
+.wf-fb-panel{position:fixed;left:16px;bottom:16px;z-index:9100;width:290px;background:#1d1d1d;color:#eee;
+  border-radius:8px;box-shadow:0 12px 40px rgba(0,0,0,.42);font:12px/1.45 system-ui,sans-serif;overflow:hidden;display:none}
+.wf-fb-panel header{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:8px 12px;
+  background:#111;font-weight:700;font-size:11px;letter-spacing:.06em;text-transform:uppercase;cursor:pointer}
+.wf-fb-panel header .wf-fb-badge{background:#2456b3;color:#fff;border-radius:8px;padding:1px 7px;font-size:10px;display:none}
+.wf-fb-panel .wf-fb-list{max-height:40vh;overflow:auto;padding:9px 12px 11px;display:flex;flex-direction:column;gap:9px}
+.wf-fb-panel.wf-fb-min .wf-fb-list{display:none}
+.wf-fb-item{display:flex;flex-direction:column;gap:3px;border-bottom:1px solid #2c2c2c;padding-bottom:8px}
+.wf-fb-item:last-child{border-bottom:0;padding-bottom:0}
+.wf-fb-item .wf-fb-meta{display:flex;align-items:center;gap:6px;color:#8a8a8a;font-size:10px}
+.wf-fb-item .wf-fb-dot{width:7px;height:7px;border-radius:50%;flex:0 0 auto}
+.wf-fb-dot[data-st=sent]{background:#6fd08c}
+.wf-fb-dot[data-st=queued]{background:#e0b64f}
+.wf-fb-dot[data-st=replied]{background:#8ab4ff}
+.wf-fb-item .wf-fb-sel{color:#8ab4ff;font-family:ui-monospace,SFMono-Regular,Menlo,monospace;
+  font-size:9.5px;word-break:break-all}
+.wf-fb-item .wf-fb-reply{margin:2px 0 0 13px;padding-left:8px;border-left:2px solid #2456b3;color:#cfe0ff}
+.wf-fb-hint{position:fixed;left:50%;bottom:18px;transform:translateX(-50%);z-index:9600;
+  background:#111;color:#fff;border-radius:6px;padding:8px 14px;font:12px system-ui;
+  box-shadow:0 8px 30px rgba(0,0,0,.5);opacity:0;transition:opacity .2s;pointer-events:none}
+.wf-fb-hint.wf-fb-show{opacity:1}
 </style>
 </head>
 <body>
@@ -621,6 +660,269 @@ const __wf = (() => {
   };
 })();
 window.__wf = __wf; window.WF = WF;
+
+
+/* ══════════════════════════════════════════════════════════════════════════
+   __wfFb — feedback kit. Comment mode (✎ in the control panel header, or the
+   `c` key): pick an element, attach a comment; or comment on the whole page.
+   Transport: POST /__feedback on the serving origin → <dir>/.feedback.jsonl;
+   replies polled every 2s from /.replies.jsonl and threaded in the panel.
+   No endpoint (old server, file://)? The payload is copied to the clipboard.
+   Harness — leave this section alone. See references/live-feedback.md.
+   ══════════════════════════════════════════════════════════════════════════ */
+const __wfFb = (() => {
+  const st = { picking: false, comments: new Map(), replies: new Map(),
+               pollMs: 2000, errs: 0, unread: 0 };
+  const httpOK = /^https?:$/.test(location.protocol);
+  const genId = () => 'fb-' + Date.now().toString(36) + '-' + Math.random().toString(36).slice(2, 4);
+  const isHarness = el => !!el.closest('.wf-ctl,.wf-fb-box,.wf-fb-panel,#wf-fb-hl,.wf-fb-hint,.wf-cmp,.wf-cmp-close');
+  let hl, panel, list, badge, hintEl, box = null;
+
+  /* ── derivation ─────────────────────────────────────────────────────────── */
+  function cssPath(el) {
+    if (el.id && document.querySelectorAll('#' + CSS.escape(el.id)).length === 1)
+      return '#' + CSS.escape(el.id);
+    const segs = [];
+    let n = el;
+    for (let depth = 0; n && n !== document.body && depth < 4; depth++, n = n.parentElement) {
+      let seg = n.tagName.toLowerCase();
+      const cls = [...n.classList].find(c => !/^(wf-|v-)/.test(c));
+      if (cls) seg += '.' + CSS.escape(cls);
+      const sibs = n.parentElement
+        ? [...n.parentElement.children].filter(s => s.tagName === n.tagName) : [];
+      if (sibs.length > 1) seg += `:nth-of-type(${sibs.indexOf(n) + 1})`;
+      segs.unshift(seg);
+      const sel = segs.join(' > ');
+      if (document.querySelectorAll(sel).length === 1) return sel;
+    }
+    return segs.join(' > ');
+  }
+  function nearestFragment(el) {
+    // Best-effort: nearest preceding "▼ FRAGMENT name" comment not already
+    // closed by its "▲ /FRAGMENT name". Optional — absence is fine.
+    const skip = new Set();
+    for (let n = el; n && n !== document.documentElement; ) {
+      let sib = n.previousSibling;
+      while (sib) {
+        if (sib.nodeType === 8) {
+          const close = /▲ \/FRAGMENT (\S+)/.exec(sib.data);
+          if (close) skip.add(close[1]);
+          const open = /▼ FRAGMENT (\S+)/.exec(sib.data);
+          if (open && !skip.has(open[1])) return open[1];
+        }
+        sib = sib.previousSibling;
+      }
+      n = n.parentNode;
+    }
+    return undefined;
+  }
+  function payload(el, comment) {
+    const p = { id: genId(), ts: new Date().toISOString(),
+      kind: el ? 'element' : 'page', comment: String(comment).slice(0, 4000),
+      state: JSON.parse(JSON.stringify(WF.S)), hash: location.hash.slice(1),
+      file: location.pathname };
+    if (el) {
+      const r = el.getBoundingClientRect();
+      Object.assign(p, { selector: cssPath(el),
+        zone: el.closest('.wf-zone')?.dataset.z,
+        fragment: nearestFragment(el),
+        snippet: (el.textContent || '').trim().replace(/\s+/g, ' ').slice(0, 120),
+        rect: { top: Math.round(r.top), left: Math.round(r.left),
+                w: Math.round(r.width), h: Math.round(r.height) } });
+    }
+    return p;
+  }
+
+  /* ── transport ──────────────────────────────────────────────────────────── */
+  async function send(p) {
+    if (httpOK) {
+      try {
+        const r = await fetch('/__feedback', { method: 'POST',
+          headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(p) });
+        if (r.ok || r.status === 204) return 'sent';
+      } catch {}
+    }
+    try { await navigator.clipboard.writeText(JSON.stringify(p)); } catch {}
+    hint('No feedback endpoint — payload copied to clipboard. Paste it to Claude.');
+    return 'queued';
+  }
+  async function fetchLines(path) {
+    const r = await fetch(path, { cache: 'no-store' });
+    if (!r.ok) return [];
+    return (await r.text()).split('\n').filter(Boolean).map(l => {
+      try { return JSON.parse(l); } catch { return null; }
+    }).filter(Boolean);
+  }
+  async function poll() {
+    if (!httpOK) return;
+    try {
+      for (const e of await fetchLines('/.replies.jsonl')) ingestReply(e);
+      st.errs = 0; st.pollMs = 2000;
+    } catch { if (++st.errs >= 2) st.pollMs = 10000; }
+    setTimeout(poll, st.pollMs);
+  }
+
+  /* ── thread panel ───────────────────────────────────────────────────────── */
+  function ingestReply(e) {
+    if (!e.id || st.replies.has(e.id)) return;
+    st.replies.set(e.id, e);
+    if (e.to && st.comments.has(e.to)) st.comments.get(e.to).status = 'replied';
+    if (panel.classList.contains('wf-fb-min')) { st.unread++; }
+    render();
+  }
+  function addComment(p, status) {
+    st.comments.set(p.id, { ...p, status });
+    render();
+  }
+  function render() {
+    const items = [...st.comments.values()];
+    const general = [...st.replies.values()].filter(r => !r.to || !st.comments.has(r.to));
+    panel.style.display = items.length || general.length ? 'block' : 'none';
+    badge.style.display = st.unread ? 'inline-block' : 'none';
+    badge.textContent = st.unread;
+    list.textContent = '';
+    for (const c of items) {
+      const it = elDiv('wf-fb-item');
+      const meta = elDiv('wf-fb-meta');
+      const dot = elDiv('wf-fb-dot'); dot.dataset.st = c.status;
+      meta.append(dot, textSpan(c.kind === 'element' ? 'element' : 'page', ''),
+                  textSpan(c.status, ''));
+      it.append(meta);
+      if (c.selector) { const s = elDiv('wf-fb-sel'); s.textContent = c.selector; it.append(s); }
+      const t = document.createElement('div'); t.textContent = c.comment; it.append(t);
+      for (const r of [...st.replies.values()].filter(r => r.to === c.id)) {
+        const rd = elDiv('wf-fb-reply'); rd.textContent = r.text; it.append(rd);
+      }
+      list.append(it);
+    }
+    for (const r of general) {
+      const it = elDiv('wf-fb-item');
+      const rd = elDiv('wf-fb-reply'); rd.textContent = r.text;
+      it.append(textSpan('Claude', 'wf-fb-meta'), rd); list.append(it);
+    }
+  }
+  const elDiv = cls => { const d = document.createElement('div'); d.className = cls; return d; };
+  const textSpan = (txt, cls) => { const s = document.createElement('span'); s.textContent = txt; if (cls) s.className = cls; return s; };
+  function hint(msg) {
+    hintEl.textContent = msg; hintEl.classList.add('wf-fb-show');
+    setTimeout(() => hintEl.classList.remove('wf-fb-show'), 3500);
+  }
+
+  /* ── picker + comment box ───────────────────────────────────────────────── */
+  function setPicking(on) {
+    st.picking = on;
+    document.body.classList.toggle('wf-fb-picking', on);
+    hl.style.display = 'none';
+    if (on) hint('Comment mode — click an element (Esc to cancel)');
+  }
+  function onMove(e) {
+    if (!st.picking) return;
+    const el = e.target;
+    if (!(el instanceof Element) || isHarness(el)) { hl.style.display = 'none'; return; }
+    const r = el.getBoundingClientRect();
+    Object.assign(hl.style, { display: 'block', top: r.top + 'px', left: r.left + 'px',
+                              width: r.width + 'px', height: r.height + 'px' });
+  }
+  function onPickClick(e) {
+    if (!st.picking) return;
+    const el = e.target;
+    if (!(el instanceof Element) || isHarness(el)) return;
+    e.preventDefault(); e.stopPropagation();
+    setPicking(false);
+    openBox(el);
+  }
+  function swallow(e) { if (st.picking && e.target instanceof Element && !isHarness(e.target)) { e.preventDefault(); e.stopPropagation(); } }
+  function openBox(el) {
+    closeBox();
+    box = elDiv('wf-fb-box');
+    const target = elDiv('wf-fb-target');
+    target.textContent = el ? cssPath(el) : 'whole page';
+    const ta = document.createElement('textarea');
+    ta.placeholder = el ? 'What should change about this element?' : 'Comment on this wireframe…';
+    const btns = elDiv('wf-fb-btns');
+    const cancel = document.createElement('button'); cancel.textContent = 'Cancel';
+    const sendB = document.createElement('button'); sendB.textContent = 'Send'; sendB.className = 'wf-fb-send';
+    cancel.onclick = closeBox;
+    sendB.onclick = async () => {
+      const txt = ta.value.trim(); if (!txt) return;
+      const p = payload(el, txt); closeBox();
+      addComment(p, await send(p));
+    };
+    btns.append(cancel, sendB); box.append(target, ta, btns);
+    document.body.append(box);
+    if (el) {
+      const r = el.getBoundingClientRect();
+      const top = Math.min(Math.max(r.bottom + 6, 8), innerHeight - 170);
+      const left = Math.min(Math.max(r.left, 8), innerWidth - 296);
+      Object.assign(box.style, { top: top + 'px', left: left + 'px' });
+    } else Object.assign(box.style, { bottom: '64px', left: '16px' });
+    ta.focus();
+  }
+  function closeBox() { box?.remove(); box = null; }
+
+  /* ── init ───────────────────────────────────────────────────────────────── */
+  function init() {
+    hl = document.createElement('div'); hl.id = 'wf-fb-hl';
+    hintEl = elDiv('wf-fb-hint');
+    panel = elDiv('wf-fb-panel');
+    const head = document.createElement('header');
+    head.append(textSpan('Comments', ''));
+    badge = textSpan('', 'wf-fb-badge'); head.append(badge);
+    head.onclick = () => { panel.classList.toggle('wf-fb-min'); st.unread = 0; render(); };
+    list = elDiv('wf-fb-list');
+    panel.append(head, list);
+    document.body.append(hl, hintEl, panel);
+
+    // ✎ into the control panel header; floating fallback if the panel is absent.
+    const host = document.querySelector('#wf-ctl .wf-hbtns');
+    const pen = document.createElement('button');
+    pen.textContent = '✎'; pen.title = 'Comment mode (c) — click an element; hold nothing to comment on the page';
+    pen.onclick = () => st.picking ? setPicking(false) : setPicking(true);
+    pen.oncontextmenu = e => { e.preventDefault(); setPicking(false); openBox(null); };
+    if (host) host.prepend(pen);
+    else { pen.style.cssText = 'position:fixed;right:16px;top:16px;z-index:9100;background:#1d1d1d;color:#eee;border:0;border-radius:6px;padding:6px 10px'; document.body.append(pen); }
+
+    addEventListener('mouseover', onMove, true);
+    addEventListener('click', onPickClick, true);
+    addEventListener('mousedown', swallow, true);
+    addEventListener('pointerdown', swallow, true);
+    addEventListener('keydown', e => {
+      if (e.key === 'Escape') { setPicking(false); closeBox(); }
+      if (e.key === 'c' && !/^(input|textarea|select)$/i.test(document.activeElement?.tagName || ''))
+        setPicking(!st.picking);
+    });
+
+    // Rebuild-between-rounds reloads the page: reconstruct the thread once.
+    if (httpOK) {
+      (async () => {
+        try {
+          for (const c of await fetchLines('/.feedback.jsonl'))
+            if (c.id && !st.comments.has(c.id)) st.comments.set(c.id, { ...c, status: 'sent' });
+          for (const r of await fetchLines('/.replies.jsonl')) ingestReply(r);
+          render();
+        } catch {}
+      })();
+      setTimeout(poll, st.pollMs);
+    }
+  }
+  if (document.readyState === 'loading') addEventListener('DOMContentLoaded', init);
+  else init();
+
+  return {
+    state: () => ({ picking: st.picking,
+      comments: [...st.comments.values()], replies: [...st.replies.values()] }),
+    /* Programmatic path — lets Phase-5 browser automation exercise the whole
+       pipeline (payload → POST → panel) without simulated mouse events. */
+    comment: async (sel, text) => {
+      const el = sel ? document.querySelector(sel) : null;
+      if (sel && !el) return `no match: ${sel}`;
+      const p = payload(el, text);
+      addComment(p, await send(p));
+      return p.id;
+    },
+  };
+})();
+window.__wfFb = __wfFb;
 
 
 /* ▼ REPLACE 4 — AXES + RENDER ════════════════════════════════════════════════

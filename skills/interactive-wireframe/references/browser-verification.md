@@ -131,6 +131,9 @@ Run this before writing the spec. Report each line as pass / fail / not-verified
 - [ ] Reduced-motion checked: all states still reachable with motion off
 - [ ] Every variant screenshotted via `WF.compare()`, comparison closed afterwards
 - [ ] Narrow viewport exercised if the surface has a responsive rule
+- [ ] Feedback path live: `__wfFb.comment('#surface h2','probe')` → entry in
+      `.feedback.jsonl`; `reply --to` it → thread panel within ~2s
+      (`references/live-feedback.md`)
 
 ## Screenshots
 

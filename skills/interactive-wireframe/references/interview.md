@@ -17,6 +17,19 @@ Read before Phase 4. The wireframe is the instrument; this is how you play it.
   not an answer to extract — it is an axis to add. Add it, and ask what should
   happen at each end.
 
+## Browser comments during rounds
+
+While the wireframe is open in the user's browser, its feedback kit is a
+second interview instrument (`references/live-feedback.md`): the user picks an
+element and comments, or comments on the page. Run `await-feedback` as a
+background task between rounds (unless the channel is live — then comments
+push themselves), drain `feedback` before composing each round, and **fold
+pending comments into the next round** rather than reacting piecemeal — a
+browser comment and a terminal answer are the same interview. Triage each:
+change → rebuild · question → `reply` into the page's thread · approval →
+decision row (`Settled by: browser comment`). Replies keep the thread panel
+honest: the user can see which comments were seen.
+
 ## Consuming the decisions ledger
 
 When `_library/decisions.md` exists, open round 1 with the settled verdicts that
