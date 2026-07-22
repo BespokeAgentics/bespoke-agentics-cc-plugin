@@ -1,11 +1,30 @@
 ---
 type: log
-updated: 2026-07-13
+updated: 2026-07-22
 ---
 
 # Wiki Operation Log
 
 Chronological record of all bootstrap, maintenance, and schema evolution operations.
+
+---
+
+## 2026-07-22 — Skill upgrade — interactive-wireframe cross-run reuse library (v1.18.0)
+
+**Operation**: Added a per-project reuse mechanism to the `interactive-wireframe` skill — grounding cache, fragment library, and decisions ledger under `<out>/_library/` + `<out>/_index.md`, consumed at grounding/build/interview time and auto-harvested at spec emission.
+
+**What it does**: Repeat wireframe runs in the same project start warm instead of re-deriving everything. Motivating evidence (CUMULATIVE_OS, 2 real runs): byte-identical token tables across both runs' `grounding.md` (the second hand-wrote "reused verbatim — see <other-slug>"), ~17% of each wireframe file being project chrome rebuilt from scratch, and settled decisions (`structure: flat`, `railW: 236`) carried between runs by hand. Three layers: **grounding cache** (`_library/grounding-cache.md`, per-section `verified` dates, TTL-trusted — default 14 days, `--ttl <days>` — with the three honest label states `cached — verified` / `cached — re-verified` / re-derived-on-drift; drift is a Gaps finding); **fragment library** (`_library/fragments/*.{html,css}`, self-describing headers with origin/sources/token-deps/feeds, injected into the scaffold's REPLACE regions wrapped in `▼ FRAGMENT … ▲ /FRAGMENT` markers so harvest is a mechanical diff); **decisions ledger** (`_library/decisions.md`, append-only, reopened rows marked superseded; verdicts imported into round 1 as fixed context with one "reopen?" affordance, landing in specs as `Settled by: carried (<slug>/Dn)`). Harvest runs automatically at Phase 6 (settled-context heuristic, cap 5 fragments; even under `--fresh`, which skips only consumption); projects with prior runs but no library get a one-time backfill offer (backfilled entries earn `verified:` only after their `path:line` anchors pass a grep). Library is per-out-dir — tokens never transfer between products; slugs must not start with `_`.
+
+**Files added**:
+- `skills/interactive-wireframe/references/reuse-library.md` — the single source of truth (layout, three layers, TTL rules, per-phase consumption, harvest algorithm, backfill, honesty rules)
+
+**Files modified**:
+- `skills/interactive-wireframe/SKILL.md` — Phase 1 cache-first check, Phase 2 fragment injection, Phase 4 ledger bullet, Phase 6 harvest step, Artifacts tree (`_index.md` + `_library/`), reference-files table row
+- `skills/interactive-wireframe/references/{grounding,interview,spec-template}.md` — cache-first pointer + cached-label heading form; "Consuming the decisions ledger" subsection; `carried (<slug>/Dn)` legend
+- `skills/interactive-wireframe/assets/wireframe-scaffold.html` — banner note on seeding regions 1–3 from fragments (harness untouched)
+- `commands/interactive-wireframe.md` — `--fresh` / `--ttl <days>` flags, process steps 2/3/5/7, output section
+
+**Registration**: `CLAUDE.md` (command-table flags + command paragraph + getting-started 28), `.claude-plugin/plugin.json` and `marketplace.json` (keywords `wireframe-reuse`/`fragment-library`/`decisions-ledger`, version → 1.18.0).
 
 ---
 

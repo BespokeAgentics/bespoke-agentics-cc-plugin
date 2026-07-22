@@ -17,6 +17,15 @@ Read before Phase 4. The wireframe is the instrument; this is how you play it.
   not an answer to extract — it is an axis to add. Add it, and ask what should
   happen at each end.
 
+## Consuming the decisions ledger
+
+When `_library/decisions.md` exists, open round 1 with the settled verdicts that
+touch this surface, presented as **fixed context** — a short list, not
+questions — plus one cheap "reopen any of these?" affordance. Reopening is
+cheap, re-asking is rude, silently dropping is dishonest. A reopened decision
+gets a new ledger row; the old one is marked superseded. Carried decisions
+appear in the spec's table as `Settled by: carried (<slug>/Dn)`.
+
 ## ASCII previews
 
 Every option carries a preview. The bar: **a preview should let the user answer

@@ -77,6 +77,14 @@ touches, behavioural constants, and data extremes.
 
 Write `wireframes/<slug>/grounding.md` — the audit trail every later value cites.
 
+**Check the library first.** If `<out>/_index.md` exists, read
+`references/reuse-library.md`: cache entries within the TTL (default 14 days,
+`--ttl <days>`) are reused without re-checking and labelled
+`cached — verified <date>`; past the TTL, their `path:line` anchors are
+re-verified before trust. Only surface-specific values are grounded fresh.
+`--fresh` skips consumption. If prior runs exist but no library does, offer the
+one-time backfill.
+
 Never invent a value. A missing token is a question; an invented one is a lie
 that looks authoritative and gets copied into production. If the project has no
 design system, say so and derive from the running app's computed styles, labelled
@@ -90,6 +98,12 @@ Copy the scaffold and edit its four marked regions:
 mkdir -p wireframes/<slug>
 cp "$SKILL_DIR/assets/wireframe-scaffold.html" wireframes/<slug>/v1.html
 ```
+
+**Inject library fragments** before authoring: when `<out>/_library/` exists,
+each applicable fragment's payloads seed the matching REPLACE regions, wrapped
+in `▼ FRAGMENT` markers, after validating its token deps against this run's
+`:root` (`references/reuse-library.md`). Author fresh only what no fragment
+covers.
 
 The scaffold is self-contained by contract — inline CSS, inline JS, no build
 step, opens by double-click. It already provides the control-overlay engine, URL
@@ -133,6 +147,11 @@ serves nothing.
   ASCII preview built from real labels.
 - **Rebuild between rounds** (`v1.html` → `v2.html` when the structure changes
   materially; edit in place for refinements).
+- **Open round 1 with the decisions ledger.** Settled verdicts from
+  `_library/decisions.md` that touch this surface are fixed context with one
+  cheap "reopen any of these?" affordance — never silently re-asked, never
+  silently dropped. Carried decisions land in the spec marked
+  `carried (<slug>/Dn)`.
 - **Hunt contradictions and surface them.** Answers that are individually
   sensible often cannot coexist — one is architecturally impossible, one renders
   the same string twice, one recreates the collision you just moved. Say what
@@ -172,17 +191,28 @@ answer in the project's `CLAUDE.md`.
 
 Link the wireframe from the spec by relative path.
 
+**Harvest before finishing** (`references/reuse-library.md`): diff the
+`▼ FRAGMENT` regions against the library, update `_library/`, merge
+run-independent grounding into the cache, append the decision table to the
+ledger, refresh `_index.md` — and list what was harvested in the final report.
+Harvest runs even under `--fresh`.
+
 ## Artifacts
 
 ```
 <repo>/
-├─ wireframes/<slug>/
-│  ├─ grounding.md        every value, with its source path
-│  ├─ v1.html             self-contained; opens with no build step
-│  ├─ v2.html             later rounds, when structure changes materially
-│  └─ .serve.json/.log    runtime state — add to .gitignore
+├─ wireframes/
+│  ├─ _index.md           run registry + fragment catalog — see references/reuse-library.md
+│  ├─ _library/           grounding cache · fragments · decisions ledger
+│  └─ <slug>/
+│     ├─ grounding.md     every value, with its source path
+│     ├─ v1.html          self-contained; opens with no build step
+│     ├─ v2.html          later rounds, when structure changes materially
+│     └─ .serve.json/.log runtime state — add to .gitignore
 └─ plans/<slug>.md        the spec (or the wiki, if the project has one)
 ```
+
+Slugs must not start with `_` — that prefix is reserved for the library.
 
 Wireframes are **committed** by default so the spec's links resolve for anyone
 who reads it later. Add `wireframes/**/.serve.*` to `.gitignore`. If the user
@@ -213,5 +243,6 @@ id, the choice, and whether the wireframe validated it.
 | `references/interview.md` | Phase 4 — round structure, ASCII previews, UI dimensions, contradiction hunting |
 | `references/browser-verification.md` | Phase 5 — hidden-tab checklist, the four assertion families |
 | `references/spec-template.md` | Phase 6 — the output shape and where it goes |
+| `references/reuse-library.md` | Phases 1/2/4/6 — cache TTL, fragment markers, decisions ledger, harvest |
 | `assets/wireframe-scaffold.html` | Phase 2 — copy this; four marked REPLACE regions |
 | `scripts/serve-wireframe.sh` | Phase 3 — `start` / `status` / `stop` / `url` |

@@ -30,11 +30,13 @@ ASCII rendering of the surface using REAL labels from grounding.>
 
 <One row per locked decision. "Wireframe" marks decisions additionally
 validated visually or by measurement — that distinction is the point of having
-built one. Group into 3–5 themed tables rather than one long one.>
+built one. "carried (<slug>/Dn)" marks a verdict imported from the decisions
+ledger and left unreopened. Group into 3–5 themed tables rather than one long
+one.>
 
 | # | Decision | Choice | Settled by |
 |---|----------|--------|-----------|
-| D1 | <question> | <choice> | interview · wireframe |
+| D1 | <question> | <choice> | interview · wireframe · carried (<slug>/Dn) |
 
 ## The contract
 

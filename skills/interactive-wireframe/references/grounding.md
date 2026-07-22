@@ -24,6 +24,12 @@ inherits it.
 
 ## What to extract
 
+**Cache first.** If `<out>/_index.md` exists, a previous run already grounded
+the run-independent slice — tokens, typography, roles, anchors. Start from
+`_library/grounding-cache.md` per the TTL rules in `references/reuse-library.md`
+and extract fresh only what is surface-specific (its enums, extremes,
+behavioural constants). `--fresh` skips the cache.
+
 | # | Category | Why the wireframe needs it |
 |---|----------|---------------------------|
 | 1 | **Design tokens** — colour, spacing, radius, elevation, borders | The surface must sit in the product's palette, and contrast must be measurable |
@@ -125,7 +131,7 @@ for every value in the file, and the spec cites it.
 **Surface:** <route / component / page>, rendered by `<path>`
 **Confidence:** sourced | partly derived | derived (no design system)
 
-## Tokens
+## Tokens (cached — verified <date> · `_library/grounding-cache.md`)   <!-- heading form when reused from the cache; plain "## Tokens" when grounded fresh -->
 | Token | Value | Source |
 |---|---|---|
 | `--surface` | `#fcfcfc` | `packages/ui/styles/tokens.css:12` |

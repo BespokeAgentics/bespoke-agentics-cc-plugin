@@ -17,6 +17,10 @@
      Everything else (control-overlay engine, zone guides, verify kit,
      comparison harness, URL state) is harness — leave it alone.
 
+     If the target repo has wireframes/_library/, seed regions 1–3 from its
+     fragments, wrapped in ▼ FRAGMENT … / ▲ /FRAGMENT markers so a later
+     harvest can diff them (see references/reuse-library.md).
+
      Self-contained by contract: inline CSS, inline JS, no build step, no
      dependencies. A webfont <link> is the only allowed remote asset, and only
      when the real product uses one — otherwise the type metrics are wrong and
