@@ -312,6 +312,43 @@ one "reopen?" affordance instead of re-asking. `--fresh` ignores the library for
 harvests); a project with prior wireframes and no library gets a one-time backfill offer. **No
 production code is written.**
 
+### When to Use the Wireframe-Parity Command
+
+| Situation | Command |
+|-----------|---------|
+| Confirm the UI that was implemented matches the wireframe a spec settled | `/bespokeagentics:wireframe-parity '<spec-or-slug>' --app <url> [--wireframe <path>] [--depth quick\|standard\|deep] [--out <dir>] [--no-browser] [--force]` |
+
+The Wireframe-Parity command is the **post-implementation** companion to `interactive-wireframe`: that
+skill settles a UI and freezes the intended design as measurable truth; this one, once the feature is
+built, confirms the **as-built UI matches the wireframe that specified it**. Its premise is that it
+does not have to invent the "intended" side — the wireframe already froze it: the spec's **Verification**
+table is a snapshot of `__wf` measurements (band contiguity like `0→44→76→131`, contrast ratios +
+AA/AAA, `button button` count, off-screen focusables), **The contract** holds the structural invariants
+and their numbers, the **Decisions** table + `_library/decisions.md` ledger record what was settled,
+and the **States** table is the overlay's axes resolved (each row reproducible as a wireframe URL). It
+runs two passes. **(1) Structural** — parallel `Explore` agents ground every settled decision / state /
+label in the real implementation (`file:line`), marking each honored / drifted / missing (the floor,
+available even under `--no-browser`). **(2) Measured** — it serves the wireframe (reusing
+`interactive-wireframe`'s `serve-wireframe.sh`) and injects the **same** dependency-free measurement kit
+(`wf-probe.js`, a standalone copy of the wireframe's `__wf`) into **both** the wireframe and the running
+app, drives each to the matching state, and diffs band geometry / contrast / markup / focusables /
+rendered labels / design tokens **apples-to-apples** — parity being invariant-**within-tolerance**
+(±2px geometry, same AA/AAA verdict, contiguity as the contract requires), never pixel-identity.
+Unreachable (auth-gated) states are labelled **"not measured"**, never assumed; a behavioural "failure"
+in a backgrounded tab is treated as a measurement artifact. Because a wireframe is a settled design that
+a build sometimes deliberately evolves past, **spec Decisions are the parity contract** — deviating from
+a settled decision is a finding, unspecified details are free — and an **AskUserQuestion** interview
+classifies each divergence as **regression** (fix the build), **intended evolution** (the build is right,
+the wireframe is now stale), or **out of scope** before anything is called a failure. On `--depth deep`
+each divergence is adversarially verified first. It writes a **read-only** report to `./reviews/` with a
+parity verdict (🟢 faithful / 🟡 minor drift / 🔴 diverges), a **decision-by-decision parity table**, a
+**measured parity table** (intended / spec-frozen / as-built / Δ), label fidelity, a color-coded
+divergence register, an honest "not measured" coverage section, and a "definition of parity" checklist —
+then **offers** (doesn't assume) to open the P0 regressions as tasks or refresh the stale decisions
+ledger. Distinct from `plan-review` (audits a document *before* build) and `ux-audit` (audits a UI
+against heuristics): this audits a **built UI against the wireframe that specified it**. **The
+implementation is never modified.**
+
 ### When to Use Each Agent-Native Engineering Command
 
 | Situation | Command |
@@ -402,6 +439,7 @@ When assessing features or making decisions, use the standard color system:
     │  ├─ screencast-highlight-reel/  # Long app-demo screencast → grounded, narrated, subtitled highlight video (TTS + ffmpeg assembly)
     │  ├─ screencast-capture/         # Browser flow → MP4 (gif tab-capture or --engine screen native-res) → hands to screencast-highlight-reel
     │  ├─ interactive-wireframe/      # Undecided UI → code-grounded interactive HTML wireframe → interview → spec
+    │  ├─ wireframe-parity/           # Built UI vs the wireframe that specified it → read-only parity report (structural + measured)
     │  ├─ plan-review/                # Plan/spec/issue → read-only, code-grounded gap review
     │  ├─ data-ui-craft/              # Data-dense UI audit + fixes + React/Tailwind primitives kit
     │  ├─ xstate-refactor/            # Feature state logic + UI → XState v5 machine/statechart/actors
@@ -459,6 +497,7 @@ When assessing features or making decisions, use the standard color system:
     │  ├─ highlight-reel.md           # /bespokeagentics:highlight-reel
     │  ├─ screencast-capture.md      # /bespokeagentics:screencast-capture
     │  ├─ interactive-wireframe.md   # /bespokeagentics:interactive-wireframe
+    │  ├─ wireframe-parity.md        # /bespokeagentics:wireframe-parity
     │  ├─ plan-review.md              # /bespokeagentics:plan-review
     │  ├─ data-ui-craft.md            # /bespokeagentics:data-ui-craft
     │  ├─ xstate-refactor.md          # /bespokeagentics:xstate-refactor
@@ -503,6 +542,7 @@ When assessing features or making decisions, use the standard color system:
 26. **Build a plan workstream-by-workstream, committing each**: Run `/bespokeagentics:workstream-orchestrate '<plan-path-or-task>'` — the sequential, commit-as-you-go sibling of `orchestrate`. It generates a human-confirmed **kickoff contract** from the plan (10 sections: mission, gates, guardrails, workstreams, hard gates, definition of done), then drives it **one workstream at a time** through a bounded `code → validate → commit` **Workflow**: an implementer applies only that workstream's scope, an independent adversarial validator re-runs the gates and **proves or refutes the plan's server-side hard gates** (crafted input against the authoritative layer, never client-side hiding), and only a green, validated workstream earns **one Conventional Commit** — followed by a human checkpoint before the next. Failing validation loops back (≤`--attempts`) then halts and surfaces the findings. The driver never writes production code; given a raw task it drafts and confirms a plan first. Resumable under `.workstream/<slug>/`; degrades to `--engine agent` when the Workflow tool is absent, or `--dry-run` for the contract only.
 27. **Record a browser demo, then make a reel**: Run `/bespokeagentics:screencast-capture '<start-url-or-flow>'` — the **capture** companion to `screencast-highlight-reel`: it *produces* the screencast that skill polishes, so you never have to screen-record yourself. It drives a live **Claude-in-Chrome** session — an AskUserQuestion interview turns your request into a shot list, it opens a fresh tab and **pauses for you to log in before recording** (credentials stay out of the footage; the agent never types secrets), records the flow step-by-step with the `gif_creator` tool (click indicators only by default), and exports the GIF. For higher fidelity, **`--engine screen`** instead records a chosen monitor with ffmpeg at **native resolution + configurable bitrate** (`--display` / `--crf`) — the fix when the default tab capture (hard-capped ~1200px, dithered GIF) looks grainy; it needs macOS Screen-Recording permission and records the whole monitor (auto-cropped to the browser window). The gif engine then **converts the GIF to a real-duration MP4** (`scripts/gif_to_mp4.sh`; the screen engine writes MP4 directly) — a GIF reports no container duration, so the reel would otherwise drift on frame-index timings — presents the MP4, and (by default) asks whether to hand off to `/bespokeagentics:highlight-reel` (`--reel`/`--no-reel` to force/skip), forwarding `--no-tts` (no ElevenLabs key) and `--no-ground` (site isn't this repo's app) as needed. Degrades gracefully (no ffmpeg → stops before recording; unclearable login → captures what's reachable or stops).
 28. **Settle an undecided UI before building it**: Run `/bespokeagentics:interactive-wireframe '<surface>'` — it grounds the surface in this repo's real source (design tokens, typography, the literal enums/labels the UI displays, roles and permission flags, the layout components the change touches — each cited to a path, never invented), emits **one self-contained HTML wireframe** (inline CSS + JS, no build step) carrying a **control overlay generated from the axes that surface actually varies on** — role switcher, entity states, permission toggles, data extremes, behavioural thresholds, layout variants, zone guides, live state readout, with state mirrored into the URL so any configuration is a shareable link — serves it on **8791** (8787 is never auto-probed; `file://` fails under browser automation), then interviews in AskUserQuestion rounds of ≤4 with concrete ASCII previews, **rebuilding the wireframe between rounds**, surfacing contradictions between your answers instead of silently reconciling them, and offering switchable variants side by side instead of arguing about aesthetics — while a **browser comment mode** (✎ or `c` in the wireframe) lets you pick any element and comment on it, the comment reaching the session with its selector, zone, and exact on-screen state, and replies threading back into the page's comment panel (instantly, when the optional `wireframe-feedback` channel is loaded; drained between rounds otherwise). It verifies by **measurement** — region contiguity, computed WCAG contrast, markup validity, off-screen focusables, scripted behaviour sequences — with the backgrounded-tab failure modes (scroll events, rAF, transitions and `.focus()` all silently no-op in a hidden tab) encoded as a hard checklist, labelling anything unmeasured "not verified" rather than claiming it. Ends at a spec grounded in real file paths, in the wiki or `./plans/<slug>.md`, then **auto-harvests a per-project reuse library** (`wireframes/_library/`: grounding cache, fragment files, decisions ledger + `wireframes/_index.md`) so the next wireframe in the same repo starts warm — cached values TTL-trusted and honestly labelled (`--ttl`, default 14 days; `--fresh` to bypass), prior verdicts imported as fixed context with one "reopen?" affordance. Composes both ways with `spec-elicitation`. **Writes no production code.**
+29. **Confirm the build matches the wireframe**: Run `/bespokeagentics:wireframe-parity '<spec-or-slug>' --app <url>` — the **post-implementation** companion to `interactive-wireframe`. Once a wireframe spec has been built, it confirms the as-built UI matches what was decided, reusing the intended design the wireframe already froze (the spec's **Verification** `__wf` numbers, **Contract** invariants, **Decisions** table + `_library/decisions.md` ledger, and **States** table). It runs a **structural** pass (parallel `Explore` agents ground every settled decision/state/label in the real implementation at `file:line`, honored/drifted/missing — the floor, available under `--no-browser`) and a **measured** pass (serves the wireframe via `serve-wireframe.sh`, injects the **same** dependency-free probe — `wf-probe.js`, a standalone copy of `__wf` — into **both** the wireframe and the running app, drives each to the matching state, and diffs band geometry / contrast / markup / focusables / rendered labels / tokens apples-to-apples, parity being invariant-**within-tolerance** — ±2px, same AA/AAA verdict, contiguity as required — not pixel-identity). Auth-gated states are labelled **"not measured"**; a backgrounded-tab behavioural "failure" is treated as an artifact. Because **spec Decisions are the parity contract** and a build sometimes evolves past the wireframe on purpose, an **AskUserQuestion** interview classifies each divergence as **regression** / **intended evolution** / **out of scope** before any is called a failure (`--depth deep` adversarially verifies each first). Writes a **read-only** report to `./reviews/` — parity verdict (🟢/🟡/🔴), a decision-by-decision parity table, a measured table (intended / spec-frozen / as-built / Δ), label fidelity, a color-coded divergence register, an honest "not measured" section, and a "definition of parity" checklist — then **offers** to open the P0 regressions as tasks or refresh the stale ledger. Distinct from `plan-review` (audits a document before build) and `ux-audit` (heuristics): this audits a **built UI against the wireframe that specified it**. **The implementation is never modified.**
 
 ## Quality Standards
 

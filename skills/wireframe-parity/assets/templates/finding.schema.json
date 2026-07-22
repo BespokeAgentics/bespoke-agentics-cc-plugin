@@ -1,0 +1,59 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "wireframe-parity divergence",
+  "description": "One divergence between the wireframe's intended UI and the as-built UI. Grounding/measurement agents return an array of these; the interview then classifies and prioritizes them.",
+  "type": "object",
+  "required": ["id", "dimension", "class", "severity", "title", "intended_evidence", "asbuilt_evidence", "why", "recommendation"],
+  "properties": {
+    "id": { "type": "string", "description": "Stable id, e.g. V1" },
+    "dimension": {
+      "type": "string",
+      "enum": ["decision", "contract", "geometry", "contrast", "markup", "focusables", "label", "token", "behaviour", "state"],
+      "description": "What kind of parity check produced this divergence"
+    },
+    "class": {
+      "type": "string",
+      "enum": ["regression", "intended-evolution", "unspecified", "unverified"],
+      "description": "regression = breaks a settled decision/contract; intended-evolution = build deliberately improved past the wireframe (recorded, not a fault); unspecified = spec never fixed this (out of parity scope); unverified = could not be measured/grounded"
+    },
+    "severity": {
+      "type": "string",
+      "enum": ["diverge", "drift", "note"],
+      "description": "diverge = breaks a contract invariant or drops a settled decision, or a measured pass→fail flip; drift = outside tolerance but not a contract break; note = within tolerance / informational"
+    },
+    "decision_ref": {
+      "type": "string",
+      "description": "The settled Decision id / spec section this touches, if any (e.g. D5, §Contract R1). Empty if not decision-anchored."
+    },
+    "title": { "type": "string", "description": "One-line summary of the divergence" },
+    "intended_evidence": {
+      "type": "string",
+      "description": "The intended side: the decided choice, the spec quote, and/or the wireframe's measured number (e.g. 'D5: rail 236px' or 'bands 0->44->76->131, contiguous')"
+    },
+    "asbuilt_evidence": {
+      "type": "string",
+      "description": "The as-built side: a file:line and/or the app's measured number (e.g. 'FeatureSectionRail.tsx:24 renders 248px' or 'bands gap 12px when scrolled')"
+    },
+    "state": {
+      "type": "string",
+      "description": "Which state (role x entity) this was observed in, if measured. Empty for state-independent structural findings."
+    },
+    "why": { "type": "string", "description": "The consequence — what the user experiences when the build diverges from the decided design" },
+    "recommendation": { "type": "string", "description": "Concrete next step to restore parity (or to record the intended evolution)" },
+    "status_color": {
+      "type": "string",
+      "enum": ["🟢", "🔵", "🟡", "🔴", "⚪", "🟣"],
+      "description": "Register color: 🟢 OOTB · 🔵 Config · 🟡 Custom Dev · 🔴 Gap · ⚪ TBD · 🟣 3rd Party"
+    },
+    "priority": {
+      "type": "string",
+      "enum": ["P0", "P1", "P2", "none"],
+      "description": "Set by the interview. A broken contract invariant or dropped settled decision defaults to P0."
+    },
+    "confidence": {
+      "type": "string",
+      "enum": ["high", "medium", "low"],
+      "description": "Measured (high) vs. inferred-from-code (medium) vs. unverified (low). Low + high-consequence => open question, not regression."
+    }
+  }
+}

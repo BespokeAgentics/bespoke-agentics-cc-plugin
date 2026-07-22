@@ -213,6 +213,11 @@ run-independent grounding into the cache, append the decision table to the
 ledger, refresh `_index.md` — and list what was harvested in the final report.
 Harvest runs even under `--fresh`.
 
+The spec's **Verification** table is not just a record — it is the frozen
+snapshot that **`/bespokeagentics:wireframe-parity`** re-measures against the
+built UI once the feature is implemented, decision by decision. Keep those
+numbers real and complete; they are the contract the parity reviewer checks.
+
 ## Artifacts
 
 ```

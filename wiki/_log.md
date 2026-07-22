@@ -9,6 +9,32 @@ Chronological record of all bootstrap, maintenance, and schema evolution operati
 
 ---
 
+## 2026-07-22 — New skill + command — wireframe-parity (v1.20.0)
+
+**Operation**: Added the `wireframe-parity` skill + `/bespokeagentics:wireframe-parity` command — a read-only reviewer that confirms an implemented UI matches the wireframe an `interactive-wireframe` spec settled.
+
+**What it does**: The post-implementation companion to `interactive-wireframe`. It does not invent the "intended" side — the wireframe already froze it: the spec's **Verification** table is a snapshot of `__wf` measurements (band contiguity, contrast + AA/AAA, `button button` count, off-screen focusables), **The contract** holds structural invariants + numbers, the **Decisions** table + `_library/decisions.md` ledger record what was settled, and the **States** table is the overlay's axes resolved (each row reproducible as a wireframe URL). Two passes: **(1) structural** — parallel `Explore` agents ground every settled decision/state/label in the real implementation (`file:line`), honored/drifted/missing (the `--no-browser` floor); **(2) measured** — serves the wireframe (reusing `interactive-wireframe`'s `scripts/serve-wireframe.sh`) and injects the **same** dependency-free probe (`assets/wf-probe.js`, a standalone copy of the scaffold's `__wf` kit + two parity extras `texts()`/`token()`) into **both** the wireframe and the running app via claude-in-chrome, drives each to the matching state, and diffs band geometry / contrast / markup / focusables / labels / tokens apples-to-apples. Parity is invariant-**within-tolerance** (±2px geometry, same AA/AAA verdict, contiguity as the contract requires), never pixel-identity (user declined strict). Auth-gated states are labelled "not measured", never assumed; a backgrounded-tab behavioural "failure" is a measurement artifact. Because **spec Decisions are the parity contract** and a build sometimes evolves past the wireframe on purpose, an AskUserQuestion interview classifies each divergence as **regression** / **intended-evolution** / **out-of-scope** before any is called a failure; `--depth deep` adversarially verifies each first. Writes a read-only `./reviews/<slug>-parity.md` (verdict 🟢/🟡/🔴, decision-by-decision parity table, measured table intended/spec-frozen/as-built/Δ, label fidelity, color-coded divergence register, honest "not measured" coverage, definition-of-parity checklist), offers (doesn't assume) to open P0 regressions as tasks or refresh the stale ledger, and wiki-ingests + logs when a vault exists.
+
+**Files added**:
+- `skills/wireframe-parity/SKILL.md` (6-phase pipeline, cloned from the plan-review reviewer scaffold)
+- `skills/wireframe-parity/references/` — `resolve-and-parse.md`, `grounding.md`, `measurement.md`, `interview.md`, `report-synthesis.md`
+- `skills/wireframe-parity/assets/wf-probe.js` — the injectable measurement kit
+- `skills/wireframe-parity/assets/templates/` — `parity-report.md`, `divergence-register.md`, `finding.schema.json`
+- `commands/wireframe-parity.md`
+
+**Files modified**:
+- `skills/interactive-wireframe/SKILL.md` + `references/spec-template.md` — cross-links noting the Verification table + Decisions are what wireframe-parity re-measures post-implementation
+
+**Design/reuse basis**: mirrors `plan-review`'s scaffold (thin command → phased skill with per-phase references, parallel `Explore` grounding to `file:line`, `--depth deep` adversarial verification, AskUserQuestion gate, `./reviews/` output with 🟢/🟡/🔴 + color-coded register + wiki ingestion), fused with `interactive-wireframe`'s in-page `__wf` assertions and `funcspec`'s code-said-X-render-shows-Y contradiction check. `wf-probe.js` is a faithful copy of the scaffold `__wf` methods (geometry/contrast/markup/focusables/behaviour) injected into both sides so the diff is drift-proof; a `methods()` self-report supports the drift check.
+
+**Verification**: wf-probe.js injected into a served scaffold via claude-in-chrome returned `bands`/`contrast`/`markup`/`texts`/`token` shapes matching the built-in `__wf`; JS + JSON syntax checks pass; command/skill flag sets agree; version strings agree across plugin.json/marketplace.json.
+
+**Registration**: `CLAUDE.md` (new "When to Use the Wireframe-Parity Command" section + paragraph, Getting Started item 29, structure tree skills/ + commands/), `.claude-plugin/plugin.json` and `marketplace.json` (keywords `wireframe-parity`/`design-parity`/`as-built-review`/`visual-parity`/`ui-parity`, version → 1.20.0).
+
+**Relationship to existing skills**: post-implementation companion to `interactive-wireframe` (consumes its spec + wireframe + `_library/decisions.md`); distinct from `plan-review` (audits a document *before* build) and `ux-audit` (heuristics on a UI) — this audits a *built UI against the wireframe that specified it*.
+
+---
+
 ## 2026-07-22 — Skill upgrade — interactive-wireframe 2-way browser feedback (v1.19.0)
 
 **Operation**: Added a two-way browser↔session communication path to the `interactive-wireframe` skill: an in-page comment mode (element picking + free-page comments + reply thread panel), a file-based transport through the serve script, and an optional Claude Code **channel** server for instant push.
