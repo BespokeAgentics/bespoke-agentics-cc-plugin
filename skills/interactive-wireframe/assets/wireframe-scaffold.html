@@ -1,0 +1,648 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>WIREFRAME — replace me</title>
+
+<!-- ═══════════════════════════════════════════════════════════════════════════
+     INTERACTIVE WIREFRAME SCAFFOLD
+
+     Copy this file, then edit exactly four regions (each marked ▼ REPLACE):
+       1. :root tokens        — real values from the target codebase
+       2. Surface styles      — the CSS for the surface under discussion
+       3. Surface markup      — the surface itself
+       4. AXES + render()     — the control overlay and what it drives
+
+     Everything else (control-overlay engine, zone guides, verify kit,
+     comparison harness, URL state) is harness — leave it alone.
+
+     Self-contained by contract: inline CSS, inline JS, no build step, no
+     dependencies. A webfont <link> is the only allowed remote asset, and only
+     when the real product uses one — otherwise the type metrics are wrong and
+     every width you measure is a lie.
+     ══════════════════════════════════════════════════════════════════════════ -->
+
+<style>
+/* ▼ REPLACE 1 — TOKENS ═══════════════════════════════════════════════════════
+   Lift these from real source. Keep the source path in the comment: it is the
+   difference between a wireframe that predicts and one that merely illustrates,
+   and it is what the spec cites later. Delete any token you did not find —
+   an invented hex is worse than a missing one, because it looks authoritative.
+
+   If the project has no design system, derive from computed styles of the
+   running app (see references/grounding.md) and label the block as derived.  */
+:root{
+  /* colour — from: <path> */
+  --wf-surface:#ffffff;
+  --wf-surface-sunken:#f4f4f5;
+  --wf-ink:#18181b;
+  --wf-ink-muted:#71717a;
+  --wf-rule:#e4e4e7;
+  --wf-rule-strong:#d4d4d8;
+  --wf-accent:#2563eb;
+  --wf-accent-ink:#1e40af;
+
+  /* type — from: <path> */
+  --wf-font-body:system-ui,-apple-system,"Segoe UI",sans-serif;
+  --wf-font-display:var(--wf-font-body);
+
+  /* geometry — from: <path> */
+  --wf-radius:6px;
+  --wf-gutter:24px;
+}
+/* ▲ /REPLACE 1 ═════════════════════════════════════════════════════════════ */
+
+
+/* ── harness base ────────────────────────────────────────────────────────── */
+*{box-sizing:border-box}
+body{margin:0;background:var(--wf-surface-sunken);color:var(--wf-ink);
+     font-family:var(--wf-font-body);font-size:14px;line-height:1.5}
+button{font:inherit;cursor:pointer}
+
+/* Honour the OS setting. Also the honest way to preview the reduced-motion
+   variant: every state must stay reachable, just not animated. */
+@media (prefers-reduced-motion:reduce){
+  *,*::before,*::after{transition-duration:.01ms !important;animation-duration:.01ms !important}
+}
+/* Forced by the verify kit so an end state can be measured in a hidden tab,
+   where transitions never advance past t=0. */
+body.wf-no-motion *{transition:none !important;animation:none !important}
+
+
+/* ▼ REPLACE 2 — SURFACE STYLES ═══════════════════════════════════════════════
+   Scope layout VARIANTS to `.v-name`, never `body.v-name`. The comparison
+   harness clones the surface into a plain <div class="v-name">, so a
+   body-scoped rule silently renders every variant identically — which reads as
+   "these options look the same" rather than "the harness is broken".         */
+
+.wf-demo{background:var(--wf-surface);border:1px solid var(--wf-rule);
+         border-radius:var(--wf-radius);padding:20px;margin:0 0 14px}
+.wf-demo h2{margin:0 0 8px;font-family:var(--wf-font-display);font-size:16px}
+.wf-demo .muted{color:var(--wf-ink-muted);font-size:13px}
+.v-compact .wf-demo{padding:10px}
+.v-roomy   .wf-demo{padding:32px}
+/* ▲ /REPLACE 2 ═════════════════════════════════════════════════════════════ */
+
+
+/* ── zone guides ─────────────────────────────────────────────────────────────
+   Put `class="wf-zone" data-z="1 · label"` on each structural band. The guide
+   toggle outlines them and prints the label, which turns "the spacing feels
+   off" into "band 2 is 8px taller than band 3". */
+.wf-zone{position:relative}
+body.wf-guides .wf-zone{outline:2px dashed color-mix(in srgb,var(--wf-accent) 70%,transparent);outline-offset:-2px}
+body.wf-guides .wf-zone::after{content:attr(data-z);position:absolute;left:6px;top:4px;z-index:99;
+  font:700 9px/1 var(--wf-font-display);letter-spacing:.08em;text-transform:uppercase;
+  background:#000;color:#fff;padding:3px 5px;border-radius:2px;pointer-events:none}
+
+/* ── control overlay ─────────────────────────────────────────────────────── */
+.wf-ctl{position:fixed;right:16px;bottom:16px;z-index:9000;width:300px;background:#1d1d1d;color:#eee;
+  border-radius:8px;box-shadow:0 12px 40px rgba(0,0,0,.42);font:12px/1.45 system-ui,sans-serif;overflow:hidden}
+/* The panel will sit on top of whatever is in that corner — routinely the
+   thing under discussion. Dock it to the other side instead of asking the
+   reviewer to judge a layout they cannot fully see. */
+.wf-ctl.wf-left{right:auto;left:16px}
+.wf-ctl header{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:9px 12px;
+  background:#111;font-weight:700;font-size:11px;letter-spacing:.06em;text-transform:uppercase}
+.wf-ctl header .wf-hbtns{display:flex;gap:2px;flex:0 0 auto}
+.wf-ctl header button{background:none;border:0;color:#999;font-size:15px;line-height:1;padding:0 3px}
+.wf-ctl header button:hover{color:#fff}
+.wf-ctl .wf-body{padding:11px 12px 13px;display:flex;flex-direction:column;gap:10px;max-height:70vh;overflow:auto}
+.wf-ctl.wf-min .wf-body{display:none}
+.wf-ctl label{display:flex;flex-direction:column;gap:4px;min-width:0;
+  color:#a5a5a5;font-size:10px;text-transform:uppercase;letter-spacing:.05em;font-weight:700}
+.wf-ctl select,.wf-ctl input[type=number]{background:#2a2a2a;border:1px solid #3d3d3d;color:#eee;
+  border-radius:4px;padding:5px 7px;font:inherit;min-width:0}
+.wf-ctl .wf-chk{flex-direction:row;align-items:center;gap:7px;
+  text-transform:none;letter-spacing:0;font-size:12px;font-weight:400;color:#ddd}
+.wf-ctl .wf-from{color:#6a6a6a;font-size:9.5px;text-transform:none;letter-spacing:0;font-weight:400}
+.wf-ctl hr{border:0;border-top:1px solid #333;margin:2px 0}
+.wf-ctl .wf-note{color:#7d7d7d;font-size:10.5px}
+.wf-ctl table{width:100%;border-collapse:collapse;font-size:11px}
+.wf-ctl td{padding:2px 0;min-width:0}
+.wf-ctl td:first-child{color:#9a9a9a;padding-right:8px}
+.wf-ctl td select{width:100%;padding:3px 5px;font-size:11px}
+.wf-ctl .wf-actions{display:flex;flex-wrap:wrap;gap:6px}
+.wf-ctl .wf-actions button{background:#2a2a2a;border:1px solid #3d3d3d;color:#eee;border-radius:4px;padding:5px 9px;font:inherit}
+.wf-ctl .wf-readout{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:10.5px;color:#6fd08c;word-break:break-word}
+
+/* ── comparison harness (WF.compare) ─────────────────────────────────────── */
+.wf-cmp{position:fixed;inset:0;z-index:8000;background:var(--wf-surface-sunken);overflow:auto;padding:16px 16px 80px}
+.wf-cmp .wf-cmp-item{margin:0 0 18px;border:1px solid var(--wf-rule-strong);background:var(--wf-surface)}
+.wf-cmp .wf-cmp-label{font:700 10px/1 system-ui;letter-spacing:.08em;text-transform:uppercase;
+  background:#111;color:#fff;padding:5px 8px}
+.wf-cmp-close{position:fixed;right:16px;top:16px;z-index:8001;background:#111;color:#fff;
+  border:0;border-radius:4px;padding:7px 12px;font:700 11px system-ui}
+</style>
+</head>
+<body>
+
+<!-- ▼ REPLACE 3 — SURFACE MARKUP ══════════════════════════════════════════════
+     The surface under discussion, at fidelity high enough to judge layout:
+     real labels, real longest-case strings, real control affordances.
+
+     Two markup rules that are not style preferences — they change what the
+     wireframe is able to prove:
+       · A <button> cannot contain a <button> or an <a>. If a row is clickable
+         AND carries actions, the row is a <div> with a sibling trigger button.
+         Getting this wrong means the wireframe validates a structure the real
+         app cannot ship (`__wf.markup()` catches it).
+       · Anything hidden by transform is still in the tab order. If you hide a
+         band, give it a focusin guard that reveals it (`__wf.focusables()`
+         reports off-screen focusables).                                       -->
+
+<main id="surface" class="wf-zone" data-z="1 · surface" style="padding:24px">
+  <div class="wf-demo">
+    <h2>Unedited scaffold</h2>
+    <p class="muted">
+      Replace regions 1–4. This placeholder exists so the harness can be smoke-tested
+      before you customise it: every control type below is live, and
+      <code>__wf.env()</code> works right now.
+    </p>
+    <p class="muted">Current demo state: <b id="demoState">—</b></p>
+  </div>
+  <div class="wf-demo">
+    <h2>Second block</h2>
+    <p class="muted">Scroll to exercise the readout; toggle zone guides to see band outlines.</p>
+  </div>
+  <div style="height:140vh"></div>
+</main>
+<!-- ▲ /REPLACE 3 ═══════════════════════════════════════════════════════════ -->
+
+<script>
+/* ══════════════════════════════════════════════════════════════════════════
+   HARNESS — control overlay engine, URL state, comparison, verify kit.
+   Leave this section alone; edit REPLACE 4 at the bottom.
+   ══════════════════════════════════════════════════════════════════════════ */
+const WF = (() => {
+  const S = {};              // live control state
+  let AXES = [], renderFn = () => {}, readoutFn = null, mounted = false;
+
+  const el = (t, a = {}, kids = []) => {
+    const n = document.createElement(t);
+    for (const [k, v] of Object.entries(a)) {
+      if (k === 'class') n.className = v;
+      else if (k === 'text') n.textContent = v;
+      else if (k === 'html') n.innerHTML = v;
+      else n.setAttribute(k, v);
+    }
+    (Array.isArray(kids) ? kids : [kids]).forEach(c => c && n.appendChild(c));
+    return n;
+  };
+  const opts = list => list.map(o => {
+    const v = typeof o === 'string' ? o : o.value;
+    const l = typeof o === 'string' ? o : (o.label ?? o.value);
+    return el('option', { value: v, text: l });
+  });
+
+  /* ── URL state ────────────────────────────────────────────────────────────
+     Every control writes to the hash, so a configuration is a link. That makes
+     "the broken one is the read-only client view at stage 3" a URL you can
+     paste, screenshot, and re-verify later — instead of a list of clicks.   */
+  const readHash = () => Object.fromEntries(new URLSearchParams(location.hash.slice(1)));
+  const writeHash = () => {
+    const p = new URLSearchParams();
+    for (const ax of AXES) {
+      if (!ax.id || ax.type === 'action') continue;
+      const v = S[ax.id];
+      if (v === undefined || v === null) continue;
+      p.set(ax.id, typeof v === 'boolean' ? (v ? '1' : '0') : (typeof v === 'object' ? JSON.stringify(v) : v));
+    }
+    history.replaceState(null, '', '#' + p.toString());
+  };
+
+  const applyBodyClasses = () => {
+    for (const ax of AXES) {
+      if (ax.type === 'variant') {
+        ax.options.forEach(o => {
+          const v = typeof o === 'string' ? o : o.value;
+          document.body.classList.toggle(v, v === S[ax.id]);
+        });
+      } else if (ax.type === 'bodyclass') {
+        document.body.classList.toggle(ax.bodyClass || ax.id, !!S[ax.id]);
+      }
+    }
+  };
+
+  const update = () => { applyBodyClasses(); renderFn(S); paintReadout(); writeHash(); };
+
+  function paintReadout() {
+    const out = document.getElementById('wf-readout');
+    if (!out) return;
+    out.textContent = readoutFn
+      ? readoutFn(S)
+      : `y ${Math.round(scrollY)} · ` +
+        AXES.filter(a => a.id && a.type !== 'action' && a.type !== 'matrix')
+            .map(a => `${a.id} ${typeof S[a.id] === 'boolean' ? (S[a.id] ? 'on' : 'off') : S[a.id]}`)
+            .join(' · ');
+  }
+
+  function buildPanel() {
+    const body = el('div', { class: 'wf-body' });
+
+    for (const ax of AXES) {
+      if (ax.type === 'divider') { body.appendChild(el('hr')); continue; }
+      if (ax.type === 'note') { body.appendChild(el('div', { class: 'wf-note', text: ax.text })); continue; }
+
+      if (ax.type === 'action') {
+        let bar = body.lastElementChild;
+        if (!bar || !bar.classList.contains('wf-actions')) { bar = el('div', { class: 'wf-actions' }); body.appendChild(bar); }
+        const b = el('button', { text: ax.label });
+        b.addEventListener('click', () => { ax.run(S, update); update(); });
+        bar.appendChild(b);
+        continue;
+      }
+
+      if (ax.type === 'matrix') {
+        body.appendChild(el('div', { class: 'wf-note', text: ax.label }));
+        const tb = el('table');
+        WF.matrixInputs[ax.id] = {};
+        ax.rows.forEach(r => {
+          const sel = el('select'); opts(ax.options).forEach(o => sel.appendChild(o));
+          sel.value = S[ax.id][r.id];
+          sel.addEventListener('change', e => { S[ax.id][r.id] = e.target.value; update(); });
+          WF.matrixInputs[ax.id][r.id] = sel;
+          tb.appendChild(el('tr', {}, [el('td', { text: r.label }), el('td', {}, sel)]));
+        });
+        body.appendChild(tb);
+        continue;
+      }
+
+      if (ax.type === 'toggle' || ax.type === 'bodyclass') {
+        const input = el('input', { type: 'checkbox' });
+        input.checked = !!S[ax.id];
+        input.addEventListener('change', e => { S[ax.id] = e.target.checked; update(); });
+        const lab = el('label', { class: 'wf-chk' }, input);
+        lab.appendChild(document.createTextNode(' ' + ax.label));
+        body.appendChild(lab);
+        // Registered like every other control: without this, WF.set() (and any
+        // in-surface control wired to it) changes the surface while the panel
+        // keeps showing the old value — which reads as a rendering bug.
+        WF.inputs[ax.id] = input;
+        continue;
+      }
+
+      const lab = el('label', {}, document.createTextNode(ax.label));
+      let input;
+      if (ax.type === 'number') {
+        input = el('input', { type: 'number' });
+        if (ax.min !== undefined) input.min = ax.min;
+        if (ax.step !== undefined) input.step = ax.step;
+        input.value = S[ax.id];
+        input.addEventListener('input', e => { S[ax.id] = +e.target.value; update(); });
+      } else { // select | variant
+        input = el('select');
+        opts(ax.options).forEach(o => input.appendChild(o));
+        input.value = S[ax.id];
+        input.addEventListener('change', e => { S[ax.id] = e.target.value; update(); });
+      }
+      lab.appendChild(input);
+      // Provenance, inline: the reviewer can see these are the app's real
+      // values and not a plausible-looking invention.
+      if (ax.from) lab.appendChild(el('span', { class: 'wf-from', text: ax.from }));
+      body.appendChild(lab);
+      if (ax.id) WF.inputs[ax.id] = input;
+    }
+
+    body.appendChild(el('hr'));
+    body.appendChild(el('div', { class: 'wf-readout', id: 'wf-readout' }));
+
+    const dock = el('button', { text: '⇄', title: 'dock to the other side' });
+    const min = el('button', { text: '–', title: 'minimise' });
+    const panel = el('aside', { class: 'wf-ctl', id: 'wf-ctl' }, [
+      el('header', {}, [el('span', { text: 'Wireframe controls' }),
+                        el('span', { class: 'wf-hbtns' }, [dock, min])]), body,
+    ]);
+    min.addEventListener('click', () => {
+      panel.classList.toggle('wf-min');
+      min.textContent = panel.classList.contains('wf-min') ? '+' : '–';
+    });
+    // Remembered, because the wireframe is rebuilt between interview rounds and
+    // re-docking every round is exactly the kind of friction that stops people
+    // exploring states.
+    const DOCK_KEY = 'wf-dock-left';
+    const applyDock = v => panel.classList.toggle('wf-left', v);
+    let left = false;
+    try { left = localStorage.getItem(DOCK_KEY) === '1'; } catch {}
+    applyDock(left);
+    dock.addEventListener('click', () => {
+      left = !left; applyDock(left);
+      try { localStorage.setItem(DOCK_KEY, left ? '1' : '0'); } catch {}
+    });
+    document.body.appendChild(panel);
+  }
+
+  const firstVal = ax => (typeof ax.options[0] === 'string' ? ax.options[0] : ax.options[0].value);
+
+  /* Hydrate S from the hash. `initial` also seeds declared defaults; on a later
+     re-hydrate, axes absent from the hash are left alone. */
+  function hydrate(initial) {
+    const h = readHash();
+    for (const ax of AXES) {
+      if (!ax.id || ax.type === 'action' || ax.type === 'divider' || ax.type === 'note') continue;
+      if (ax.type === 'matrix') {
+        if (initial) S[ax.id] = Object.fromEntries(ax.rows.map(r => [r.id, r.value ?? firstVal(ax)]));
+        if (h[ax.id]) { try { Object.assign(S[ax.id], JSON.parse(h[ax.id])); } catch {} }
+        continue;
+      }
+      let v;
+      if (h[ax.id] !== undefined) {
+        v = (ax.type === 'toggle' || ax.type === 'bodyclass') ? h[ax.id] === '1'
+          : ax.type === 'number' ? +h[ax.id] : h[ax.id];
+      } else if (initial) {
+        v = ax.value;
+        if (v === undefined) v = (ax.type === 'toggle' || ax.type === 'bodyclass') ? false
+          : ax.options ? firstVal(ax) : 0;
+      } else continue;
+      S[ax.id] = v;
+    }
+  }
+
+  /* Push S back into the controls, so the panel can never disagree with the
+     surface — whatever changed the state. */
+  function syncInputs() {
+    for (const [id, input] of Object.entries(WF.inputs)) {
+      if (input.type === 'checkbox') input.checked = !!S[id]; else input.value = S[id];
+    }
+    for (const [axId, rows] of Object.entries(WF.matrixInputs))
+      for (const [rowId, sel] of Object.entries(rows)) sel.value = S[axId][rowId];
+  }
+
+  return {
+    S, inputs: {}, matrixInputs: {},
+
+    /* mount({axes, render, readout}) — the whole overlay is generated from the
+       axes the surface actually varies on. Adding a question to the interview
+       means adding an axis here, not writing markup. */
+    mount({ axes, render, readout }) {
+      AXES = axes; renderFn = render || (() => {}); readoutFn = readout || null;
+      hydrate(true);
+      buildPanel(); mounted = true; update();
+      addEventListener('scroll', paintReadout, { passive: true });
+      /* Navigating to a URL that differs only in the hash does NOT reload the
+         page, so without this the wireframe silently ignores the state you
+         asked for and you measure the previous one. With it, the URL is a real
+         control surface: automation can drive the surface to an exact state by
+         navigating, and a pasted link reproduces what someone saw. */
+      addEventListener('hashchange', () => { hydrate(false); syncInputs(); update(); });
+      return S;
+    },
+
+    set(id, v) { S[id] = v; syncInputs(); update(); },
+    update,
+    syncInputs,
+
+    /* Any change in document height can move scrollY without the user
+       scrolling (browser scroll anchoring). Call before reading scrollY in a
+       scroll handler that compares against a baseline — otherwise an expand
+       that inserts content ABOVE the viewport reads as a large user scroll and
+       fires whatever that scroll was supposed to trigger. */
+    _lastH: 0,
+    absorbLayoutShift(baselineKey) {
+      const h = document.documentElement.scrollHeight;
+      if (!WF._lastH) WF._lastH = h;
+      if (h !== WF._lastH) { if (baselineKey && typeof S[baselineKey] === 'number') S[baselineKey] += h - WF._lastH; WF._lastH = h; }
+      return h;
+    },
+    /* Re-baseline synchronously AFTER a layout-changing toggle. Synchronous —
+       an rAF/setTimeout baseline drifts whenever frames are throttled, and
+       frames are always throttled in a backgrounded automation tab. */
+    rebaseline(baselineKey) {
+      void document.documentElement.scrollHeight;
+      if (baselineKey) S[baselineKey] = scrollY;
+      WF._lastH = document.documentElement.scrollHeight;
+    },
+
+    /* compare(selector, variants) — clone the real surface once per variant
+       into a full-screen sheet and screenshot it once. Settles aesthetic
+       arguments that prose cannot: two options that read as different in
+       description are often pixel-identical on screen, and you only find that
+       out by seeing them adjacent.
+
+       Two things make this work, both learned the hard way:
+
+       1. The live variant class is stripped from <body> for the duration. A
+          clone lands INSIDE body, so `body.v-a .thing` and the wrapper's
+          `.v-b .thing` both match it at equal specificity — and the later rule
+          in source order wins, for every panel. The symptom is every variant
+          rendering identically, which reads as "these options look the same"
+          rather than "the harness is broken". Scoping variant CSS to `.v-x`
+          (never `body.v-x`) is necessary but NOT sufficient; the ancestor has
+          to go too.
+       2. ids are stripped from clones, so getElementById and any
+          aria-controls/label references keep resolving to the live surface
+          rather than to a copy.                                              */
+    compare(selector, variants) {
+      const src = document.querySelector(selector);
+      if (!src) return `compare: no element matches ${selector}`;
+      WF.closeCompare();
+
+      const variantClasses = AXES.filter(a => a.type === 'variant')
+        .flatMap(a => a.options.map(o => (typeof o === 'string' ? o : o.value)));
+      const stripped = variantClasses.filter(c => document.body.classList.contains(c));
+      stripped.forEach(c => document.body.classList.remove(c));
+
+      const sheet = el('div', { class: 'wf-cmp' });
+      variants.forEach(v => {
+        const name = typeof v === 'string' ? v : v.value;
+        const label = typeof v === 'string' ? v : (v.label || v.value);
+        const item = el('div', { class: 'wf-cmp-item ' + name });
+        item.appendChild(el('div', { class: 'wf-cmp-label', text: label }));
+        const clone = src.cloneNode(true);
+        clone.removeAttribute('id');
+        clone.querySelectorAll('[id]').forEach(n => n.removeAttribute('id'));
+        item.appendChild(clone);
+        sheet.appendChild(item);
+      });
+      const close = el('button', { class: 'wf-cmp-close', text: 'Close comparison' });
+      close.addEventListener('click', WF.closeCompare);
+      document.body.append(sheet, close);
+      WF._stripped = stripped;
+      return `comparing ${variants.length} variants of ${selector}` +
+             (stripped.length ? ` (body variant ${stripped.join(',')} suspended)` : '');
+    },
+
+    closeCompare() {
+      document.querySelector('.wf-cmp')?.remove();
+      document.querySelector('.wf-cmp-close')?.remove();
+      (WF._stripped || []).forEach(c => document.body.classList.add(c));
+      WF._stripped = [];
+      return 'closed';
+    },
+  };
+})();
+
+/* ══════════════════════════════════════════════════════════════════════════
+   __wf — in-page verification kit. Call these from browser automation instead
+   of eyeballing a screenshot: a number you can put in a spec beats an
+   impression, and every one of these has caught a real defect.
+   ══════════════════════════════════════════════════════════════════════════ */
+const __wf = (() => {
+  const r2 = n => Math.round(n * 100) / 100;
+  const px = el => { const b = el.getBoundingClientRect();
+    return { top: r2(b.top), bottom: r2(b.bottom), left: r2(b.left), right: r2(b.right), w: r2(b.width), h: r2(b.height) }; };
+  const parseRGB = s => { const m = (s || '').match(/-?[\d.]+/g); return m ? m.slice(0, 4).map(Number) : null; };
+  const lum = ([r, g, b]) => { const f = c => { c /= 255; return c <= .04045 ? c / 12.92 : Math.pow((c + .055) / 1.055, 2.4); };
+    return .2126 * f(r) + .7152 * f(g) + .0722 * f(b); };
+  const over = (fg, bg) => { const a = fg[3] ?? 1; return [0, 1, 2].map(i => fg[i] * a + bg[i] * (1 - a)); };
+  const effBg = el => { // walk up compositing until opaque; default white
+    let node = el, acc = null;
+    while (node && node.nodeType === 1) {
+      const c = parseRGB(getComputedStyle(node).backgroundColor);
+      if (c && (c[3] ?? 1) > 0) acc = acc ? over(acc, c) : c;
+      if (acc && (acc[3] ?? 1) >= 1) return acc.slice(0, 3);
+      node = node.parentElement;
+    }
+    return acc ? over(acc, [255, 255, 255]) : [255, 255, 255];
+  };
+
+  return {
+    /* ALWAYS call this first. In a backgrounded tab scroll events, rAF, CSS
+       transitions and .focus() all silently no-op — a "failing" behavioural
+       result is then a measurement artifact, not a defect. */
+    env() {
+      return {
+        visibilityState: document.visibilityState,
+        documentFocused: document.hasFocus(),
+        trustworthyForBehaviour: document.visibilityState === 'visible',
+        viewport: { w: innerWidth, h: innerHeight, dpr: devicePixelRatio },
+        scrollY: Math.round(scrollY),
+        docHeight: document.documentElement.scrollHeight,
+        reducedMotion: matchMedia('(prefers-reduced-motion: reduce)').matches,
+        // Deliberately NOT location.href: browser-automation bridges refuse to
+        // return a payload containing a URL/query string, which would block
+        // this entire result — and env() is the call you make first.
+        path: location.pathname,
+      };
+    },
+
+    rect(sel) { const e = document.querySelector(sel); return e ? px(e) : { error: `no match: ${sel}` }; },
+
+    /* Contiguity. Prove bands do not separate rather than squinting at a
+       screenshot: any non-zero gap is a visible seam. */
+    bands(selectors) {
+      const rows = selectors.map(s => { const e = document.querySelector(s);
+        return e ? { sel: s, ...px(e) } : { sel: s, error: 'no match' }; });
+      rows.forEach((row, i) => { const next = rows[i + 1];
+        if (next && !row.error && !next.error) row.gapToNext = r2(next.top - row.bottom); });
+      return { rows, contiguous: rows.every(r => r.gapToNext === undefined || r.gapToNext === 0) };
+    },
+
+    /* Computed, not guessed. Text colours that "look fine" against a tint fail
+       AA surprisingly often, and the failure is invisible until measured. */
+    contrast(sel) {
+      const e = document.querySelector(sel); if (!e) return { error: `no match: ${sel}` };
+      const cs = getComputedStyle(e);
+      const fgRaw = parseRGB(cs.color) || [0, 0, 0];
+      const bg = effBg(e);
+      const fg = (fgRaw[3] ?? 1) < 1 ? over(fgRaw, bg) : fgRaw.slice(0, 3);
+      const L1 = lum(fg), L2 = lum(bg);
+      const ratio = r2((Math.max(L1, L2) + .05) / (Math.min(L1, L2) + .05));
+      const size = parseFloat(cs.fontSize), bold = +cs.fontWeight >= 700;
+      const large = size >= 24 || (bold && size >= 18.66);
+      const hex = c => '#' + c.map(x => Math.round(x).toString(16).padStart(2, '0')).join('');
+      return { sel, text: (e.textContent || '').trim().slice(0, 40), fg: hex(fg), bg: hex(bg),
+               fontSize: size, bold, large, ratio, AA: ratio >= (large ? 3 : 4.5), AAA: ratio >= (large ? 4.5 : 7) };
+    },
+
+    /* Structural validity. `button button` is the one that bites: it is valid-
+       looking in a mockup, unshippable in real markup, and forces inert spans
+       that are unreachable by keyboard. */
+    markup() {
+      const q = s => [...document.querySelectorAll(s)];
+      const name = e => (e.getAttribute('aria-label') || e.getAttribute('title') || e.textContent || '').trim();
+      const ids = q('[id]').map(e => e.id);
+      return {
+        nestedInteractive: q('button button, button a, a a, a button').map(e => e.outerHTML.slice(0, 90)),
+        unnamedControls: q('button, a[href], [role=button]').filter(e => !name(e)).map(e => e.outerHTML.slice(0, 90)),
+        danglingAriaControls: q('[aria-controls]').filter(e => !document.getElementById(e.getAttribute('aria-controls')))
+          .map(e => e.getAttribute('aria-controls')),
+        toggleWithoutExpanded: q('[aria-controls]').filter(e => !e.hasAttribute('aria-expanded')).map(e => e.id || e.className),
+        duplicateIds: ids.filter((v, i) => ids.indexOf(v) !== i),
+        imagesWithoutAlt: q('img:not([alt])').length,
+      };
+    },
+
+    /* Anything hidden by TRANSFORM or CLIP is still tabbable — that is the
+       defect this looks for. Without a focusin guard, keyboard focus walks
+       onto controls nobody can see.
+
+       Content hidden by `display:none` / `visibility:hidden` (a collapsed
+       accordion, a closed panel) is NOT tabbable and must not be reported: a
+       check that fires on every closed disclosure gets ignored, and then the
+       real finding gets ignored with it. Distinguish by whether the element
+       generates a box at all.
+
+       Pass a selector to scope this to the surface and skip the overlay. */
+    focusables(scope = 'body') {
+      const sel = 'a[href],button:not([disabled]),input:not([disabled]),select:not([disabled]),textarea,[tabindex]:not([tabindex="-1"])';
+      const root = document.querySelector(scope) || document.body;
+      const rendered = [], notRendered = [];
+      for (const e of root.querySelectorAll(sel)) {
+        const label = (e.getAttribute('aria-label') || e.textContent || e.value || '').trim().slice(0, 30);
+        const box = e.getClientRects().length > 0 && getComputedStyle(e).visibility !== 'hidden';
+        if (!box) { notRendered.push(label); continue; }   // not in the tab order
+        const b = e.getBoundingClientRect();
+        rendered.push({ label, tag: e.tagName.toLowerCase(), top: r2(b.top),
+          onScreen: b.bottom > 0 && b.top < innerHeight && b.right > 0 && b.left < innerWidth });
+      }
+      return {
+        tabbable: rendered.length,
+        notRendered: notRendered.length,          // collapsed/hidden — correctly ignored
+        offScreen: rendered.filter(x => !x.onScreen),   // tabbable but invisible → needs a focus guard
+      };
+    },
+
+    /* Scroll that works in a hidden tab: set the position AND fire the event,
+       because a backgrounded tab delivers neither. */
+    scrollTo(y) { window.scrollTo(0, y); dispatchEvent(new Event('scroll')); return Math.round(scrollY); },
+
+    /* Measure an end state in a hidden tab, where transitions freeze at t=0. */
+    noMotion(on = true) { document.body.classList.toggle('wf-no-motion', on); void document.body.offsetHeight; return on; },
+
+    /* focus() is a no-op when the document is not focused; the event is not. */
+    focusIn(sel) { const e = document.querySelector(sel); if (!e) return `no match: ${sel}`;
+      e.dispatchEvent(new FocusEvent('focusin', { bubbles: true })); return 'dispatched'; },
+
+    /* A scripted sequence returns a table, so a regression is visible as a row
+       that changed rather than a screenshot someone has to re-interpret. */
+    seq(steps, observe) {
+      const obs = observe || (() => ({ y: Math.round(scrollY) }));
+      return steps.map(s => { if (typeof s === 'function') s(); else if (s.scrollTo !== undefined) __wf.scrollTo(s.scrollTo);
+        else if (s.click) document.querySelector(s.click)?.click();
+        return { step: s.label || (s.scrollTo !== undefined ? `scrollTo ${s.scrollTo}` : s.click || 'fn'), ...obs() }; });
+    },
+
+    state() { return JSON.parse(JSON.stringify(WF.S)); },
+  };
+})();
+window.__wf = __wf; window.WF = WF;
+
+
+/* ▼ REPLACE 4 — AXES + RENDER ════════════════════════════════════════════════
+   Generate one axis per dimension the surface ACTUALLY varies on — read off
+   the real enums, roles and flags found while grounding. `from:` is the source
+   path; it keeps the values honest and gets cited in the spec.
+
+   Types: select · toggle · number · variant (exclusive body class, scope CSS
+          to `.v-x`) · bodyclass · matrix · action · divider · note           */
+WF.mount({
+  axes: [
+    { id: 'density', label: 'Density', type: 'variant', value: 'v-compact',
+      options: [{ value: 'v-compact', label: 'Compact' }, { value: 'v-roomy', label: 'Roomy' }] },
+    { id: 'demoFlag', label: 'Demo toggle', type: 'toggle', value: true },
+    { type: 'divider' },
+    { id: 'guides', label: 'Show zone guides', type: 'bodyclass', bodyClass: 'wf-guides' },
+    { label: 'Scroll to top', type: 'action', run: () => scrollTo({ top: 0, behavior: 'smooth' }) },
+  ],
+
+  // Called on every control change. Read state from `S`, write the DOM.
+  render(S) {
+    const t = document.getElementById('demoState');
+    if (t) t.textContent = `${S.density} · demoFlag ${S.demoFlag ? 'on' : 'off'}`;
+  },
+});
+/* ▲ /REPLACE 4 ═════════════════════════════════════════════════════════════ */
+</script>
+</body>
+</html>
