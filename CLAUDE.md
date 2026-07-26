@@ -415,6 +415,46 @@ the dead code — the skill's wins are **governance** (no silent deletion of com
 unprompted commits, everything recoverable). Distinct from `repo-audit` (reports, never edits) and
 `simplify`-style cleanups (style, not deadness): this one **deletes proven-dead code safely**.
 
+### When to Use the Skill-Reverse-Engineer Command
+
+| Situation | Command |
+|-----------|---------|
+| A skill works but behaves differently every run — reverse-engineer it and make it more deterministic, robust, and less AI-reliant | `/bespokeagentics:skill-reverse-engineer '<skill-path-or-name>' [--mode audit\|apply\|new-version] [--out <dir>]` |
+
+The Skill-Reverse-Engineer command treats a skill as a program whose interpreter is a language
+model — and freshly generated skills put *everything* in the "judged" bucket: mechanical shell
+procedures written as prose the model re-derives, report structures described instead of
+templated, "verify that X" left to eyeballing, phase handoffs passed as vibes. It reconstructs
+what one run of the target actually does into a **step graph**, classifying each step's executor
+(`script` / `model-mechanical` / `model-judgment` / `user-gate`) via the **distill test** —
+*would two competent runs, given the same inputs, be wrong to differ?* — then audits against a
+rule catalog (`DS*` prose→script, `TP*` generated→template, `CT*` loose contracts, `VF*`
+judgment→check, `AM*` ambiguity, `RB*` robustness, `KM*` knowledge materialization), seeded by a
+bundled deterministic **inventory script** (prose/code split, ALL-CAPS directives, vague
+quantifiers, unrunnable verify-verbs, broken refs, script hygiene). Its differentiator is
+**host grounding**: a bounded `host_probe.py` enumerates the invoking project's stack, data
+schemas, and data stores; the run classifies host state (`host-grounded`/`host-generic`/
+`no-host`) and records, per model step, what *stable host knowledge* it consumes — so per-run
+LLM lookups can be **materialized** into generated fact files (e.g. a configuration matrix mined
+from the host's schema) carrying `_provenance` (only `mined` — generator + cited sources + SHA256
+`--check` — or `declared`-by-interview is expressible; a frozen model guess is unrepresentable),
+consulted via a check → regenerate → derive-fresh-and-label ladder in which a stale artifact is
+never trusted silently; an unlabeled hardcoded snapshot is itself a KM5 defect, so
+over-materialization is self-indicting. The severity scale is run-to-run consequence; the report
+(`./reviews/skill-re-<name>.md` + `host-context.json` sidecar) carries a verdict (🟢
+already-hardened — short form, no padding / 🟡 improvisation-dependent / 🔴 vibes-driven), the
+step-executor matrix, a materialization-opportunities table, and an **essential-judgment
+register** — the AI-reliance that should STAY (design, synthesis, convention-matching), because
+a skill flattened into a brittle script bundle is a failure mode, not a win. Nothing is edited
+before an **AskUserQuestion gate** (mode, appetite, per-finding confirmation, judgment
+overrides, which facts to materialize / where artifacts live / refresh policy); `apply`
+refactors in place, `new-version` emits a drop-in hardened copy outside auto-registered paths
+with a per-file diff summary, and every shipped script and generator is **executed before it
+ships** (usage path, happy path, drift-check tamper test). Behavior-preserving throughout — the
+skill does the same job, with less of it improvised. Distinct from `skill-creator` (creates and
+eval-iterates skills) and structure auditors (YAML/best-practice compliance): this one
+restructures **where the work happens**.
+
 ### When to Use Each Agent-Native Engineering Command
 
 | Situation | Command |
@@ -511,6 +551,7 @@ When assessing features or making decisions, use the standard color system:
     │  ├─ data-ui-craft/              # Data-dense UI audit + fixes + React/Tailwind primitives kit
     │  ├─ xstate-refactor/            # Feature state logic + UI → XState v5 machine/statechart/actors
     │  ├─ dead-code-sweep/            # Post-session dead-code cleanup: diff-seeded, gated waves, tiered confirmation, regression-proofed
+    │  ├─ skill-reverse-engineer/     # Target skill → determinism audit (DS/TP/CT/VF/AM/RB/KM + host grounding) → gated refactor or hardened new version
     │  ├─ orchestrate/                # Plan/task → gated multi-agent implementation (Fable orchestrates, Opus/Sonnet implement)
     │  ├─ workstream-orchestrate/     # Plan → kickoff contract → sequential per-WS code→validate→commit (Workflow) + hard-gate proofs
     │  ├─ agent-loop-audit/           # AI API/SDK integration → event-loop defect audit + gated fixes (silent hangs, stop_reason, deadlocks)
@@ -571,6 +612,7 @@ When assessing features or making decisions, use the standard color system:
     │  ├─ data-ui-craft.md            # /bespokeagentics:data-ui-craft
     │  ├─ xstate-refactor.md          # /bespokeagentics:xstate-refactor
     │  ├─ dead-code-sweep.md          # /bespokeagentics:dead-code-sweep
+    │  ├─ skill-reverse-engineer.md   # /bespokeagentics:skill-reverse-engineer
     │  ├─ orchestrate.md              # /bespokeagentics:orchestrate
     │  ├─ workstream-orchestrate.md   # /bespokeagentics:workstream-orchestrate
     │  ├─ agent-loop-audit.md         # /bespokeagentics:agent-loop-audit
@@ -615,6 +657,7 @@ When assessing features or making decisions, use the standard color system:
 29. **Confirm the build matches the wireframe**: Run `/bespokeagentics:wireframe-parity '<spec-or-slug>' --app <url>` — the **post-implementation** companion to `interactive-wireframe`. Once a wireframe spec has been built, it confirms the as-built UI matches what was decided, reusing the intended design the wireframe already froze (the spec's **Verification** `__wf` numbers, **Contract** invariants, **Decisions** table + `_library/decisions.md` ledger, and **States** table). It runs a **structural** pass (parallel `Explore` agents ground every settled decision/state/label in the real implementation at `file:line`, honored/drifted/missing — the floor, available under `--no-browser`) and a **measured** pass (serves the wireframe via `serve-wireframe.sh`, injects the **same** dependency-free probe — `wf-probe.js`, a standalone copy of `__wf` — into **both** the wireframe and the running app, drives each to the matching state, and diffs band geometry / contrast / markup / focusables / rendered labels / tokens apples-to-apples, parity being invariant-**within-tolerance** — ±2px, same AA/AAA verdict, contiguity as required — not pixel-identity). Auth-gated states are labelled **"not measured"**; a backgrounded-tab behavioural "failure" is treated as an artifact. Because **spec Decisions are the parity contract** and a build sometimes evolves past the wireframe on purpose, an **AskUserQuestion** interview classifies each divergence as **regression** / **intended evolution** / **out of scope** before any is called a failure (`--depth deep` adversarially verifies each first). Writes a **read-only** report to `./reviews/` — parity verdict (🟢/🟡/🔴), a decision-by-decision parity table, a measured table (intended / spec-frozen / as-built / Δ), label fidelity, a color-coded divergence register, an honest "not measured" section, and a "definition of parity" checklist — then **offers** to open the P0 regressions as tasks or refresh the stale ledger. Distinct from `plan-review` (audits a document before build) and `ux-audit` (heuristics): this audits a **built UI against the wireframe that specified it**. **The implementation is never modified.**
 30. **Explore what an existing surface could become**: Run `/bespokeagentics:reimagine '<surface>'` — the **upstream sibling** of the wireframe pair (*reimagine explores **which** design, `interactive-wireframe` settles **the** design, `wireframe-parity` checks the build*). It recreates the Current design **from source as an honest baseline** (structure, labels, tokens transcribed and cited `path:line` into a Baseline-fidelity section; optionally cross-checked against the running app via `wf-probe.js`, with a fidelity chip — `cross-checked <date>` or `code-grounded, not pixel-checked` — that never lies), pitches **two direction briefs per ambition tier** (Restyle / Restructure / Rethink — tiers are *contracts* policed by mechanical proxies, so a Rethink that is secretly a restyle gets demoted), and lets you **pick directions in an interview round before anything is built**. The picked directions become real sibling panes in **one self-contained HTML gallery** (`wireframes/<slug>/reimagine-v1.html`, derived byte-faithfully from the wireframe scaffold, drift-checked) with a variant switcher, **single/grid/split** views, and **shared axes that hit every pane at once** — flip "empty" and all variants answer; browser comments arrive tagged with their pane. All variants are **brand-faithful**: one shared grounded token block; leaving the design system is a pitch that must be approved. Served by the parent's `serve-wireframe.sh` reused in place (8791, never 8787). The interview arcs **reaction → critique (works/breaks/what to steal) → hybridization** — a chosen hybrid is **rebuilt as a real pane** in `reimagine-v2.html`, never hand-waved — **→ winner**, with per-loser rejection reasons confirmed from critique evidence. The winner gets the full measurement battery in single view, and the spec lands with the **divergence-from-current inventory** (Δ rows: Current at `path:line` → becomes → change class — the implementer's worklist), rejected directions (brief vs gallery), two verification tables (the winner's in wireframe-parity-consumable format), and **offered** handoffs to `interactive-wireframe` (fine-grained settlement) and orchestrate (build). Shares the wireframe **reuse library** (runs typed `wireframe`|`reimagine`; rejected variants' styles never harvest). **Writes no production code.**
 31. **Clean up after a coding session**: Run `/bespokeagentics:dead-code-sweep` — it resolves a scope (`uncommitted` by default, `branch` vs its merge-base, or `project`), runs the repo's own gates FIRST to record a baseline (no gates → no autonomous deletion; broken baseline → report-only), finds candidates by tracing what the diff stopped referencing plus the ecosystem's native detectors, cross-checks every candidate against a liveness checklist (dynamic/string references, framework conventions, public API, keep-markers), then removes in gated waves: high-confidence auto-removed with gates re-run after every wave (a new failure restores the code — the failing test proved it alive and is never deleted to get green), medium batch-confirmed in one interview, low report-only. Stale tests/mocks/snapshots go with their subjects; cascades converge in waves; everything is backed up under `.dead-code-sweep/<ts>/` with one-command restore; nothing is ever committed. Use `--report-only` for a read-only pass.
+32. **Harden a skill that behaves differently every run**: Run `/bespokeagentics:skill-reverse-engineer '<skill>'` — it reconstructs what one run of the target skill actually does (step graph, each step classified `script` / `model-mechanical` / `model-judgment` / `user-gate` via the distill test: *would two competent runs be wrong to differ?*), audits it against the `DS*/TP*/CT*/VF*/AM*/RB*/KM*` catalog with a bundled deterministic inventory script, and **grounds the audit in the host project** it runs in (a bounded `host_probe.py` enumerates stack, data schemas, data stores) so the target's per-run LLM lookups can be **materialized** into generated fact files — a configuration matrix mined from the host's schema, with `_provenance` (mined-with-SHA256-`--check` or declared-by-interview; a frozen guess is unrepresentable) consulted via a check → regenerate → derive-fresh-and-label ladder. The report separates findings from the **essential-judgment register** (the AI-reliance that should stay); nothing is edited before the interview gate; `--mode apply` refactors in place, `--mode new-version` emits a drop-in hardened copy with a diff summary, and every shipped script/generator is executed (including a drift-check tamper test) before it ships. Use `--mode audit` for the read-only report.
 
 ## Quality Standards
 

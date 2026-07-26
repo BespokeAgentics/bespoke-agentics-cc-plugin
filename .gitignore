@@ -13,3 +13,6 @@ __pycache__/
 
 # screencast-capture skill output dir (recordings, reels)
 /screencast-capture/
+
+# skill-creator eval workspaces (test-run outputs, gradings, benchmarks — not plugin content)
+skills/*-workspace/
