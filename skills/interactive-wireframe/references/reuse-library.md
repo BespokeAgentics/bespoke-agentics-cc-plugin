@@ -187,8 +187,8 @@ After the spec is written, before the final report:
 # Wireframe index — <project>
 
 ## Runs
-| Slug | Surface | Date | Spec | Decisions |
-|---|---|---|---|---|
+| Slug | Surface | Type | Date | Spec | Decisions |
+|---|---|---|---|---|---|
 
 ## Library
 **Grounding cache** — `_library/grounding-cache.md` · TTL 14d
@@ -202,6 +202,10 @@ After the spec is written, before the final report:
 2. Phase 2: inject applicable fragments with `▼ FRAGMENT` markers.
 3. Phase 4 round 1: present the ledger as fixed context, one reopen affordance.
 ```
+
+`Type` distinguishes run kinds sharing this library: `wireframe` (this skill)
+or `reimagine` (the variant-gallery sibling). Blank in legacy rows means
+`wireframe`.
 
 ## Backfill — when runs exist but no library does
 

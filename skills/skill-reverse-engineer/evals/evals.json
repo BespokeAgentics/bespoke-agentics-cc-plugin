@@ -1,0 +1,69 @@
+{
+  "skill_name": "skill-reverse-engineer",
+  "evals": [
+    {
+      "id": 1,
+      "prompt": "Our wiki-lint skill (skills/wiki-lint/) describes all seven of its health checks in prose — broken link detection, orphan pages, frontmatter validation, all of it is 'read the pages and check X'. Every run does it slightly differently and I don't trust the counts. Audit it for determinism — don't change anything yet, just give me the report.",
+      "expected_output": "Runs audit mode only (no files modified in the target). Runs/replicates the inventory metrics. Reconstructs the step graph with executor classification. Files DS3-type findings (model-performed link/orphan/frontmatter checking that a script could own), VF-type findings (checks with no runnable form), each with file:line into skills/wiki-lint/ and a named artifact (e.g. a lint script signature). Produces the report at ./reviews/skill-re-wiki-lint.md with verdict, step-executor matrix, essential-judgment register (e.g. contradiction detection stays judgment), and strengths. No edits to skills/wiki-lint/.",
+      "files": [],
+      "name": "audit-prose-heavy-wiki-lint",
+      "assertions": [
+        "audit-report-file-written: a markdown audit report for wiki-lint exists under the run's outputs/ directory",
+        "target-skill-unmodified: no file under the repo's skills/wiki-lint/ was modified by the run (git diff for that path is empty)",
+        "verdict-present: the report states an overall verdict using the ✅-style scale 🟢/🟡/🔴 (or an equivalent explicit already-hardened/improvisation-dependent/vibes-driven verdict)",
+        "rule-ids-cited: findings carry catalog rule IDs with DS/TP/CT/VF/AM/RB prefixes",
+        "file-line-citations: findings cite file:line locations into skills/wiki-lint files, and spot-checked citations actually match the cited content",
+        "step-executor-matrix: the report reconstructs the target's execution as steps classified by executor (script / model-mechanical / model-judgment / user-gate)",
+        "essential-judgment-register: the report explicitly lists at least one step that should REMAIN model judgment, with a reason",
+        "named-refactor-artifacts: major findings name the concrete artifact to create (a script with an argument signature, a template with slots, or a schema with fields), not just generic advice"
+      ]
+    },
+    {
+      "id": 2,
+      "prompt": "Take the copy of the knowledge-loop skill in ./targets/knowledge-loop/ and produce a hardened new version of it — more deterministic, less reliant on the model re-deriving things every run. Don't touch the original; put the new version somewhere I can compare, and show me what you changed and why. Assume I accept your CRITICAL and HIGH recommendations.",
+      "expected_output": "New-version mode: original ./targets/knowledge-loop/ untouched (verifiable by diff). Hardened copy written outside auto-registered paths (e.g. ./skill-re-out/knowledge-loop/). Mechanical steps (store integrity checks, promotion-threshold counting, index updates) extracted into executed-and-verified scripts; templates/contracts tightened; the why-prose kept next to each invocation. Report includes before/after metrics, diff summary table, essential-judgment register (e.g. deciding whether evidence confirms a hypothesis stays judgment), and verification section showing each script was actually run.",
+      "files": [],
+      "name": "new-version-knowledge-loop",
+      "assertions": [
+        "original-target-untouched: ./targets/knowledge-loop/ in the run dir is byte-identical to the repo's skills/knowledge-loop/ (diff -r is empty)",
+        "hardened-copy-produced: a complete new skill directory (containing SKILL.md) exists in the run's outputs outside ./targets/",
+        "scripts-extracted: the hardened version contains at least one script file that does not exist in the original",
+        "new-scripts-actually-run: extracted scripts execute successfully when the grader invokes them (usage path exits nonzero with a usage message; a happy-path invocation works), and the report shows they were run during the session",
+        "no-broken-internal-references: every references/, scripts/, templates/ path mentioned in the hardened copy's markdown files exists in the copy",
+        "before-after-metrics: the report contains a before/after comparison of the original vs hardened version",
+        "diff-summary-table: the report lists per-file what was added / modified / unchanged"
+      ]
+    },
+    {
+      "id": 3,
+      "prompt": "Can you check skills/dedupe-frames for how deterministic it is? I think it's mostly fine since it already has a python script doing the work, but give it a once-over.",
+      "expected_output": "Audit mode. Recognizes an already-mostly-hardened target: the perceptual-dedup work is script-owned. Short report, verdict likely 🟢 or mild 🟡, honest strengths section, only real residual findings (e.g. script hygiene RB4 items, undocumented output contract, or unpinned invocation prose) — no manufactured findings, no padding. Report length proportional to what was found.",
+      "files": [],
+      "name": "already-hardened-dedupe-frames",
+      "assertions": [
+        "report-or-answer-produced: a written assessment of dedupe-frames exists in the run's outputs (file) or as the run's final answer",
+        "target-skill-unmodified: no file under the repo's skills/dedupe-frames/ was modified by the run",
+        "acknowledges-script-ownership: the assessment explicitly credits that the core dedup work is already owned by the bundled python script (a strengths acknowledgment, not only criticism)",
+        "proportional-not-padded: the assessment is concise (report body under ~150 lines) and does not manufacture findings to fill space",
+        "criticals-are-evidenced: every CRITICAL-severity claim (if any) is backed by a quoted line that exists in the target; zero unsupported CRITICALs"
+      ]
+    },
+    {
+      "id": 4,
+      "prompt": "Our wiki-lint skill (skills/wiki-lint/) keeps disagreeing with our actual vault about what valid frontmatter looks like — the vault's rules live in wiki/_schema/SCHEMA.md but the skill seems to have its own opinions baked in, and I think they've drifted. Harden wiki-lint as a new version (don't touch the original) so the repo it runs in is the source of truth for this stuff instead of the skill's prose — and flag anything else it re-derives from the repo on every run. Assume I accept your CRITICAL and HIGH recommendations.",
+      "expected_output": "New-version mode with host grounding: probes the host, classifies host-grounded (the vault is in the repo), builds host-context.json naming wiki/_schema/SCHEMA.md as the defining source, files KM5 at checks.md's hardcoded frontmatter table quoting the real drift (e.g. question status {open, resolved, blocked} vs SCHEMA.md:535 open|answered|blocked|deferred|resolved), ships a generator script in the hardened copy that mines SCHEMA.md into a frontmatter matrix with _provenance + --check, rewrites the validation instructions to consult the artifact with a labeled stale/absent fallback, documents the host-side home for the artifact, and leaves skills/wiki-lint untouched.",
+      "files": [],
+      "name": "km-materialize-wiki-lint-schema",
+      "assertions": [
+        "host-grounding-performed: outputs include a host-context JSON identifying the repo's wiki vault and wiki/_schema/SCHEMA.md as the defining source for the target's validation knowledge",
+        "km-rule-cited: at least one finding carries a KM-family rule ID citing skills/wiki-lint/references/checks.md at the hardcoded frontmatter table",
+        "real-drift-evidenced: the report quotes at least one concrete value mismatch that actually exists between checks.md and wiki/_schema/SCHEMA.md (e.g. the question-status enums), with file:line on both sides",
+        "original-untouched: no file under the repo's skills/wiki-lint/ was modified by the run (git diff empty)",
+        "generator-shipped-and-run: the hardened copy contains a generator script absent from the original; grader-invoked usage path exits nonzero with a usage message; a happy-path invocation against the repo's wiki/_schema/ emits the fact artifact; the report shows it was run in-session",
+        "provenance-complete: the generated artifact embeds provenance — generator, generated_at, source path(s), a regeneration command, and a working drift-check mechanism (source-hash --check or a documented TTL)",
+        "consuming-instructions-rewritten: the hardened skill's frontmatter-validation instructions consult the generated artifact instead of a hardcoded enum table, and state a labeled fallback for when the artifact is stale or absent",
+        "placement-policy-followed: the artifact's documented home is host-side (e.g. under wiki/_schema/ or a stated host path) with the generator shipping in the skill — not an unlabeled static copy baked into the portable skill"
+      ]
+    }
+  ]
+}

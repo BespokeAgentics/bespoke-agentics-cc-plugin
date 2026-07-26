@@ -1,0 +1,1228 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>REIMAGINE — replace me</title>
+
+<!-- ═══════════════════════════════════════════════════════════════════════════
+     REIMAGINE GALLERY SCAFFOLD
+
+     Derived from interactive-wireframe/assets/wireframe-scaffold.html (the
+     parent). Byte-faithful to the parent — SYNC OBLIGATION, see
+     references/gallery.md:
+       · WF     control-overlay engine — verbatim
+       · __wf   verification kit       — verbatim
+                (drift check: Object.keys(__wf) here must equal the parent's)
+       · __wfFb feedback kit           — verbatim EXCEPT two additions marked
+                "RV:" — payload() gains a `variant` field so every browser
+                comment self-attributes to a pane, and isHarness() covers the
+                gallery chrome.
+     New here (harness, leave alone): the RV gallery module + its chrome CSS —
+     variant manifest → bottom-docked switcher bar, single/grid/split view
+     modes, labelled pane cells, state registered as WF axes so URL state, the
+     control panel and WF.set() keep working unchanged.
+
+     Copy this file, then edit exactly four regions (each marked ▼ REPLACE):
+       1. :root tokens      — real values from the target codebase. ONE shared
+                              block, deliberately: brand-faithful means every
+                              variant draws from the same grounded palette. A
+                              variant that needs an ungrounded value is an
+                              interview question, not a new token.
+       2. Variant styles    — one clearly-banded sub-block per variant, scoped
+                              to `.rv-<id>` (never `body.…`)
+       3. Variant panes     — one <section class="rv-pane rv-<id>"> per variant
+                              inside #rv-stage. Current first. Real labels, real
+                              longest-case strings, own zone bands per pane.
+       4. Manifest + axes   — RV.mount({variants, axes, render}). Shared axes
+                              (role, entity state, data extremes) apply to every
+                              pane at once — flip "empty" and all variants
+                              answer simultaneously.
+
+     Measure in SINGLE view only: grid and split shrink panes to fit and the
+     cell heads sit above them, so geometry there is for looking, not for the
+     spec. In single view the active pane starts at y=0, heads are hidden, and
+     the switcher bar is fixed chrome outside the pane — bands measure clean.
+
+     Self-contained by contract: inline CSS, inline JS, no build step, no
+     dependencies. A webfont <link> is the only allowed remote asset, and only
+     when the real product uses one — otherwise the type metrics are wrong and
+     every width you measure is a lie.
+     ══════════════════════════════════════════════════════════════════════════ -->
+
+<style>
+/* ▼ REPLACE 1 — TOKENS ═══════════════════════════════════════════════════════
+   Lift these from real source. Keep the source path in the comment: it is the
+   difference between a gallery that predicts and one that merely illustrates,
+   and it is what the spec cites later. Delete any token you did not find —
+   an invented hex is worse than a missing one, because it looks authoritative.
+
+   ONE shared block for every variant — brand-faithful means the reimagined
+   panes draw from the same grounded palette as Current. Derived values must be
+   computed from these (color-mix etc.) and labelled `derived`.
+
+   If the project has no design system, derive from computed styles of the
+   running app (see the parent skill's references/grounding.md) and label the
+   block as derived.  */
+:root{
+  /* colour — from: <path> */
+  --wf-surface:#ffffff;
+  --wf-surface-sunken:#f4f4f5;
+  --wf-ink:#18181b;
+  --wf-ink-muted:#71717a;
+  --wf-rule:#e4e4e7;
+  --wf-rule-strong:#d4d4d8;
+  --wf-accent:#2563eb;
+  --wf-accent-ink:#1e40af;
+
+  /* type — from: <path> */
+  --wf-font-body:system-ui,-apple-system,"Segoe UI",sans-serif;
+  --wf-font-display:var(--wf-font-body);
+
+  /* geometry — from: <path> */
+  --wf-radius:6px;
+  --wf-gutter:24px;
+}
+/* ▲ /REPLACE 1 ═════════════════════════════════════════════════════════════ */
+
+
+/* ── harness base ────────────────────────────────────────────────────────── */
+*{box-sizing:border-box}
+body{margin:0;background:var(--wf-surface-sunken);color:var(--wf-ink);
+     font-family:var(--wf-font-body);font-size:14px;line-height:1.5}
+button{font:inherit;cursor:pointer}
+
+/* Honour the OS setting. Also the honest way to preview the reduced-motion
+   variant: every state must stay reachable, just not animated. */
+@media (prefers-reduced-motion:reduce){
+  *,*::before,*::after{transition-duration:.01ms !important;animation-duration:.01ms !important}
+}
+/* Forced by the verify kit so an end state can be measured in a hidden tab,
+   where transitions never advance past t=0. */
+body.wf-no-motion *{transition:none !important;animation:none !important}
+
+
+/* ▼ REPLACE 2 — VARIANT STYLES ═══════════════════════════════════════════════
+   One clearly-banded sub-block per variant, scoped to `.rv-<id>` — the pane
+   class, never `body.…`. Panes are real sibling DOM: in grid view every pane
+   renders at once, so a body-scoped rule bleeds into all of them.
+
+   Intra-pane style variants (a sub-option WITHIN one pane, driven by a
+   `variant` axis) still scope to `.v-name`, never `body.v-name` — the
+   WF.compare() clone harness depends on it (see the parent scaffold).
+
+   The blocks below style the placeholder demo panes; replace them.          */
+
+/* shared demo chrome */
+.rv-pane{background:var(--wf-surface);min-height:60vh}
+.rv-pane .demo-head{display:flex;align-items:center;justify-content:space-between;
+  padding:14px var(--wf-gutter);border-bottom:1px solid var(--wf-rule)}
+.rv-pane .demo-head h1{margin:0;font:600 16px/1.3 var(--wf-font-display)}
+.rv-pane .demo-body{padding:var(--wf-gutter)}
+.rv-demo-empty{display:none;color:var(--wf-ink-muted);text-align:center;padding:48px 0}
+body.demo-empty .rv-demo-data{display:none}
+body.demo-empty .rv-demo-empty{display:block}
+
+/* ── rv-current — the placeholder "existing design" */
+.rv-current .demo-row{display:flex;gap:16px;padding:10px 0;border-bottom:1px solid var(--wf-rule)}
+.rv-current .demo-row b{min-width:180px;font-weight:600}
+.rv-current .demo-row span{color:var(--wf-ink-muted)}
+
+/* ── rv-restyle — same structure, calmer hierarchy */
+.rv-restyle .demo-head{background:color-mix(in srgb,var(--wf-accent) 6%,var(--wf-surface))}
+.rv-restyle .demo-row{display:flex;gap:16px;padding:6px 0;border-bottom:1px dashed var(--wf-rule)}
+.rv-restyle .demo-row b{min-width:180px;font-weight:500;color:var(--wf-accent-ink)}
+.rv-restyle .demo-row span{color:var(--wf-ink-muted);font-size:13px}
+
+/* ── rv-restructure — same content, grouped as cards */
+.rv-restructure .demo-cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:12px}
+.rv-restructure .demo-card{border:1px solid var(--wf-rule-strong);border-radius:var(--wf-radius);padding:12px}
+.rv-restructure .demo-card b{display:block;margin-bottom:4px}
+.rv-restructure .demo-card span{color:var(--wf-ink-muted);font-size:13px}
+
+/* ── rv-rethink — records as a time sequence */
+.rv-rethink .demo-tl{list-style:none;margin:0;padding:0 0 0 18px;border-left:2px solid var(--wf-accent)}
+.rv-rethink .demo-tl li{position:relative;padding:0 0 18px 14px}
+.rv-rethink .demo-tl li::before{content:"";position:absolute;left:-23px;top:5px;width:8px;height:8px;
+  border-radius:50%;background:var(--wf-accent)}
+.rv-rethink details{margin-top:4px}
+.rv-rethink summary{color:var(--wf-accent-ink);font-size:13px;cursor:pointer}
+/* ▲ /REPLACE 2 ═════════════════════════════════════════════════════════════ */
+
+
+/* ── zone guides ─────────────────────────────────────────────────────────────
+   Put `class="wf-zone" data-z="1 · label"` on each structural band, per pane.
+   The guide toggle outlines them and prints the label, which turns "the
+   spacing feels off" into "band 2 is 8px taller than band 3". */
+.wf-zone{position:relative}
+body.wf-guides .wf-zone{outline:2px dashed color-mix(in srgb,var(--wf-accent) 70%,transparent);outline-offset:-2px}
+body.wf-guides .wf-zone::after{content:attr(data-z);position:absolute;left:6px;top:4px;z-index:99;
+  font:700 9px/1 var(--wf-font-display);letter-spacing:.08em;text-transform:uppercase;
+  background:#000;color:#fff;padding:3px 5px;border-radius:2px;pointer-events:none}
+
+/* ── control overlay ─────────────────────────────────────────────────────── */
+.wf-ctl{position:fixed;right:16px;bottom:16px;z-index:9000;width:300px;background:#1d1d1d;color:#eee;
+  border-radius:8px;box-shadow:0 12px 40px rgba(0,0,0,.42);font:12px/1.45 system-ui,sans-serif;overflow:hidden}
+/* The panel will sit on top of whatever is in that corner — routinely the
+   thing under discussion. Dock it to the other side instead of asking the
+   reviewer to judge a layout they cannot fully see. */
+.wf-ctl.wf-left{right:auto;left:16px}
+.wf-ctl header{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:9px 12px;
+  background:#111;font-weight:700;font-size:11px;letter-spacing:.06em;text-transform:uppercase}
+.wf-ctl header .wf-hbtns{display:flex;gap:2px;flex:0 0 auto}
+.wf-ctl header button{background:none;border:0;color:#999;font-size:15px;line-height:1;padding:0 3px}
+.wf-ctl header button:hover{color:#fff}
+.wf-ctl .wf-body{padding:11px 12px 13px;display:flex;flex-direction:column;gap:10px;max-height:70vh;overflow:auto}
+.wf-ctl.wf-min .wf-body{display:none}
+.wf-ctl label{display:flex;flex-direction:column;gap:4px;min-width:0;
+  color:#a5a5a5;font-size:10px;text-transform:uppercase;letter-spacing:.05em;font-weight:700}
+.wf-ctl select,.wf-ctl input[type=number]{background:#2a2a2a;border:1px solid #3d3d3d;color:#eee;
+  border-radius:4px;padding:5px 7px;font:inherit;min-width:0}
+.wf-ctl .wf-chk{flex-direction:row;align-items:center;gap:7px;
+  text-transform:none;letter-spacing:0;font-size:12px;font-weight:400;color:#ddd}
+.wf-ctl .wf-from{color:#6a6a6a;font-size:9.5px;text-transform:none;letter-spacing:0;font-weight:400}
+.wf-ctl hr{border:0;border-top:1px solid #333;margin:2px 0}
+.wf-ctl .wf-note{color:#7d7d7d;font-size:10.5px}
+.wf-ctl table{width:100%;border-collapse:collapse;font-size:11px}
+.wf-ctl td{padding:2px 0;min-width:0}
+.wf-ctl td:first-child{color:#9a9a9a;padding-right:8px}
+.wf-ctl td select{width:100%;padding:3px 5px;font-size:11px}
+.wf-ctl .wf-actions{display:flex;flex-wrap:wrap;gap:6px}
+.wf-ctl .wf-actions button{background:#2a2a2a;border:1px solid #3d3d3d;color:#eee;border-radius:4px;padding:5px 9px;font:inherit}
+.wf-ctl .wf-readout{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:10.5px;color:#6fd08c;word-break:break-word}
+
+/* ── comparison harness (WF.compare) ─────────────────────────────────────── */
+.wf-cmp{position:fixed;inset:0;z-index:8000;background:var(--wf-surface-sunken);overflow:auto;padding:16px 16px 80px}
+.wf-cmp .wf-cmp-item{margin:0 0 18px;border:1px solid var(--wf-rule-strong);background:var(--wf-surface)}
+.wf-cmp .wf-cmp-label{font:700 10px/1 system-ui;letter-spacing:.08em;text-transform:uppercase;
+  background:#111;color:#fff;padding:5px 8px}
+.wf-cmp-close{position:fixed;right:16px;top:16px;z-index:8001;background:#111;color:#fff;
+  border:0;border-radius:4px;padding:7px 12px;font:700 11px system-ui}
+
+/* ── feedback kit (__wfFb) ───────────────────────────────────────────────────
+   Comment mode: pick an element (or comment on the whole page), POST to the
+   serve script's /__feedback; replies polled from /.replies.jsonl render in
+   the thread panel. Chrome is token-independent, same palette as .wf-ctl. */
+#wf-fb-hl{position:fixed;pointer-events:none;z-index:9500;display:none;
+  outline:2px solid #4c8dff;background:rgba(76,141,255,.12);border-radius:2px}
+body.wf-fb-picking,body.wf-fb-picking *{cursor:crosshair !important}
+.wf-fb-box{position:fixed;z-index:9500;width:280px;background:#1d1d1d;color:#eee;border-radius:8px;
+  box-shadow:0 12px 40px rgba(0,0,0,.42);font:12px/1.45 system-ui,sans-serif;
+  padding:10px;display:flex;flex-direction:column;gap:7px}
+.wf-fb-box .wf-fb-target{color:#8ab4ff;font-family:ui-monospace,SFMono-Regular,Menlo,monospace;
+  font-size:10px;word-break:break-all}
+.wf-fb-box textarea{background:#2a2a2a;border:1px solid #3d3d3d;color:#eee;border-radius:4px;
+  padding:6px 7px;font:12px/1.4 system-ui,sans-serif;min-height:56px;resize:vertical}
+.wf-fb-box .wf-fb-btns{display:flex;gap:6px;justify-content:flex-end}
+.wf-fb-box button{background:#2a2a2a;border:1px solid #3d3d3d;color:#eee;border-radius:4px;padding:5px 10px;font:inherit}
+.wf-fb-box button.wf-fb-send{background:#2456b3;border-color:#2456b3;color:#fff;font-weight:700}
+.wf-fb-panel{position:fixed;left:16px;bottom:16px;z-index:9100;width:290px;background:#1d1d1d;color:#eee;
+  border-radius:8px;box-shadow:0 12px 40px rgba(0,0,0,.42);font:12px/1.45 system-ui,sans-serif;overflow:hidden;display:none}
+.wf-fb-panel header{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:8px 12px;
+  background:#111;font-weight:700;font-size:11px;letter-spacing:.06em;text-transform:uppercase;cursor:pointer}
+.wf-fb-panel header .wf-fb-badge{background:#2456b3;color:#fff;border-radius:8px;padding:1px 7px;font-size:10px;display:none}
+.wf-fb-panel .wf-fb-list{max-height:40vh;overflow:auto;padding:9px 12px 11px;display:flex;flex-direction:column;gap:9px}
+.wf-fb-panel.wf-fb-min .wf-fb-list{display:none}
+.wf-fb-item{display:flex;flex-direction:column;gap:3px;border-bottom:1px solid #2c2c2c;padding-bottom:8px}
+.wf-fb-item:last-child{border-bottom:0;padding-bottom:0}
+.wf-fb-item .wf-fb-meta{display:flex;align-items:center;gap:6px;color:#8a8a8a;font-size:10px}
+.wf-fb-item .wf-fb-dot{width:7px;height:7px;border-radius:50%;flex:0 0 auto}
+.wf-fb-dot[data-st=sent]{background:#6fd08c}
+.wf-fb-dot[data-st=queued]{background:#e0b64f}
+.wf-fb-dot[data-st=replied]{background:#8ab4ff}
+.wf-fb-item .wf-fb-sel{color:#8ab4ff;font-family:ui-monospace,SFMono-Regular,Menlo,monospace;
+  font-size:9.5px;word-break:break-all}
+.wf-fb-item .wf-fb-reply{margin:2px 0 0 13px;padding-left:8px;border-left:2px solid #2456b3;color:#cfe0ff}
+.wf-fb-hint{position:fixed;left:50%;bottom:64px;transform:translateX(-50%);z-index:9600; /* RV: raised above the switcher bar */
+  background:#111;color:#fff;border-radius:6px;padding:8px 14px;font:12px system-ui;
+  box-shadow:0 8px 30px rgba(0,0,0,.5);opacity:0;transition:opacity .2s;pointer-events:none}
+.wf-fb-hint.wf-fb-show{opacity:1}
+
+/* ── reimagine gallery chrome (RV) ───────────────────────────────────────────
+   Harness — leave alone. The switcher bar is docked bottom-centre, NOT top: a
+   top-fixed bar would overlay exactly the region most redesigns argue about
+   (the header) and would shift every measured band top. In single view the
+   cell heads are hidden and the active pane starts at y=0, so geometry
+   measures clean; grid/split are for looking, not measuring. */
+#rv-stage{min-height:60vh}
+.rv-cell{display:none;min-width:0}
+.rv-cell.rv-on{display:block}
+body.rv-grid #rv-stage{display:grid;grid-template-columns:repeat(auto-fit,minmax(380px,1fr));gap:18px;padding:18px 18px 80px}
+body.rv-split #rv-stage{display:grid;grid-template-columns:1fr 1fr;gap:18px;padding:18px 18px 80px;align-items:start}
+body.rv-grid .rv-cell,body.rv-split .rv-cell{border:1px solid var(--wf-rule-strong);background:var(--wf-surface);overflow:hidden}
+.rv-cell-head{display:none;align-items:center;gap:8px;padding:6px 10px;background:#111;color:#fff;
+  font:700 10px/1 system-ui,sans-serif;letter-spacing:.07em;text-transform:uppercase}
+body.rv-grid .rv-cell-head,body.rv-split .rv-cell-head{display:flex}
+.rv-tier{border-radius:8px;padding:2px 7px;font-size:9px;letter-spacing:.05em}
+.rv-tier[data-tier=current]{background:#3f3f46;color:#e4e4e7}
+.rv-tier[data-tier=restyle]{background:#1e40af;color:#dbeafe}
+.rv-tier[data-tier=restructure]{background:#9a3412;color:#fed7aa}
+.rv-tier[data-tier=rethink]{background:#6b21a8;color:#e9d5ff}
+.rv-fid{color:#9a9a9a;font-weight:400;text-transform:none;letter-spacing:0;font-size:10px}
+.rv-bar{position:fixed;left:50%;bottom:16px;transform:translateX(-50%);z-index:9050;display:flex;align-items:center;gap:2px;
+  background:#1d1d1d;color:#eee;border-radius:999px;padding:5px 7px;box-shadow:0 12px 40px rgba(0,0,0,.42);
+  font:12px/1 system-ui,sans-serif;max-width:calc(100vw - 32px);overflow-x:auto}
+.rv-bar button{background:none;border:0;color:#bbb;border-radius:999px;padding:7px 11px;font:inherit;white-space:nowrap}
+.rv-bar button:hover{color:#fff}
+.rv-bar button[aria-pressed=true]{background:#2456b3;color:#fff;font-weight:700}
+.rv-bar .rv-sep{width:1px;height:18px;background:#3d3d3d;margin:0 4px;flex:0 0 auto}
+.rv-bar .rv-mode{font-size:13px;padding:6px 9px}
+</style>
+</head>
+<body>
+
+<!-- ▼ REPLACE 3 — VARIANT PANES ═══════════════════════════════════════════════
+     One <section class="rv-pane rv-<id>" data-variant="<id>" data-tier="…">
+     per variant inside #rv-stage. Current FIRST (manifest order = tab order).
+     Each pane at fidelity high enough to judge layout: real labels, real
+     longest-case strings, real control affordances, its own zone bands.
+
+     Pane rules that change what the gallery can prove:
+       · ids must be pane-unique across the WHOLE file (prefix them per pane if
+         needed): panes hidden in single view are still in the document, so a
+         duplicated id breaks aria-controls references and __wf.markup()'s
+         duplicateIds check will flag it.
+       · A <button> cannot contain a <button> or an <a>. If a row is clickable
+         AND carries actions, the row is a <div> with a sibling trigger button.
+         Getting this wrong means a pane validates a structure the real app
+         cannot ship (`__wf.markup()` catches it).
+       · Anything hidden by transform is still in the tab order. If you hide a
+         band, give it a focusin guard that reveals it (`__wf.focusables()`
+         reports off-screen focusables).                                       -->
+
+<main id="rv-stage">
+
+  <section id="rv-current" class="rv-pane rv-current" data-variant="current" data-tier="current">
+    <div class="demo-head wf-zone" data-z="1 · head">
+      <h1>Unedited gallery — Current</h1>
+      <button type="button">New record</button>
+    </div>
+    <div class="demo-body wf-zone" data-z="2 · body">
+      <div class="rv-demo-data">
+        <div class="demo-row"><b>Placeholder record one</b><span>replace regions 1–4 · state: <span id="demoState">—</span></span></div>
+        <div class="demo-row"><b>Placeholder record two</b><span>every control below is live right now</span></div>
+        <div class="demo-row"><b>Placeholder record three</b><span>__wf.env() works before you edit anything</span></div>
+      </div>
+      <div class="rv-demo-empty">No records yet.</div>
+    </div>
+  </section>
+
+  <section id="rv-restyle" class="rv-pane rv-restyle" data-variant="restyle" data-tier="restyle">
+    <div class="demo-head wf-zone" data-z="1 · head">
+      <h1>Unedited gallery — Restyle</h1>
+      <button type="button">New record</button>
+    </div>
+    <div class="demo-body wf-zone" data-z="2 · body">
+      <div class="rv-demo-data">
+        <div class="demo-row"><b>Placeholder record one</b><span>same DOM as Current, calmer treatment</span></div>
+        <div class="demo-row"><b>Placeholder record two</b><span>tier contract: structure identical</span></div>
+        <div class="demo-row"><b>Placeholder record three</b><span>only the visual treatment differs</span></div>
+      </div>
+      <div class="rv-demo-empty">No records yet.</div>
+    </div>
+  </section>
+
+  <section id="rv-restructure" class="rv-pane rv-restructure" data-variant="restructure" data-tier="restructure">
+    <div class="demo-head wf-zone" data-z="1 · head">
+      <h1>Unedited gallery — Restructure</h1>
+      <button type="button">New record</button>
+    </div>
+    <div class="demo-body wf-zone" data-z="2 · body">
+      <div class="rv-demo-data demo-cards">
+        <div class="demo-card"><b>Placeholder record one</b><span>same content inventory as Current</span></div>
+        <div class="demo-card"><b>Placeholder record two</b><span>different grouping and order</span></div>
+        <div class="demo-card"><b>Placeholder record three</b><span>tier contract: IA differs</span></div>
+      </div>
+      <div class="rv-demo-empty">No records yet.</div>
+    </div>
+  </section>
+
+  <section id="rv-rethink" class="rv-pane rv-rethink" data-variant="rethink" data-tier="rethink">
+    <div class="demo-head wf-zone" data-z="1 · head">
+      <h1>Unedited gallery — Rethink</h1>
+      <button type="button">New record</button>
+    </div>
+    <div class="demo-body wf-zone" data-z="2 · body">
+      <ul class="demo-tl rv-demo-data">
+        <li><b>Placeholder record one</b>
+          <details><summary>Details</summary><span>tier contract: a different interaction model — at least one new trigger→effect</span></details>
+        </li>
+        <li><b>Placeholder record two</b>
+          <details><summary>Details</summary><span>the task and the data domain are preserved</span></details>
+        </li>
+      </ul>
+      <div class="rv-demo-empty">No records yet.</div>
+    </div>
+  </section>
+
+</main>
+<!-- ▲ /REPLACE 3 ═══════════════════════════════════════════════════════════ -->
+
+<script>
+/* ══════════════════════════════════════════════════════════════════════════
+   HARNESS — control overlay engine, URL state, comparison, verify kit.
+   Byte-faithful to the parent scaffold. Leave this section alone; edit
+   REPLACE 4 at the bottom.
+   ══════════════════════════════════════════════════════════════════════════ */
+const WF = (() => {
+  const S = {};              // live control state
+  let AXES = [], renderFn = () => {}, readoutFn = null, mounted = false;
+
+  const el = (t, a = {}, kids = []) => {
+    const n = document.createElement(t);
+    for (const [k, v] of Object.entries(a)) {
+      if (k === 'class') n.className = v;
+      else if (k === 'text') n.textContent = v;
+      else if (k === 'html') n.innerHTML = v;
+      else n.setAttribute(k, v);
+    }
+    (Array.isArray(kids) ? kids : [kids]).forEach(c => c && n.appendChild(c));
+    return n;
+  };
+  const opts = list => list.map(o => {
+    const v = typeof o === 'string' ? o : o.value;
+    const l = typeof o === 'string' ? o : (o.label ?? o.value);
+    return el('option', { value: v, text: l });
+  });
+
+  /* ── URL state ────────────────────────────────────────────────────────────
+     Every control writes to the hash, so a configuration is a link. That makes
+     "the broken one is the read-only client view at stage 3" a URL you can
+     paste, screenshot, and re-verify later — instead of a list of clicks.   */
+  const readHash = () => Object.fromEntries(new URLSearchParams(location.hash.slice(1)));
+  const writeHash = () => {
+    const p = new URLSearchParams();
+    for (const ax of AXES) {
+      if (!ax.id || ax.type === 'action') continue;
+      const v = S[ax.id];
+      if (v === undefined || v === null) continue;
+      p.set(ax.id, typeof v === 'boolean' ? (v ? '1' : '0') : (typeof v === 'object' ? JSON.stringify(v) : v));
+    }
+    history.replaceState(null, '', '#' + p.toString());
+  };
+
+  const applyBodyClasses = () => {
+    for (const ax of AXES) {
+      if (ax.type === 'variant') {
+        ax.options.forEach(o => {
+          const v = typeof o === 'string' ? o : o.value;
+          document.body.classList.toggle(v, v === S[ax.id]);
+        });
+      } else if (ax.type === 'bodyclass') {
+        document.body.classList.toggle(ax.bodyClass || ax.id, !!S[ax.id]);
+      }
+    }
+  };
+
+  const update = () => { applyBodyClasses(); renderFn(S); paintReadout(); writeHash(); };
+
+  function paintReadout() {
+    const out = document.getElementById('wf-readout');
+    if (!out) return;
+    out.textContent = readoutFn
+      ? readoutFn(S)
+      : `y ${Math.round(scrollY)} · ` +
+        AXES.filter(a => a.id && a.type !== 'action' && a.type !== 'matrix')
+            .map(a => `${a.id} ${typeof S[a.id] === 'boolean' ? (S[a.id] ? 'on' : 'off') : S[a.id]}`)
+            .join(' · ');
+  }
+
+  function buildPanel() {
+    const body = el('div', { class: 'wf-body' });
+
+    for (const ax of AXES) {
+      if (ax.type === 'divider') { body.appendChild(el('hr')); continue; }
+      if (ax.type === 'note') { body.appendChild(el('div', { class: 'wf-note', text: ax.text })); continue; }
+
+      if (ax.type === 'action') {
+        let bar = body.lastElementChild;
+        if (!bar || !bar.classList.contains('wf-actions')) { bar = el('div', { class: 'wf-actions' }); body.appendChild(bar); }
+        const b = el('button', { text: ax.label });
+        b.addEventListener('click', () => { ax.run(S, update); update(); });
+        bar.appendChild(b);
+        continue;
+      }
+
+      if (ax.type === 'matrix') {
+        body.appendChild(el('div', { class: 'wf-note', text: ax.label }));
+        const tb = el('table');
+        WF.matrixInputs[ax.id] = {};
+        ax.rows.forEach(r => {
+          const sel = el('select'); opts(ax.options).forEach(o => sel.appendChild(o));
+          sel.value = S[ax.id][r.id];
+          sel.addEventListener('change', e => { S[ax.id][r.id] = e.target.value; update(); });
+          WF.matrixInputs[ax.id][r.id] = sel;
+          tb.appendChild(el('tr', {}, [el('td', { text: r.label }), el('td', {}, sel)]));
+        });
+        body.appendChild(tb);
+        continue;
+      }
+
+      if (ax.type === 'toggle' || ax.type === 'bodyclass') {
+        const input = el('input', { type: 'checkbox' });
+        input.checked = !!S[ax.id];
+        input.addEventListener('change', e => { S[ax.id] = e.target.checked; update(); });
+        const lab = el('label', { class: 'wf-chk' }, input);
+        lab.appendChild(document.createTextNode(' ' + ax.label));
+        body.appendChild(lab);
+        // Registered like every other control: without this, WF.set() (and any
+        // in-surface control wired to it) changes the surface while the panel
+        // keeps showing the old value — which reads as a rendering bug.
+        WF.inputs[ax.id] = input;
+        continue;
+      }
+
+      const lab = el('label', {}, document.createTextNode(ax.label));
+      let input;
+      if (ax.type === 'number') {
+        input = el('input', { type: 'number' });
+        if (ax.min !== undefined) input.min = ax.min;
+        if (ax.step !== undefined) input.step = ax.step;
+        input.value = S[ax.id];
+        input.addEventListener('input', e => { S[ax.id] = +e.target.value; update(); });
+      } else { // select | variant
+        input = el('select');
+        opts(ax.options).forEach(o => input.appendChild(o));
+        input.value = S[ax.id];
+        input.addEventListener('change', e => { S[ax.id] = e.target.value; update(); });
+      }
+      lab.appendChild(input);
+      // Provenance, inline: the reviewer can see these are the app's real
+      // values and not a plausible-looking invention.
+      if (ax.from) lab.appendChild(el('span', { class: 'wf-from', text: ax.from }));
+      body.appendChild(lab);
+      if (ax.id) WF.inputs[ax.id] = input;
+    }
+
+    body.appendChild(el('hr'));
+    body.appendChild(el('div', { class: 'wf-readout', id: 'wf-readout' }));
+
+    const dock = el('button', { text: '⇄', title: 'dock to the other side' });
+    const min = el('button', { text: '–', title: 'minimise' });
+    const panel = el('aside', { class: 'wf-ctl', id: 'wf-ctl' }, [
+      el('header', {}, [el('span', { text: 'Wireframe controls' }),
+                        el('span', { class: 'wf-hbtns' }, [dock, min])]), body,
+    ]);
+    min.addEventListener('click', () => {
+      panel.classList.toggle('wf-min');
+      min.textContent = panel.classList.contains('wf-min') ? '+' : '–';
+    });
+    // Remembered, because the wireframe is rebuilt between interview rounds and
+    // re-docking every round is exactly the kind of friction that stops people
+    // exploring states.
+    const DOCK_KEY = 'wf-dock-left';
+    const applyDock = v => panel.classList.toggle('wf-left', v);
+    let left = false;
+    try { left = localStorage.getItem(DOCK_KEY) === '1'; } catch {}
+    applyDock(left);
+    dock.addEventListener('click', () => {
+      left = !left; applyDock(left);
+      try { localStorage.setItem(DOCK_KEY, left ? '1' : '0'); } catch {}
+    });
+    document.body.appendChild(panel);
+  }
+
+  const firstVal = ax => (typeof ax.options[0] === 'string' ? ax.options[0] : ax.options[0].value);
+
+  /* Hydrate S from the hash. `initial` also seeds declared defaults; on a later
+     re-hydrate, axes absent from the hash are left alone. */
+  function hydrate(initial) {
+    const h = readHash();
+    for (const ax of AXES) {
+      if (!ax.id || ax.type === 'action' || ax.type === 'divider' || ax.type === 'note') continue;
+      if (ax.type === 'matrix') {
+        if (initial) S[ax.id] = Object.fromEntries(ax.rows.map(r => [r.id, r.value ?? firstVal(ax)]));
+        if (h[ax.id]) { try { Object.assign(S[ax.id], JSON.parse(h[ax.id])); } catch {} }
+        continue;
+      }
+      let v;
+      if (h[ax.id] !== undefined) {
+        v = (ax.type === 'toggle' || ax.type === 'bodyclass') ? h[ax.id] === '1'
+          : ax.type === 'number' ? +h[ax.id] : h[ax.id];
+      } else if (initial) {
+        v = ax.value;
+        if (v === undefined) v = (ax.type === 'toggle' || ax.type === 'bodyclass') ? false
+          : ax.options ? firstVal(ax) : 0;
+      } else continue;
+      S[ax.id] = v;
+    }
+  }
+
+  /* Push S back into the controls, so the panel can never disagree with the
+     surface — whatever changed the state. */
+  function syncInputs() {
+    for (const [id, input] of Object.entries(WF.inputs)) {
+      if (input.type === 'checkbox') input.checked = !!S[id]; else input.value = S[id];
+    }
+    for (const [axId, rows] of Object.entries(WF.matrixInputs))
+      for (const [rowId, sel] of Object.entries(rows)) sel.value = S[axId][rowId];
+  }
+
+  return {
+    S, inputs: {}, matrixInputs: {},
+
+    /* mount({axes, render, readout}) — the whole overlay is generated from the
+       axes the surface actually varies on. Adding a question to the interview
+       means adding an axis here, not writing markup. */
+    mount({ axes, render, readout }) {
+      AXES = axes; renderFn = render || (() => {}); readoutFn = readout || null;
+      hydrate(true);
+      buildPanel(); mounted = true; update();
+      addEventListener('scroll', paintReadout, { passive: true });
+      /* Navigating to a URL that differs only in the hash does NOT reload the
+         page, so without this the wireframe silently ignores the state you
+         asked for and you measure the previous one. With it, the URL is a real
+         control surface: automation can drive the surface to an exact state by
+         navigating, and a pasted link reproduces what someone saw. */
+      addEventListener('hashchange', () => { hydrate(false); syncInputs(); update(); });
+      return S;
+    },
+
+    set(id, v) { S[id] = v; syncInputs(); update(); },
+    update,
+    syncInputs,
+
+    /* Any change in document height can move scrollY without the user
+       scrolling (browser scroll anchoring). Call before reading scrollY in a
+       scroll handler that compares against a baseline — otherwise an expand
+       that inserts content ABOVE the viewport reads as a large user scroll and
+       fires whatever that scroll was supposed to trigger. */
+    _lastH: 0,
+    absorbLayoutShift(baselineKey) {
+      const h = document.documentElement.scrollHeight;
+      if (!WF._lastH) WF._lastH = h;
+      if (h !== WF._lastH) { if (baselineKey && typeof S[baselineKey] === 'number') S[baselineKey] += h - WF._lastH; WF._lastH = h; }
+      return h;
+    },
+    /* Re-baseline synchronously AFTER a layout-changing toggle. Synchronous —
+       an rAF/setTimeout baseline drifts whenever frames are throttled, and
+       frames are always throttled in a backgrounded automation tab. */
+    rebaseline(baselineKey) {
+      void document.documentElement.scrollHeight;
+      if (baselineKey) S[baselineKey] = scrollY;
+      WF._lastH = document.documentElement.scrollHeight;
+    },
+
+    /* compare(selector, variants) — clone the real surface once per variant
+       into a full-screen sheet and screenshot it once. Settles aesthetic
+       arguments that prose cannot: two options that read as different in
+       description are often pixel-identical on screen, and you only find that
+       out by seeing them adjacent.
+
+       Two things make this work, both learned the hard way:
+
+       1. The live variant class is stripped from <body> for the duration. A
+          clone lands INSIDE body, so `body.v-a .thing` and the wrapper's
+          `.v-b .thing` both match it at equal specificity — and the later rule
+          in source order wins, for every panel. The symptom is every variant
+          rendering identically, which reads as "these options look the same"
+          rather than "the harness is broken". Scoping variant CSS to `.v-x`
+          (never `body.v-x`) is necessary but NOT sufficient; the ancestor has
+          to go too.
+       2. ids are stripped from clones, so getElementById and any
+          aria-controls/label references keep resolving to the live surface
+          rather than to a copy.                                              */
+    compare(selector, variants) {
+      const src = document.querySelector(selector);
+      if (!src) return `compare: no element matches ${selector}`;
+      WF.closeCompare();
+
+      const variantClasses = AXES.filter(a => a.type === 'variant')
+        .flatMap(a => a.options.map(o => (typeof o === 'string' ? o : o.value)));
+      const stripped = variantClasses.filter(c => document.body.classList.contains(c));
+      stripped.forEach(c => document.body.classList.remove(c));
+
+      const sheet = el('div', { class: 'wf-cmp' });
+      variants.forEach(v => {
+        const name = typeof v === 'string' ? v : v.value;
+        const label = typeof v === 'string' ? v : (v.label || v.value);
+        const item = el('div', { class: 'wf-cmp-item ' + name });
+        item.appendChild(el('div', { class: 'wf-cmp-label', text: label }));
+        const clone = src.cloneNode(true);
+        clone.removeAttribute('id');
+        clone.querySelectorAll('[id]').forEach(n => n.removeAttribute('id'));
+        item.appendChild(clone);
+        sheet.appendChild(item);
+      });
+      const close = el('button', { class: 'wf-cmp-close', text: 'Close comparison' });
+      close.addEventListener('click', WF.closeCompare);
+      document.body.append(sheet, close);
+      WF._stripped = stripped;
+      return `comparing ${variants.length} variants of ${selector}` +
+             (stripped.length ? ` (body variant ${stripped.join(',')} suspended)` : '');
+    },
+
+    closeCompare() {
+      document.querySelector('.wf-cmp')?.remove();
+      document.querySelector('.wf-cmp-close')?.remove();
+      (WF._stripped || []).forEach(c => document.body.classList.add(c));
+      WF._stripped = [];
+      return 'closed';
+    },
+  };
+})();
+
+/* ══════════════════════════════════════════════════════════════════════════
+   __wf — in-page verification kit. Call these from browser automation instead
+   of eyeballing a screenshot: a number you can put in a spec beats an
+   impression, and every one of these has caught a real defect.
+   ══════════════════════════════════════════════════════════════════════════ */
+const __wf = (() => {
+  const r2 = n => Math.round(n * 100) / 100;
+  const px = el => { const b = el.getBoundingClientRect();
+    return { top: r2(b.top), bottom: r2(b.bottom), left: r2(b.left), right: r2(b.right), w: r2(b.width), h: r2(b.height) }; };
+  const parseRGB = s => { const m = (s || '').match(/-?[\d.]+/g); return m ? m.slice(0, 4).map(Number) : null; };
+  const lum = ([r, g, b]) => { const f = c => { c /= 255; return c <= .04045 ? c / 12.92 : Math.pow((c + .055) / 1.055, 2.4); };
+    return .2126 * f(r) + .7152 * f(g) + .0722 * f(b); };
+  const over = (fg, bg) => { const a = fg[3] ?? 1; return [0, 1, 2].map(i => fg[i] * a + bg[i] * (1 - a)); };
+  const effBg = el => { // walk up compositing until opaque; default white
+    let node = el, acc = null;
+    while (node && node.nodeType === 1) {
+      const c = parseRGB(getComputedStyle(node).backgroundColor);
+      if (c && (c[3] ?? 1) > 0) acc = acc ? over(acc, c) : c;
+      if (acc && (acc[3] ?? 1) >= 1) return acc.slice(0, 3);
+      node = node.parentElement;
+    }
+    return acc ? over(acc, [255, 255, 255]) : [255, 255, 255];
+  };
+
+  return {
+    /* ALWAYS call this first. In a backgrounded tab scroll events, rAF, CSS
+       transitions and .focus() all silently no-op — a "failing" behavioural
+       result is then a measurement artifact, not a defect. */
+    env() {
+      return {
+        visibilityState: document.visibilityState,
+        documentFocused: document.hasFocus(),
+        trustworthyForBehaviour: document.visibilityState === 'visible',
+        viewport: { w: innerWidth, h: innerHeight, dpr: devicePixelRatio },
+        scrollY: Math.round(scrollY),
+        docHeight: document.documentElement.scrollHeight,
+        reducedMotion: matchMedia('(prefers-reduced-motion: reduce)').matches,
+        // Deliberately NOT location.href: browser-automation bridges refuse to
+        // return a payload containing a URL/query string, which would block
+        // this entire result — and env() is the call you make first.
+        path: location.pathname,
+      };
+    },
+
+    rect(sel) { const e = document.querySelector(sel); return e ? px(e) : { error: `no match: ${sel}` }; },
+
+    /* Contiguity. Prove bands do not separate rather than squinting at a
+       screenshot: any non-zero gap is a visible seam. */
+    bands(selectors) {
+      const rows = selectors.map(s => { const e = document.querySelector(s);
+        return e ? { sel: s, ...px(e) } : { sel: s, error: 'no match' }; });
+      rows.forEach((row, i) => { const next = rows[i + 1];
+        if (next && !row.error && !next.error) row.gapToNext = r2(next.top - row.bottom); });
+      return { rows, contiguous: rows.every(r => r.gapToNext === undefined || r.gapToNext === 0) };
+    },
+
+    /* Computed, not guessed. Text colours that "look fine" against a tint fail
+       AA surprisingly often, and the failure is invisible until measured. */
+    contrast(sel) {
+      const e = document.querySelector(sel); if (!e) return { error: `no match: ${sel}` };
+      const cs = getComputedStyle(e);
+      const fgRaw = parseRGB(cs.color) || [0, 0, 0];
+      const bg = effBg(e);
+      const fg = (fgRaw[3] ?? 1) < 1 ? over(fgRaw, bg) : fgRaw.slice(0, 3);
+      const L1 = lum(fg), L2 = lum(bg);
+      const ratio = r2((Math.max(L1, L2) + .05) / (Math.min(L1, L2) + .05));
+      const size = parseFloat(cs.fontSize), bold = +cs.fontWeight >= 700;
+      const large = size >= 24 || (bold && size >= 18.66);
+      const hex = c => '#' + c.map(x => Math.round(x).toString(16).padStart(2, '0')).join('');
+      return { sel, text: (e.textContent || '').trim().slice(0, 40), fg: hex(fg), bg: hex(bg),
+               fontSize: size, bold, large, ratio, AA: ratio >= (large ? 3 : 4.5), AAA: ratio >= (large ? 4.5 : 7) };
+    },
+
+    /* Structural validity. `button button` is the one that bites: it is valid-
+       looking in a mockup, unshippable in real markup, and forces inert spans
+       that are unreachable by keyboard. */
+    markup() {
+      const q = s => [...document.querySelectorAll(s)];
+      const name = e => (e.getAttribute('aria-label') || e.getAttribute('title') || e.textContent || '').trim();
+      const ids = q('[id]').map(e => e.id);
+      return {
+        nestedInteractive: q('button button, button a, a a, a button').map(e => e.outerHTML.slice(0, 90)),
+        unnamedControls: q('button, a[href], [role=button]').filter(e => !name(e)).map(e => e.outerHTML.slice(0, 90)),
+        danglingAriaControls: q('[aria-controls]').filter(e => !document.getElementById(e.getAttribute('aria-controls')))
+          .map(e => e.getAttribute('aria-controls')),
+        toggleWithoutExpanded: q('[aria-controls]').filter(e => !e.hasAttribute('aria-expanded')).map(e => e.id || e.className),
+        duplicateIds: ids.filter((v, i) => ids.indexOf(v) !== i),
+        imagesWithoutAlt: q('img:not([alt])').length,
+      };
+    },
+
+    /* Anything hidden by TRANSFORM or CLIP is still tabbable — that is the
+       defect this looks for. Without a focusin guard, keyboard focus walks
+       onto controls nobody can see.
+
+       Content hidden by `display:none` / `visibility:hidden` (a collapsed
+       accordion, a closed panel) is NOT tabbable and must not be reported: a
+       check that fires on every closed disclosure gets ignored, and then the
+       real finding gets ignored with it. Distinguish by whether the element
+       generates a box at all.
+
+       Pass a selector to scope this to the surface and skip the overlay. */
+    focusables(scope = 'body') {
+      const sel = 'a[href],button:not([disabled]),input:not([disabled]),select:not([disabled]),textarea,[tabindex]:not([tabindex="-1"])';
+      const root = document.querySelector(scope) || document.body;
+      const rendered = [], notRendered = [];
+      for (const e of root.querySelectorAll(sel)) {
+        const label = (e.getAttribute('aria-label') || e.textContent || e.value || '').trim().slice(0, 30);
+        const box = e.getClientRects().length > 0 && getComputedStyle(e).visibility !== 'hidden';
+        if (!box) { notRendered.push(label); continue; }   // not in the tab order
+        const b = e.getBoundingClientRect();
+        rendered.push({ label, tag: e.tagName.toLowerCase(), top: r2(b.top),
+          onScreen: b.bottom > 0 && b.top < innerHeight && b.right > 0 && b.left < innerWidth });
+      }
+      return {
+        tabbable: rendered.length,
+        notRendered: notRendered.length,          // collapsed/hidden — correctly ignored
+        offScreen: rendered.filter(x => !x.onScreen),   // tabbable but invisible → needs a focus guard
+      };
+    },
+
+    /* Scroll that works in a hidden tab: set the position AND fire the event,
+       because a backgrounded tab delivers neither. */
+    scrollTo(y) { window.scrollTo(0, y); dispatchEvent(new Event('scroll')); return Math.round(scrollY); },
+
+    /* Measure an end state in a hidden tab, where transitions freeze at t=0. */
+    noMotion(on = true) { document.body.classList.toggle('wf-no-motion', on); void document.body.offsetHeight; return on; },
+
+    /* focus() is a no-op when the document is not focused; the event is not. */
+    focusIn(sel) { const e = document.querySelector(sel); if (!e) return `no match: ${sel}`;
+      e.dispatchEvent(new FocusEvent('focusin', { bubbles: true })); return 'dispatched'; },
+
+    /* A scripted sequence returns a table, so a regression is visible as a row
+       that changed rather than a screenshot someone has to re-interpret. */
+    seq(steps, observe) {
+      const obs = observe || (() => ({ y: Math.round(scrollY) }));
+      return steps.map(s => { if (typeof s === 'function') s(); else if (s.scrollTo !== undefined) __wf.scrollTo(s.scrollTo);
+        else if (s.click) document.querySelector(s.click)?.click();
+        return { step: s.label || (s.scrollTo !== undefined ? `scrollTo ${s.scrollTo}` : s.click || 'fn'), ...obs() }; });
+    },
+
+    state() { return JSON.parse(JSON.stringify(WF.S)); },
+  };
+})();
+window.__wf = __wf; window.WF = WF;
+
+
+/* ══════════════════════════════════════════════════════════════════════════
+   __wfFb — feedback kit. Comment mode (✎ in the control panel header, or the
+   `c` key): pick an element, attach a comment; or comment on the whole page.
+   Transport: POST /__feedback on the serving origin → <dir>/.feedback.jsonl;
+   replies polled every 2s from /.replies.jsonl and threaded in the panel.
+   No endpoint (old server, file://)? The payload is copied to the clipboard.
+   Byte-faithful to the parent EXCEPT the two additions marked "RV:".
+   Harness — leave this section alone. See the parent skill's
+   references/live-feedback.md.
+   ══════════════════════════════════════════════════════════════════════════ */
+const __wfFb = (() => {
+  const st = { picking: false, comments: new Map(), replies: new Map(),
+               pollMs: 2000, errs: 0, unread: 0 };
+  const httpOK = /^https?:$/.test(location.protocol);
+  const genId = () => 'fb-' + Date.now().toString(36) + '-' + Math.random().toString(36).slice(2, 4);
+  const isHarness = el => !!el.closest('.wf-ctl,.wf-fb-box,.wf-fb-panel,#wf-fb-hl,.wf-fb-hint,.wf-cmp,.wf-cmp-close,.rv-bar,.rv-cell-head'); /* RV: +gallery chrome */
+  let hl, panel, list, badge, hintEl, box = null;
+
+  /* ── derivation ─────────────────────────────────────────────────────────── */
+  function cssPath(el) {
+    if (el.id && document.querySelectorAll('#' + CSS.escape(el.id)).length === 1)
+      return '#' + CSS.escape(el.id);
+    const segs = [];
+    let n = el;
+    for (let depth = 0; n && n !== document.body && depth < 4; depth++, n = n.parentElement) {
+      let seg = n.tagName.toLowerCase();
+      const cls = [...n.classList].find(c => !/^(wf-|v-)/.test(c));
+      if (cls) seg += '.' + CSS.escape(cls);
+      const sibs = n.parentElement
+        ? [...n.parentElement.children].filter(s => s.tagName === n.tagName) : [];
+      if (sibs.length > 1) seg += `:nth-of-type(${sibs.indexOf(n) + 1})`;
+      segs.unshift(seg);
+      const sel = segs.join(' > ');
+      if (document.querySelectorAll(sel).length === 1) return sel;
+    }
+    return segs.join(' > ');
+  }
+  function nearestFragment(el) {
+    // Best-effort: nearest preceding "▼ FRAGMENT name" comment not already
+    // closed by its "▲ /FRAGMENT name". Optional — absence is fine.
+    const skip = new Set();
+    for (let n = el; n && n !== document.documentElement; ) {
+      let sib = n.previousSibling;
+      while (sib) {
+        if (sib.nodeType === 8) {
+          const close = /▲ \/FRAGMENT (\S+)/.exec(sib.data);
+          if (close) skip.add(close[1]);
+          const open = /▼ FRAGMENT (\S+)/.exec(sib.data);
+          if (open && !skip.has(open[1])) return open[1];
+        }
+        sib = sib.previousSibling;
+      }
+      n = n.parentNode;
+    }
+    return undefined;
+  }
+  function payload(el, comment) {
+    const p = { id: genId(), ts: new Date().toISOString(),
+      kind: el ? 'element' : 'page', comment: String(comment).slice(0, 4000),
+      state: JSON.parse(JSON.stringify(WF.S)), hash: location.hash.slice(1),
+      file: location.pathname };
+    if (el) {
+      const r = el.getBoundingClientRect();
+      Object.assign(p, { selector: cssPath(el),
+        variant: el.closest('.rv-pane')?.dataset.variant, /* RV: pane attribution */
+        zone: el.closest('.wf-zone')?.dataset.z,
+        fragment: nearestFragment(el),
+        snippet: (el.textContent || '').trim().replace(/\s+/g, ' ').slice(0, 120),
+        rect: { top: Math.round(r.top), left: Math.round(r.left),
+                w: Math.round(r.width), h: Math.round(r.height) } });
+    }
+    return p;
+  }
+
+  /* ── transport ──────────────────────────────────────────────────────────── */
+  async function send(p) {
+    if (httpOK) {
+      try {
+        const r = await fetch('/__feedback', { method: 'POST',
+          headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(p) });
+        if (r.ok || r.status === 204) return 'sent';
+      } catch {}
+    }
+    try { await navigator.clipboard.writeText(JSON.stringify(p)); } catch {}
+    hint('No feedback endpoint — payload copied to clipboard. Paste it to Claude.');
+    return 'queued';
+  }
+  async function fetchLines(path) {
+    const r = await fetch(path, { cache: 'no-store' });
+    if (!r.ok) return [];
+    return (await r.text()).split('\n').filter(Boolean).map(l => {
+      try { return JSON.parse(l); } catch { return null; }
+    }).filter(Boolean);
+  }
+  async function poll() {
+    if (!httpOK) return;
+    try {
+      for (const e of await fetchLines('/.replies.jsonl')) ingestReply(e);
+      st.errs = 0; st.pollMs = 2000;
+    } catch { if (++st.errs >= 2) st.pollMs = 10000; }
+    setTimeout(poll, st.pollMs);
+  }
+
+  /* ── thread panel ───────────────────────────────────────────────────────── */
+  function ingestReply(e) {
+    if (!e.id || st.replies.has(e.id)) return;
+    st.replies.set(e.id, e);
+    if (e.to && st.comments.has(e.to)) st.comments.get(e.to).status = 'replied';
+    if (panel.classList.contains('wf-fb-min')) { st.unread++; }
+    render();
+  }
+  function addComment(p, status) {
+    st.comments.set(p.id, { ...p, status });
+    render();
+  }
+  function render() {
+    const items = [...st.comments.values()];
+    const general = [...st.replies.values()].filter(r => !r.to || !st.comments.has(r.to));
+    panel.style.display = items.length || general.length ? 'block' : 'none';
+    badge.style.display = st.unread ? 'inline-block' : 'none';
+    badge.textContent = st.unread;
+    list.textContent = '';
+    for (const c of items) {
+      const it = elDiv('wf-fb-item');
+      const meta = elDiv('wf-fb-meta');
+      const dot = elDiv('wf-fb-dot'); dot.dataset.st = c.status;
+      meta.append(dot, textSpan(c.kind === 'element' ? 'element' : 'page', ''),
+                  textSpan(c.status, ''));
+      it.append(meta);
+      if (c.selector) { const s = elDiv('wf-fb-sel'); s.textContent = c.selector; it.append(s); }
+      const t = document.createElement('div'); t.textContent = c.comment; it.append(t);
+      for (const r of [...st.replies.values()].filter(r => r.to === c.id)) {
+        const rd = elDiv('wf-fb-reply'); rd.textContent = r.text; it.append(rd);
+      }
+      list.append(it);
+    }
+    for (const r of general) {
+      const it = elDiv('wf-fb-item');
+      const rd = elDiv('wf-fb-reply'); rd.textContent = r.text;
+      it.append(textSpan('Claude', 'wf-fb-meta'), rd); list.append(it);
+    }
+  }
+  const elDiv = cls => { const d = document.createElement('div'); d.className = cls; return d; };
+  const textSpan = (txt, cls) => { const s = document.createElement('span'); s.textContent = txt; if (cls) s.className = cls; return s; };
+  function hint(msg) {
+    hintEl.textContent = msg; hintEl.classList.add('wf-fb-show');
+    setTimeout(() => hintEl.classList.remove('wf-fb-show'), 3500);
+  }
+
+  /* ── picker + comment box ───────────────────────────────────────────────── */
+  function setPicking(on) {
+    st.picking = on;
+    document.body.classList.toggle('wf-fb-picking', on);
+    hl.style.display = 'none';
+    if (on) hint('Comment mode — click an element (Esc to cancel)');
+  }
+  function onMove(e) {
+    if (!st.picking) return;
+    const el = e.target;
+    if (!(el instanceof Element) || isHarness(el)) { hl.style.display = 'none'; return; }
+    const r = el.getBoundingClientRect();
+    Object.assign(hl.style, { display: 'block', top: r.top + 'px', left: r.left + 'px',
+                              width: r.width + 'px', height: r.height + 'px' });
+  }
+  function onPickClick(e) {
+    if (!st.picking) return;
+    const el = e.target;
+    if (!(el instanceof Element) || isHarness(el)) return;
+    e.preventDefault(); e.stopPropagation();
+    setPicking(false);
+    openBox(el);
+  }
+  function swallow(e) { if (st.picking && e.target instanceof Element && !isHarness(e.target)) { e.preventDefault(); e.stopPropagation(); } }
+  function openBox(el) {
+    closeBox();
+    box = elDiv('wf-fb-box');
+    const target = elDiv('wf-fb-target');
+    target.textContent = el ? cssPath(el) : 'whole page';
+    const ta = document.createElement('textarea');
+    ta.placeholder = el ? 'What should change about this element?' : 'Comment on this wireframe…';
+    const btns = elDiv('wf-fb-btns');
+    const cancel = document.createElement('button'); cancel.textContent = 'Cancel';
+    const sendB = document.createElement('button'); sendB.textContent = 'Send'; sendB.className = 'wf-fb-send';
+    cancel.onclick = closeBox;
+    sendB.onclick = async () => {
+      const txt = ta.value.trim(); if (!txt) return;
+      const p = payload(el, txt); closeBox();
+      addComment(p, await send(p));
+    };
+    btns.append(cancel, sendB); box.append(target, ta, btns);
+    document.body.append(box);
+    if (el) {
+      const r = el.getBoundingClientRect();
+      const top = Math.min(Math.max(r.bottom + 6, 8), innerHeight - 170);
+      const left = Math.min(Math.max(r.left, 8), innerWidth - 296);
+      Object.assign(box.style, { top: top + 'px', left: left + 'px' });
+    } else Object.assign(box.style, { bottom: '64px', left: '16px' });
+    ta.focus();
+  }
+  function closeBox() { box?.remove(); box = null; }
+
+  /* ── init ───────────────────────────────────────────────────────────────── */
+  function init() {
+    hl = document.createElement('div'); hl.id = 'wf-fb-hl';
+    hintEl = elDiv('wf-fb-hint');
+    panel = elDiv('wf-fb-panel');
+    const head = document.createElement('header');
+    head.append(textSpan('Comments', ''));
+    badge = textSpan('', 'wf-fb-badge'); head.append(badge);
+    head.onclick = () => { panel.classList.toggle('wf-fb-min'); st.unread = 0; render(); };
+    list = elDiv('wf-fb-list');
+    panel.append(head, list);
+    document.body.append(hl, hintEl, panel);
+
+    // ✎ into the control panel header; floating fallback if the panel is absent.
+    const host = document.querySelector('#wf-ctl .wf-hbtns');
+    const pen = document.createElement('button');
+    pen.textContent = '✎'; pen.title = 'Comment mode (c) — click an element; hold nothing to comment on the page';
+    pen.onclick = () => st.picking ? setPicking(false) : setPicking(true);
+    pen.oncontextmenu = e => { e.preventDefault(); setPicking(false); openBox(null); };
+    if (host) host.prepend(pen);
+    else { pen.style.cssText = 'position:fixed;right:16px;top:16px;z-index:9100;background:#1d1d1d;color:#eee;border:0;border-radius:6px;padding:6px 10px'; document.body.append(pen); }
+
+    addEventListener('mouseover', onMove, true);
+    addEventListener('click', onPickClick, true);
+    addEventListener('mousedown', swallow, true);
+    addEventListener('pointerdown', swallow, true);
+    addEventListener('keydown', e => {
+      if (e.key === 'Escape') { setPicking(false); closeBox(); }
+      if (e.key === 'c' && !/^(input|textarea|select)$/i.test(document.activeElement?.tagName || ''))
+        setPicking(!st.picking);
+    });
+
+    // Rebuild-between-rounds reloads the page: reconstruct the thread once.
+    if (httpOK) {
+      (async () => {
+        try {
+          for (const c of await fetchLines('/.feedback.jsonl'))
+            if (c.id && !st.comments.has(c.id)) st.comments.set(c.id, { ...c, status: 'sent' });
+          for (const r of await fetchLines('/.replies.jsonl')) ingestReply(r);
+          render();
+        } catch {}
+      })();
+      setTimeout(poll, st.pollMs);
+    }
+  }
+  if (document.readyState === 'loading') addEventListener('DOMContentLoaded', init);
+  else init();
+
+  return {
+    state: () => ({ picking: st.picking,
+      comments: [...st.comments.values()], replies: [...st.replies.values()] }),
+    /* Programmatic path — lets Phase-5 browser automation exercise the whole
+       pipeline (payload → POST → panel) without simulated mouse events. */
+    comment: async (sel, text) => {
+      const el = sel ? document.querySelector(sel) : null;
+      if (sel && !el) return `no match: ${sel}`;
+      const p = payload(el, text);
+      addComment(p, await send(p));
+      return p.id;
+    },
+  };
+})();
+window.__wfFb = __wfFb;
+
+
+/* ══════════════════════════════════════════════════════════════════════════
+   RV — reimagine gallery harness. NEW in this scaffold (not in the parent).
+   Builds the variant switcher bar and the view modes (single / grid / split)
+   from the manifest, wraps each pane in a labelled cell, and registers its
+   state as WF axes — so URL state, the control panel, WF.set() and hash
+   navigation all keep working unchanged. Harness — leave this alone; declare
+   your variants in REPLACE 4.
+
+   Automation drive points (also reachable by hash navigation:
+   #rv=restyle&view=split&split=current):
+     __rv.show('restyle')            → single view, that pane active
+     __rv.mode('grid'|'single'|'split')
+     __rv.split('restyle','current') → split view, A vs B
+     __rv.manifest()                 → the declared variants
+     __rv.state()                    → {rv, view, split}
+   ══════════════════════════════════════════════════════════════════════════ */
+const RV = (() => {
+  let MAN = [], CELLS = {}, tabs = {}, modes = {};
+  const mk = (t, cls, text) => { const n = document.createElement(t);
+    if (cls) n.className = cls; if (text !== undefined) n.textContent = text; return n; };
+
+  /* Wrap each pane in a .rv-cell with a labelled head (variant · tier badge ·
+     fidelity chip). Heads render in grid/split only: in single view the active
+     pane must start at y=0 so bands measure clean. */
+  function wrapPanes() {
+    for (const v of MAN) {
+      const pane = document.getElementById('rv-' + v.id);
+      if (!pane) { console.warn('RV: no pane #rv-' + v.id + ' — declared in manifest but absent from REPLACE 3'); continue; }
+      const cell = mk('div', 'rv-cell'); cell.dataset.variant = v.id;
+      const head = mk('div', 'rv-cell-head');
+      head.append(mk('span', '', v.label));
+      const tier = mk('span', 'rv-tier', v.tier); tier.dataset.tier = v.tier;
+      head.append(tier);
+      if (v.fidelity) head.append(mk('span', 'rv-fid', v.fidelity));
+      pane.parentNode.insertBefore(cell, pane);
+      cell.append(head, pane);
+      CELLS[v.id] = cell;
+    }
+  }
+
+  function buildBar() {
+    const bar = mk('nav', 'rv-bar');
+    bar.setAttribute('aria-label', 'Variant switcher');
+    for (const v of MAN) {
+      const b = mk('button', '', v.label);
+      b.title = v.tier + (v.thesis ? ' — ' + v.thesis : '');
+      b.addEventListener('click', () => WF.set('rv', v.id));
+      tabs[v.id] = b; bar.append(b);
+    }
+    bar.append(mk('span', 'rv-sep'));
+    for (const [m, icon, title] of [['single', '▭', 'Single — one variant, measurable'],
+                                    ['grid', '▦', 'Grid — every variant at once'],
+                                    ['split', '◫', 'Split — active variant vs "Split with"']]) {
+      const b = mk('button', 'rv-mode', icon);
+      b.title = title; b.setAttribute('aria-label', title);
+      b.addEventListener('click', () => WF.set('view', m));
+      modes[m] = b; bar.append(b);
+    }
+    document.body.append(bar);
+  }
+
+  function apply(S) {
+    const view = S.view || 'single';
+    ['rv-single', 'rv-grid', 'rv-split'].forEach(c => document.body.classList.remove(c));
+    document.body.classList.add('rv-' + view);
+    for (const v of MAN) {
+      const on = view === 'grid' || v.id === S.rv || (view === 'split' && v.id === S.split);
+      CELLS[v.id]?.classList.toggle('rv-on', on);
+      tabs[v.id]?.setAttribute('aria-pressed', String(v.id === S.rv));
+    }
+    for (const [m, b] of Object.entries(modes)) b.setAttribute('aria-pressed', String(m === view));
+  }
+
+  return {
+    /* mount({variants, axes, render, readout}) — variants is the manifest:
+       [{id, label, tier: current|restyle|restructure|rethink, thesis,
+         fidelity?, retired?}] in tab order, Current first. Retired variants
+       (killed in an interview round) keep their manifest entry for the record
+       but get no tab and no cell. Author axes are SHARED: they apply to every
+       pane at once. */
+    mount({ variants, axes = [], render, readout }) {
+      MAN = variants.filter(v => !v.retired);
+      RV._all = variants;
+      wrapPanes(); buildBar();
+      const vOpts = MAN.map(v => ({ value: v.id, label: v.label }));
+      const rvAxes = [
+        { id: 'rv', label: 'Variant', type: 'select', value: MAN[0]?.id, options: vOpts },
+        { id: 'view', label: 'View', type: 'select', value: 'single', options: ['single', 'grid', 'split'] },
+        { id: 'split', label: 'Split with', type: 'select', value: MAN[0]?.id, options: vOpts },
+        { type: 'divider' },
+      ];
+      return WF.mount({
+        axes: [...rvAxes, ...axes],
+        render(S) { apply(S); render && render(S); },
+        readout: readout ||
+          (S => `${S.rv} · ${S.view}${S.view === 'split' ? ' vs ' + S.split : ''} · y ${Math.round(scrollY)}`),
+      });
+    },
+    manifest: () => (RV._all || MAN).map(v => ({ ...v })),
+  };
+})();
+window.RV = RV;
+window.__rv = {
+  show: id => { WF.set('rv', id); return WF.S.rv; },
+  mode: m => { WF.set('view', m); return WF.S.view; },
+  split: (a, b) => { WF.set('rv', a); WF.set('split', b); WF.set('view', 'split'); return `${a} vs ${b}`; },
+  manifest: () => RV.manifest(),
+  state: () => ({ rv: WF.S.rv, view: WF.S.view, split: WF.S.split }),
+};
+
+
+/* ▼ REPLACE 4 — MANIFEST + AXES + RENDER ═════════════════════════════════════
+   Declare the manifest (tab order, Current first; tier is the honesty
+   contract — see references/directions.md) and the SHARED axes: one axis per
+   dimension the surface actually varies on, read off the real enums, roles
+   and flags found while grounding. `from:` is the source path; it keeps the
+   values honest and gets cited in the spec. Shared axes hit every pane at
+   once — that is the gallery's strongest interview move.
+
+   Axis types: select · toggle · number · variant (exclusive body class for
+   INTRA-pane sub-options, scope CSS to `.v-x`) · bodyclass · matrix · action ·
+   divider · note                                                            */
+RV.mount({
+  variants: [
+    { id: 'current', label: 'Current', tier: 'current',
+      fidelity: 'placeholder — replace me', thesis: 'The existing design, recreated from source' },
+    { id: 'restyle', label: 'Quiet ink', tier: 'restyle',
+      thesis: 'Same structure, calmer hierarchy' },
+    { id: 'restructure', label: 'Cards', tier: 'restructure',
+      thesis: 'Same content, grouped as cards' },
+    { id: 'rethink', label: 'Timeline', tier: 'rethink',
+      thesis: 'Records as a time sequence with per-record disclosure' },
+  ],
+
+  axes: [
+    { id: 'empty', label: 'Empty state', type: 'bodyclass', bodyClass: 'demo-empty' },
+    { type: 'divider' },
+    { id: 'guides', label: 'Show zone guides', type: 'bodyclass', bodyClass: 'wf-guides' },
+    { label: 'Scroll to top', type: 'action', run: () => scrollTo({ top: 0, behavior: 'smooth' }) },
+  ],
+
+  // Called on every control change. Read state from `S`, write the DOM.
+  render(S) {
+    const t = document.getElementById('demoState');
+    if (t) t.textContent = `${S.rv} · ${S.view} · empty ${S.empty ? 'on' : 'off'}`;
+  },
+});
+/* ▲ /REPLACE 4 ═════════════════════════════════════════════════════════════ */
+</script>
+</body>
+</html>
