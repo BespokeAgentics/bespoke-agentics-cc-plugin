@@ -1,6 +1,6 @@
 {
   "name": "bespoke-agentics",
-  "version": "1.21.0",
+  "version": "1.22.0",
   "description": "AI transparency auditing, agent architecture generation, progressive-disclosure context layering for large codebases, UX evaluation, code-grounded interactive wireframing, Pi harness customization, video-to-deliverables pipelines, workflow analysis, Biome AI guardrails, and the Agent-Native Engineering suite (fast CI, label-triggered agents, chore crons, agent evidence, hermetic deploys, simulation data) for Claude Code",
   "author": {
     "name": "Bespoke Agentics"
@@ -122,6 +122,12 @@
     "restyle-restructure-rethink",
     "brand-faithful-redesign",
     "divergence-inventory",
+    "dead-code-sweep",
+    "dead-code",
+    "code-cleanup",
+    "post-session-cleanup",
+    "stale-tests",
+    "regression-safe-deletion",
     "wireframe-parity",
     "design-parity",
     "as-built-review",

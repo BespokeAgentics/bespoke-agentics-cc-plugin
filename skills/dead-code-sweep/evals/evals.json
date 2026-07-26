@@ -1,0 +1,66 @@
+{
+  "skill_name": "dead-code-sweep",
+  "evals": [
+    {
+      "id": 0,
+      "name": "uncommitted-refactor-litter",
+      "fixture": "cart-uncommitted",
+      "prompt": "I just finished refactoring the discount handling in this cart library \u2014 my changes are still uncommitted. Can you check whether I left any dead code behind and clean it up? Make sure the tests still pass and don't touch my actual changes.",
+      "expected_output": "Removes applyLegacyDiscount + its stale (untouched) test, the dead formatCents import in cart.js, the orphaned src/coupon-codes.js, and (cascade) the orphaned src/money.js. Reports but does not auto-delete the commented-out legacy block. Leaves renderReceipt (config-string dispatch) intact. Tests pass; nothing committed; user's refactor untouched; removals recoverable.",
+      "files": [],
+      "assertions": [
+        "applyLegacyDiscount function removed from src/discounts.js",
+        "stale applyLegacyDiscount test removed from test/discounts.test.js",
+        "unused formatCents import removed from src/cart.js",
+        "orphaned src/coupon-codes.js deleted",
+        "cascade: orphaned src/money.js deleted",
+        "trap kept: renderReceipt survives (referenced via receipt-config.json string)",
+        "commented-out legacy block not deleted without confirmation",
+        "all tests pass in final state",
+        "user's refactor untouched (applyDiscount + new cartTotal intact)",
+        "nothing committed; session changes remain uncommitted",
+        "removals are recoverable: backups or restore instructions provided"
+      ]
+    },
+    {
+      "id": 1,
+      "name": "branch-rewrite-cascade",
+      "fixture": "py-branch",
+      "prompt": "On the feature/html-rewrite branch of this reportgen project I replaced the legacy renderer with a new render_html. Before I open the PR, sweep the branch for dead code the rewrite left behind \u2014 including stale tests \u2014 and make sure nothing regresses compared to main.",
+      "expected_output": "Follows the full cascade: dead render_html_legacy import in cli.py -> render_html_legacy + untouched stale TestRenderLegacy -> now-dead wrap_text import in render.py -> orphaned utils.py wrap_text + TestWrapText. Leaves plugins.emit_json/emit_text (getattr dispatch) intact. Tests pass afterward; nothing committed; removals recoverable.",
+      "files": [],
+      "assertions": [
+        "render_html_legacy removed from reportgen/render.py",
+        "stale TestRenderLegacy removed",
+        "dead render_html_legacy import removed from cli.py",
+        "cascade: wrap_text no longer referenced in render.py",
+        "cascade: orphaned wrap_text implementation removed",
+        "stale TestWrapText removed",
+        "trap kept: plugins.emit_json / emit_text survive (getattr dispatch)",
+        "all tests pass in final state",
+        "user's rewrite intact (render_html defined and used by cli)",
+        "no new commits on the branch",
+        "removals are recoverable: backups or restore instructions provided"
+      ]
+    },
+    {
+      "id": 2,
+      "name": "project-sweep-with-traps",
+      "fixture": "js-project",
+      "prompt": "This notifier repo has accumulated cruft over the years. Do a full-project dead-code cleanup \u2014 remove what's truly unused, including tests, but be careful: some things in here are wired up dynamically. Don't break anything.",
+      "expected_output": "Removes src/old-mailer.js (zero references) and the unused median export in stats.js. Does NOT remove: handlers/webhook.js (config-string dispatch via routes.json), src/cli.js (package.json bin entry), the side-effect import of polyfill.js, or csv-export.js + its test (test-only referenced, project scope \u2192 needs confirmation, so reported not removed in a non-interactive run). Tests pass afterward.",
+      "files": [],
+      "assertions": [
+        "dead src/old-mailer.js deleted",
+        "unused median export removed from src/stats.js (mean kept)",
+        "trap kept: handlers/webhook.js survives (config-string route dispatch)",
+        "trap kept: src/cli.js survives (package.json bin entry)",
+        "trap kept: side-effect polyfill import intact",
+        "test-only csv-export not auto-removed (needs confirmation)",
+        "all tests pass in final state",
+        "nothing committed",
+        "removals are recoverable: backups or restore instructions provided"
+      ]
+    }
+  ]
+}

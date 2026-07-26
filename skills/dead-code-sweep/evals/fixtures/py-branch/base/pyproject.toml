@@ -1,0 +1,5 @@
+[project]
+name = "reportgen"
+version = "0.1.0"
+description = "Tiny HTML report generator"
+requires-python = ">=3.9"

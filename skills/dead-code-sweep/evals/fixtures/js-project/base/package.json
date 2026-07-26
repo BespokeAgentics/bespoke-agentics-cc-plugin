@@ -1,0 +1,12 @@
+{
+  "name": "notifier",
+  "version": "2.3.0",
+  "type": "module",
+  "private": true,
+  "bin": {
+    "notifier": "src/cli.js"
+  },
+  "scripts": {
+    "test": "node --test"
+  }
+}
