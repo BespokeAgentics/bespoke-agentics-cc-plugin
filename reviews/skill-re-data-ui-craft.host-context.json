@@ -1,0 +1,63 @@
+{
+  "generated_at": "2026-07-27",
+  "host_root": "/Users/quintinhenry/Documents/Projects/BESPOKE_AGENTICS/bespoke-agentics-plugin",
+  "host_state": "no-host",
+  "host_state_reason": "cwd is the plugin repo that authors data-ui-craft, not a data-dense application the skill operates on; the probe found no schema sources, no data stores, and only two peripheral package.json files belonging to internal tooling (apps/spec-interviewer, channels/wireframe-feedback)",
+  "probe": { "script": "skills/skill-reverse-engineer/scripts/host_probe.py", "exit": 0 },
+  "stack": [
+    {
+      "fact": "Claude Code plugin repo — markdown skills + commands, no application runtime that data-ui-craft would audit",
+      "evidence": "skills/*/SKILL.md, commands/*.md, no root package manifest"
+    },
+    {
+      "fact": "Two isolated Node sub-projects exist but are plugin infrastructure, not data-display surfaces",
+      "evidence": "apps/spec-interviewer/package.json, channels/wireframe-feedback/package.json"
+    },
+    {
+      "fact": "An Obsidian wiki vault is present — the wiki-first mandate applies to this run's output",
+      "evidence": "wiki/_schema/SCHEMA.md, wiki/_log.md"
+    }
+  ],
+  "data_schemas": [
+    {
+      "kind": "wiki-schema",
+      "path": "wiki/_schema/SCHEMA.md",
+      "summary": "frontmatter types + enums for the vault's page types — unrelated to data-ui-craft's domain (UI component/column definitions)"
+    }
+  ],
+  "data_stores": [],
+  "knowledge_sources": [
+    {
+      "question_the_target_answers": "which framework / styling primitive / data-grid library / class-merge + icon utilities the project uses",
+      "consumed_by_step": 2,
+      "answered_by": "nowhere in this host — the fact lives in whatever project data-ui-craft is invoked against",
+      "stability": "stable per host, but the target is a portable skill that meets many hosts",
+      "materialization_candidate": false,
+      "note": "KM1 reading rejected in favour of DS1: the answer is recomputable in under a second by a detection script, so a cached artifact would add a staleness surface for nothing. Filed as H1 (DS1) with the KM1 reading cross-referenced."
+    },
+    {
+      "question_the_target_answers": "which data-display surfaces exist and where",
+      "consumed_by_step": 4,
+      "answered_by": "nowhere in this host — grep-derived per invocation from the target project",
+      "stability": "volatile — changes with every commit to the audited project",
+      "materialization_candidate": false,
+      "note": "anti-list: volatile working state. Evidence gathering is still mechanical — filed as H1 (DS1), not KM."
+    },
+    {
+      "question_the_target_answers": "how each fix recipe adapts to a non-React/Tailwind stack (shadcn, MUI, AG Grid, Ant, Vue/Svelte/Angular, plain CSS)",
+      "consumed_by_step": 17,
+      "answered_by": "skills/data-ui-craft/references/patterns-react.md:32-35,61-63,99-101,124-125,153,181-183,228-229,251,279,300-301 (per-section Adapt notes) and :351-360 (Cross-stack quick map)",
+      "stability": "stable",
+      "materialization_candidate": true,
+      "note": "KM4 — skill-invariant decision table, host-independent, restated in eleven places inside the skill. Filed as M1."
+    },
+    {
+      "question_the_target_answers": "which hex values encode each severity level in the HTML report",
+      "consumed_by_step": 11,
+      "answered_by": "skills/ux-audit/references/report-format.md:12-16 (the cited-but-unlinked origin)",
+      "stability": "stable",
+      "materialization_candidate": true,
+      "note": "KM5 — the target asserts 'the color system matches the plugin's ux-audit skill' (references/report-format.md:5) while carrying an uncited verbatim copy at :9-15 and :81-86. Verified identical on 2026-07-27; no citation and no check exist to keep it that way. Filed as L1."
+    }
+  ]
+}

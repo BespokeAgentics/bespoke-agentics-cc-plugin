@@ -1,11 +1,38 @@
 ---
 type: log
-updated: 2026-07-22
+updated: 2026-07-27
 ---
 
 # Wiki Operation Log
 
 Chronological record of all bootstrap, maintenance, and schema evolution operations.
+
+---
+
+## 2026-07-27 — Skill audit — skill-reverse-engineer run against data-ui-craft
+
+**Operation**: `/bespokeagentics:skill-reverse-engineer skills/data-ui-craft --mode audit` — read-only determinism audit. Nothing in the target was modified.
+
+**Verdict**: 🟡 improvisation-dependent. Of 20 reconstructed steps, **0 are owned by a bundled artifact and 12 are mechanical work the model re-derives every run**. The judgment layer is strong (stable-ID `DF*`/`PD*`/`IU*` rule catalog with detection cues + default severities, an explicit calibration section, 15 real `.tmpl` files, a literal markdown report template, 0 ALL-CAPS directives, correct progressive disclosure, a properly gated destructive step); the mechanical layer does not exist — `skills/data-ui-craft/` has no `scripts/` directory.
+
+**Findings**: 0 CRITICAL · 4 HIGH · 5 MEDIUM · 3 LOW.
+- **H1 (DS1)** stack detection + surface discovery as prose (`SKILL.md:77-109`) — the audit's *scope* varies run to run → `detect_stack.py`, `find_surfaces.py`
+- **H2 (DS4)** `templates/index.ts.tmpl:5-21` exports 13 modules a partial scaffold won't have written, against "write only the primitives that are actually needed" (`SKILL.md:168`) → `scaffold_kit.py` generating the barrel from the selected set
+- **H3 (TP2)** 118-line HTML report skeleton retyped every run (`references/report-format.md:72-189`) → `assets/audit-report.html` + `render_report.py`
+- **H4 (CT1)** findings never leave context — counts tallied by the model, md/html written independently, `implement` re-scans by design (`SKILL.md:153-154`) → `./data-ui-craft-audit.json` + `assets/rules.json`
+- **M1 (KM4)** cross-stack adapter mapping stated 11× and already divergent · **M2 (AM3)** `{{CN}}` contract contradicts itself across 3 files · **M3 (VF1)** layout sanity pass = 5 decidable conditions, no check, optional trigger · **M4 (AM2)** no degradation section for tsc/linter/browser · **M5 (CT3)** no argument grammar · **L1 (KM5)** severity palette is an uncited copy of `ux-audit`'s (verified identical today, no drift check) · **L2 (RB2)** two instructions cite an authoring-time conversation no run can see · **L3 (RB5)** fixed root-level report paths silently overwrite the prior audit
+
+**Essential-judgment register** (8 entries — the AI-reliance that must stay): applying detection patterns as *proxies*, severity calibration, data-type inference from column defs, respecting deliberate product choices, frequency × importance placement, PM-facing prose, in-place fix application, Opportunity selection.
+
+**Host state**: `no-host` — the cwd is the plugin repo that authors the skill, not a data-dense app it operates on, so KM1–KM3 were not gradeable; both candidate host facts failed the materialization test on their own merits regardless (stack = recomputable in <1s → runtime script; surfaces = volatile working state → anti-list).
+
+**Files added**:
+- `reviews/skill-re-data-ui-craft.md` — the read-only report
+- `reviews/skill-re-data-ui-craft.host-context.json` — host-state sidecar + `knowledge_sources` worklist
+
+**Corrections made during the run**: `inventory.py` reported 1 broken internal reference — verified false positive (its `REF_PATH` regex truncates `templates/README.md.tmpl` at `.md`; the file exists). The target has 0 broken references. Logged as a defect in the *auditing* skill, out of scope for this run.
+
+**Not executed**: the 13 `.tsx.tmpl` files were reviewed statically — no React/TypeScript toolchain was exercised, so H2's barrel mismatch is a reading of the template against `SKILL.md:168`, not an observed `tsc` failure.
 
 ---
 
