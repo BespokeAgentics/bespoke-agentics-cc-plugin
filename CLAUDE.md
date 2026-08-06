@@ -415,6 +415,33 @@ the dead code — the skill's wins are **governance** (no silent deletion of com
 unprompted commits, everything recoverable). Distinct from `repo-audit` (reports, never edits) and
 `simplify`-style cleanups (style, not deadness): this one **deletes proven-dead code safely**.
 
+### When to Use the Defect-Intake Command
+
+| Situation | Command |
+|-----------|---------|
+| A defect surfaced mid-session (bug, missing test, swallowed error, contract violation, gap) and it needs proper disposition instead of a note in the summary | `/bespokeagentics:defect-intake '<defect description, file:line, or failing output>'` |
+
+The Defect-Intake command exists because **noting a defect is not resolving a defect** — a finding
+that survives into a session summary, a `TODO`, or a "future work" bullet has been deferred, and the
+next session inherits a codebase whose known problems are invisible. It is **user-invoked only**:
+deciding a defect is worth stopping for is the operator's call, so the skill never self-triggers on
+the mere mention of a bug. The sequence is capture → **verify before editing** (an unreproduced
+defect is a hypothesis; the skill guards explicitly against the *phantom defect* — code that looks
+wrong but is load-bearing — and against fixing the first plausible root cause rather than the actual
+one) → **classify by blast radius, never by authorship** (fix-now / fold-into-current-change /
+escalate-to-user; "we didn't introduce it" is not a disposition) → baseline the repo's **own gates**
+so pre-existing red is known before you can misattribute it → **write the failing test first** and
+watch it fail, because a test written after the fix passes immediately and proves nothing →
+**narrowest fix** that turns it green (the adjacent cleanup is its own item) → re-run gates against
+the baseline → document symptom/root cause/fix/**why it was wrong** where that repo keeps durable
+knowledge (`references/documentation-targets.md` resolves wiki vs. ADR vs. changelog vs.
+comment-plus-test) → resume with an honest account. Two hard lines: **escalation means stopping and
+asking in the conversation now** — a TODO, a ticket, or a handoff bullet is deferral wearing
+escalation's clothes — and **a failing test is never deleted, skipped, or loosened to reach green**,
+because green achieved by silencing the alarm is worse than red. Never commits. Distinct from
+`repo-audit` and `dead-code-sweep`, which *hunt* for problems across a scope: this one dispositions
+a **single known defect** and does not go looking for more.
+
 ### When to Use the Skill-Reverse-Engineer Command
 
 | Situation | Command |
@@ -551,6 +578,7 @@ When assessing features or making decisions, use the standard color system:
     │  ├─ data-ui-craft/              # Data-dense UI audit + fixes + React/Tailwind primitives kit
     │  ├─ xstate-refactor/            # Feature state logic + UI → XState v5 machine/statechart/actors
     │  ├─ dead-code-sweep/            # Post-session dead-code cleanup: diff-seeded, gated waves, tiered confirmation, regression-proofed
+    │  ├─ defect-intake/              # Known defect → verify, classify by blast radius, failing-test-first fix, document, resume (user-invoked)
     │  ├─ skill-reverse-engineer/     # Target skill → determinism audit (DS/TP/CT/VF/AM/RB/KM + host grounding) → gated refactor or hardened new version
     │  ├─ orchestrate/                # Plan/task → gated multi-agent implementation (Fable orchestrates, Opus/Sonnet implement)
     │  ├─ workstream-orchestrate/     # Plan → kickoff contract → sequential per-WS code→validate→commit (Workflow) + hard-gate proofs

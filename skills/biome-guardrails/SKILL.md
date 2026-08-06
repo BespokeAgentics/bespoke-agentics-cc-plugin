@@ -1,10 +1,14 @@
 ---
 name: biome-guardrails
-description: "Install Biome.js + sidecar ESLint as strict AI-code guardrails in a JS/TS project. Triggers: 'add Biome', 'set up linting', 'enforce code quality', 'lint guardrails'."
+description: "Install Biome.js + sidecar ESLint as strict AI-code guardrails in a JS/TS project, OR audit an existing codebase for weak-typing debt and install ratchet-based enforcement that blocks new debt without breaking the build. Use for: 'add Biome', 'set up linting', 'enforce code quality', 'lint guardrails', 'audit typing', 'find any usage', 'no-explicit-any', 'type ratchet', 'harden types', 'stop huge files', 'file size limit', or when weak types / oversized files slipped through review and the user wants it to never happen again."
 ---
 
 <objective>
-Set up Biome.js with strict, enforced code quality rules designed to constrain AI-generated code. Installs Biome with native rules (complexity, correctness, style, suspicious), a sidecar ESLint config for structural rules Biome does not yet cover (line limits, param counts, no-comments), package.json lint scripts, and optional Claude Code hooks for config protection and real-time lint feedback on edits.
+Two modes, one goal: enforced code quality gates.
+
+**Greenfield install** — set up Biome.js with strict rules designed to constrain AI-generated code: native rules (complexity, correctness, style, suspicious), a sidecar ESLint config for structural rules Biome does not cover (line limits, param counts, no-comments), package.json lint scripts, and optional Claude Code hooks for config protection and lint-on-edit feedback.
+
+**Brownfield audit + ratchet** — for a codebase that already has debt: audit the enforcement holes (linters disabled per directory, plugins loaded with zero rules, no file-size cap anywhere), measure the debt (`any` counts, oversized files, per-flag compiler-strictness costs), then install ratchet guards that are green on day one and block only NEW debt. Baselines only go down. Existing configs are never overwritten.
 </objective>
 
 <quick_start>
@@ -28,6 +32,16 @@ Custom source directory:
 ```
 /bespokeagentics:biome-guardrails --src app/
 ```
+
+Brownfield: read-only audit of typing debt and enforcement holes:
+```
+/bespokeagentics:biome-guardrails --audit
+```
+
+Brownfield: audit, then install ratchet enforcement (no config overwrites):
+```
+/bespokeagentics:biome-guardrails --ratchet
+```
 </quick_start>
 
 <input>
@@ -36,9 +50,37 @@ Parse from `$ARGUMENTS`:
 - `--no-eslint` (optional): Skip the sidecar ESLint config and its dependencies
 - `--no-hooks` (optional): Skip Claude Code hook setup
 - `--src <path>` (optional): Source directory for ESLint to target (default: `src/`)
+- `--audit` (optional): Brownfield mode, report only. Measure debt and enforcement holes; change nothing.
+- `--ratchet` (optional): Brownfield mode. Audit, then install ratchet guards, baselines, and ring wiring.
+- `--max-lines <n>` (optional): File-size cap for ratchet mode (default: 1500)
+- `--include-tests` (optional): Count test files in the type ratchet (default: production code only)
 
-If `$ARGUMENTS` is empty, install everything with defaults.
+If `$ARGUMENTS` is empty, resolve the mode per <mode_selection>.
 </input>
+
+<mode_selection>
+
+`--audit` or `--ratchet` selects brownfield mode explicitly. Otherwise decide
+from what Phase 1 discovery finds:
+
+- **Greenfield signals**: no lint config, or a young project with few sources
+  and near-zero violations. → Run phases 2–8 below (the installer).
+- **Brownfield signals**: an existing `biome.json`/ESLint config, a mature
+  tree, hundreds of violations if strict rules were applied, directories with
+  linting disabled, an in-flight refactor in `git status`. → Brownfield mode.
+- **Ambiguous** (config exists but the tree is small and nearly clean): ask
+  the user with AskUserQuestion — overwrite-install versus audit+ratchet
+  changes what happens to their existing configs, so it is their call.
+
+In brownfield mode, read `references/brownfield-ratchet.md` and follow its
+phases B1–B7 instead of phases 2–8. The bundled guard scripts it installs are
+`scripts/type-ratchet.mjs` and `scripts/max-file-lines.mjs`; ring wiring is in
+`references/ring-wiring.md`. `--audit` stops after phase B1's report.
+
+The modes compose: a brownfield repo that later wants the full strict rule
+set can run the greenfield install once its ratchet counts reach zero.
+
+</mode_selection>
 
 <phase_1 name="Project Discovery">
 
@@ -358,7 +400,9 @@ For the full rule coverage matrix (which rules are Biome native vs ESLint sideca
 
 - **ALWAYS detect the package manager** — never assume npm
 - **ALWAYS verify after install** — run the lint tools to confirm they work
-- **Overwrite configs when invoked** — this command represents an intentional setup
+- **Overwrite configs only in greenfield install mode** — that invocation represents an intentional setup. Brownfield mode never overwrites an existing config and never edits source files.
+- **Ratchet guards never write** — no `--fix`, no formatter. A guard that rewrites bytes has broken frozen work before; these only read and report.
+- **Never trust a green guard you have not seen fail** — brownfield verification injects a violation and confirms exit 1 before reporting success.
 - **Merge hooks, NEVER overwrite** — respect existing hook configurations
 - **Report everything** — the user should know exactly what was created and changed
 
@@ -366,12 +410,20 @@ For the full rule coverage matrix (which rules are Biome native vs ESLint sideca
 
 <success_criteria>
 
-The skill is complete when ALL of the following are true:
+**Greenfield install** is complete when ALL of the following are true:
 
 1. `biome.json` exists at project root with all guardrail rules and `biome check` exits cleanly on it
 2. `package.json` has `lint`, `lint:fix`, `format`, and `ci` scripts
 3. If ESLint sidecar was installed: `eslint.ai-guardrails.mjs` exists at project root and `eslint --config eslint.ai-guardrails.mjs` runs without config errors
 4. If hooks were installed: `.claude/scripts/protect-lint-config.sh` and `.claude/scripts/lint-on-edit.sh` are present and executable, and `.claude/settings.local.json` has the hook registrations
 5. Summary report was printed showing all created files and available scripts
+
+**Brownfield ratchet** is complete when ALL of the following are true:
+
+1. The audit report was printed with measured numbers (debt counts, enforcement holes, per-flag compiler costs)
+2. Both guard scripts are copied into the project, both baselines are initialized and committed, and `lint:types` / `lint:filesize` package scripts exist
+3. Both guards exit 0 on the current tree, and every mutation test in phase B6 produced the expected failure
+4. Guards are wired into the detected git-hook manager and CI, at the warn/block level the user chose
+5. No pre-existing config was overwritten and no source file was edited (`--audit` mode: nothing was written at all)
 
 </success_criteria>
