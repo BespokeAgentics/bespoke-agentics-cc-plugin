@@ -1,5 +1,5 @@
 ---
-name: new-micro
+name: microdots-new-micro
 description: Scaffold a new micro-app end to end — runs the generator, completes the wiring steps it only prints (bun install, tsconfig path, vitest alias, host registry + slot), and, given a feature brief, ports matching prior art from docs/reuse-catalog.md in the same run.
 disable-model-invocation: true
 ---

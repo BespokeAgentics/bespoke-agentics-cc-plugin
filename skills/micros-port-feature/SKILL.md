@@ -1,5 +1,5 @@
 ---
-name: port-feature
+name: microdots-port-feature
 description: >
   Extract a feature from an existing application and port it into a standalone micro-app in the
   Effect/Foldkit micros workspace. Use whenever someone says "port X into a micro", "extract this
@@ -266,21 +266,21 @@ app's fate).
 
 ## Degradation matrix
 
-| Missing | Behavior |
-|---|---|
-| Browser tools unavailable | Skip Phase 2; derive the UX inventory from code; label every UX claim "not visually verified"; continue |
-| No running app, none startable with consent | Same as above — never simulate a walk from source |
-| Login wall the user cannot clear | Inventory what is reachable; unreached states listed as "not walked" with the reason |
-| Native dialog freezes the extension | Ask the user to dismiss it in the browser, re-run `tabs_context_mcp`, resume |
-| No micros workspace found or confirmed | Offer trace + inventory only, written to `--out` or `<source>/plans/ports/<slug>/`, labeled partial; Phases 3–7 need a real target |
-| spec-elicitation unavailable | Leave the seeded spec + decision register; state that the interview still needs to run |
-| Non-interactive run hits a decision point | Record the recommendation as `assumed — not confirmed` in the register; continue; never silently decide |
+| Missing                                     | Behavior                                                                                                                           |
+| ------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------- |
+| Browser tools unavailable                   | Skip Phase 2; derive the UX inventory from code; label every UX claim "not visually verified"; continue                            |
+| No running app, none startable with consent | Same as above — never simulate a walk from source                                                                                  |
+| Login wall the user cannot clear            | Inventory what is reachable; unreached states listed as "not walked" with the reason                                               |
+| Native dialog freezes the extension         | Ask the user to dismiss it in the browser, re-run `tabs_context_mcp`, resume                                                       |
+| No micros workspace found or confirmed      | Offer trace + inventory only, written to `--out` or `<source>/plans/ports/<slug>/`, labeled partial; Phases 3–7 need a real target |
+| spec-elicitation unavailable                | Leave the seeded spec + decision register; state that the interview still needs to run                                             |
+| Non-interactive run hits a decision point   | Record the recommendation as `assumed — not confirmed` in the register; continue; never silently decide                            |
 
 ## Reference files
 
-| File | Read when |
-|---|---|
-| `references/tracing.md` | Phase 1 — the five lanes, agent prompts, `trace.md` format, boundary-analysis taxonomy |
-| `references/visual-inventory.md` | Phase 2 — tool loading, tab discipline, login gate, state screenshots, network capture, gotchas, `ui-inventory.md` format |
-| `references/port-map.md` | Phases 3–4 — catalog matching, surface design, contract drafting, TEA translation, dispositions, decision register |
-| `references/spec-and-execution.md` | Phases 5–7 — spec seeding map, elicitation handoff, execution gate, waves, verify, report |
+| File                               | Read when                                                                                                                 |
+| ---------------------------------- | ------------------------------------------------------------------------------------------------------------------------- |
+| `references/tracing.md`            | Phase 1 — the five lanes, agent prompts, `trace.md` format, boundary-analysis taxonomy                                    |
+| `references/visual-inventory.md`   | Phase 2 — tool loading, tab discipline, login gate, state screenshots, network capture, gotchas, `ui-inventory.md` format |
+| `references/port-map.md`           | Phases 3–4 — catalog matching, surface design, contract drafting, TEA translation, dispositions, decision register        |
+| `references/spec-and-execution.md` | Phases 5–7 — spec seeding map, elicitation handoff, execution gate, waves, verify, report                                 |

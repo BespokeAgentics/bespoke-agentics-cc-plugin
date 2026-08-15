@@ -1,5 +1,5 @@
 ---
-name: deploy
+name: microdots-deploy
 description: Deploy a built artifact to a hosting target. Handles the host shell or an individual micro-app bundle. Cloudflare Workers static assets is the implemented target; the flow is target-agnostic so others can be added.
 disable-model-invocation: true
 ---
@@ -97,8 +97,8 @@ Each micro-app splits its service into three files:
 ```ts
 const { handler } = HttpRouter.toWebHandler(RpcAppLayer, {
   middleware: HttpMiddleware.cors(),
-})
-export default { fetch: (request: Request) => handler(request) }
+});
+export default { fetch: (request: Request) => handler(request) };
 ```
 
 `HttpRouter.toWebHandler` takes the Layer directly and returns a standard
@@ -147,7 +147,7 @@ through the micro-app's own RPC client rather than hand-rolling the NDJSON
 protocol with curl:
 
 ```ts
-Effect.provide(makeXClientLive('http://localhost:8787'))
+Effect.provide(makeXClientLive("http://localhost:8787"));
 ```
 
 Confirm CORS too: `curl -i -X OPTIONS localhost:8787/rpc -H "Origin: <host>"`.

@@ -1,5 +1,5 @@
 ---
-name: verify
+name: microdots-verify
 description: Verify a change is actually done — typecheck, lint, test, build every micro-app bundle, then boot the system and confirm in a browser that the micro-apps render and poll their services. Use before reporting any change to this repo complete.
 ---
 
