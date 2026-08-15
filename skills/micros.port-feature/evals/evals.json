@@ -1,0 +1,20 @@
+{
+  "skill_name": "port-feature",
+  "notes": "Both evals run non-interactively (--no-browser --dossier-only): the browser walk and the spec-elicitation interview cannot run in a subagent, so evals grade phases 0-5 — trace, derived UI inventory, micros grounding, port map, decision register, seeded spec. Fixture: evals/fixtures/teamboard (setup.sh copies it to a work dir).",
+  "evals": [
+    {
+      "id": 1,
+      "name": "status-board-owner-port",
+      "prompt": "Port the team status board (the feature where teammates post what they're up to and see everyone's latest status) out of the TeamBoard app at <fixture>/source-app into a standalone micro. The micros workspace is <fixture>/micros-workspace. No browser is available and there is no user to interview: run with --no-browser --dossier-only and produce the complete port dossier.",
+      "expected_output": "Dossier at <fixture>/micros-workspace/docs/ports/<slug>/ containing trace.md (file:line-cited across surface/behavior/data/API/deps, boundary analysis incl. the activity_log cross-write, session auth, VITE_API_URL env, Toast shell dependency), ui-inventory.md labeled not visually verified, port-map.md (attributes/events surface, contract draft with 422 validation error, TEA sketch with loading/loaded/empty/error/refreshing states, dispositions covering all feature files, catalog matches P2+P3, decision register with data-ownership/auth/deploy rows marked open or assumed), spec.md using spec-elicitation template headers with TODO markers. Source app byte-identical; micros workspace untouched outside docs/ports/.",
+      "files": ["fixtures/teamboard"]
+    },
+    {
+      "id": 2,
+      "name": "activity-feed-reader-port",
+      "prompt": "Port the activity feed (the 'Activity' page listing recent team events) out of the TeamBoard app at <fixture>/source-app into a standalone micro. The micros workspace is <fixture>/micros-workspace. No browser is available and there is no user to interview: run with --no-browser --dossier-only and produce the complete port dossier.",
+      "expected_output": "Dossier as in eval 1, but the boundary analysis must recognize the feed is a pure READER of data it does not own (activity_log written by the status feature's POST handler; joins users and statuses) — the data-ownership decision register row is the crux and must present own-the-log/import/keep-reading options rather than assuming ownership. Catalog match P3 at most (no persistence of its own unless ownership chosen). Honest derived-from-code UI inventory.",
+      "files": ["fixtures/teamboard"]
+    }
+  ]
+}

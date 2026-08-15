@@ -1,0 +1,14 @@
+{
+  "name": "effect-microapps",
+  "private": true,
+  "workspaces": ["apps/*", "micros/*", "packages/*"],
+  "scripts": {
+    "dev": "bun scripts/dev.ts",
+    "build": "bun scripts/build.ts",
+    "typecheck": "tsc --noEmit",
+    "lint": "oxlint",
+    "test": "vitest run",
+    "check": "bun run typecheck && bun run lint && bun run test",
+    "new:micro": "bun scripts/new-micro.ts"
+  }
+}

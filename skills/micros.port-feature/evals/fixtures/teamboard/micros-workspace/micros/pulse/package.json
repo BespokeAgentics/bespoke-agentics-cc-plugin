@@ -1,0 +1,13 @@
+{
+  "name": "@micro/pulse",
+  "private": true,
+  "type": "module",
+  "microApp": { "tags": ["pulse-panel"] },
+  "dependencies": { "@kit/theme": "workspace:*" },
+  "scripts": {
+    "dev:service": "bun --watch service/main.ts",
+    "dev:bundle": "vite build --watch",
+    "build": "vite build",
+    "start": "bun service/main.ts"
+  }
+}

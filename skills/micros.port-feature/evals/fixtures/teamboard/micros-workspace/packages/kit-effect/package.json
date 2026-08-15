@@ -1,0 +1,11 @@
+{
+  "name": "@kit/effect",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts",
+    "./service": "./src/service.ts",
+    "./worker": "./src/worker.ts",
+    "./secret": "./src/secret.ts"
+  }
+}
