@@ -1,5 +1,5 @@
 ---
-name: "bespokeagentics:prune-node-modules"
+name: "prune-node-modules"
 description: "Reclaim disk space by finding and deleting stale node_modules directories. Scans a projects folder (default ~/Documents/Projects), flags every node_modules whose project has not been touched in N days (default 30 — by source-file edit OR git commit, ignoring node_modules/.git/build-output churn), and guides you through a dry-run review before any permanent deletion. Correctly handles monorepos, git worktrees, paths with spaces, and macOS iCloud snapshot accounting."
 argument-hint: "[--dir <path>] [--days N] [--apply] [--trash] [--log <file>]"
 allowed-tools: Bash, Read, AskUserQuestion

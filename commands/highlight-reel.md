@@ -1,5 +1,5 @@
 ---
-name: "bespokeagentics:highlight-reel"
+name: "highlight-reel"
 description: "Turn a long app-demo screencast into a short, narrated, subtitled highlight video. Extracts frames + narration, grounds every feature shown in this repo's real source (file:line) so the voiceover is technically accurate, proposes the highlight moments, runs an AskUserQuestion interview to confirm the cut / duration / voice / audio, writes a narration script + subtitles, synthesizes a voiceover with ElevenLabs TTS, and renders the reel with ffmpeg. The creation companion to video-to-deliverables (docs) — this outputs a new .mp4. For .mp4/.mov/.webm/.gif demos of the app open in this session."
 argument-hint: "'<video-path>' [reel-label] [interval] [--duration <sec>] [--voice <id>] [--audio duck|keep|mute] [--no-subs] [--no-ground] [--no-tts] [--out <dir>] [--skip-dedup] [--skip-transcribe] [--force]"
 allowed-tools: Skill(screencast-highlight-reel), Agent, AskUserQuestion, Bash, Read, Write, Edit, Glob, Grep

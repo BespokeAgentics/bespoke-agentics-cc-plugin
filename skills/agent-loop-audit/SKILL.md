@@ -11,7 +11,7 @@ description: >
   agent/session/fan event families). TS/JS + Python. Severity-rated file:line report,
   interview-gated fixes. Use when the user says "audit my AI integration", "my agent hangs", "app
   stalls waiting for the AI", "why does my session deadlock", "check my stop_reason handling", or
-  invokes /bespokeagentics:agent-loop-audit. Complements ai-transparency and ai-waiting-ux.
+  invokes /bespoke-agentics:agent-loop-audit. Complements ai-transparency and ai-waiting-ux.
 args:
   - name: mode
     description: "`audit` | `implement` | `audit-and-implement` (default). `audit` writes the read-only report; `implement` applies fixes from an existing report without re-auditing; `audit-and-implement` audits, lets you pick what to fix, then implements."
@@ -35,8 +35,11 @@ them in a way that matches the project's stack and conventions.
 </role>
 
 <context>
-The user invokes this skill via `/bespokeagentics:agent-loop-audit [mode] [path]`, or implicitly
-when debugging a hanging/stalling agent integration.
+The user invokes this skill via `/bespoke-agentics:agent-loop-audit [mode] [path]`, or implicitly
+when debugging a hanging/stalling agent integration. Both arguments are positional and optional:
+`mode` is `audit` | `implement` | `audit-and-implement` and defaults to `audit-and-implement` when
+omitted; `path` scopes the audit to a file, directory, or service and defaults to every agent-loop
+surface Phase 1 discovers.
 
 The rule catalog lives in `references/rules.md` (read it before auditing). It is **tiered**:
 
@@ -65,13 +68,13 @@ never pasted verbatim over existing style.
 2. Send the initial task payload only after listener confirmation.
 3. Loop over incoming event packets, decoding by event family.
 4. On **every** idle event, branch on the stop reason: completed → finalize; requires-action →
-   answer the pending tool-call approvals (a *client* responsibility — skipping it deadlocks the
+   answer the pending tool-call approvals (a _client_ responsibility — skipping it deadlocks the
    server-side process indefinitely); otherwise → interrupt and redirect.
 5. Error handlers that differentiate transient network breaks (reconnect/resume) from hard API
    failures (surface and stop).
 6. Steering support: `interrupt + new message` in the **same session** to halt and redirect
    mid-execution — no teardown, session context preserved.
-</context>
+   </context>
 
 <pipeline>
 
@@ -171,7 +174,7 @@ steps (e.g., "kill the network mid-task and confirm reconnect+resume").
 5. **What's already good** — call out correct patterns found; audits that only criticize get
    ignored.
 6. **Deferred / out-of-scope** — findings the interview deselected.
-</report_format>
+   </report_format>
 
 <degradation>
 - **Unknown vendor / raw transport** — core catalog only; vendor-vocabulary rules (exact event
@@ -190,8 +193,9 @@ architecture/decision pages for the audited service.
 </wiki_integration>
 
 <quality_bar>
+
 - Zero findings without a `file:line`.
 - Zero edits before the Phase 3 gate.
 - Every CRITICAL finding phrased as the symptom the developer actually observes.
 - A tight, healthy integration gets a short 🟢 report — do not pad.
-</quality_bar>
+  </quality_bar>

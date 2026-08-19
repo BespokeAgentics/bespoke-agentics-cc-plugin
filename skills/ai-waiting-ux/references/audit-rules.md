@@ -115,7 +115,7 @@ Write findings to `./ai-waiting-ux-audit.md`:
 {generated file list with target paths}
 
 ## Suggested next step
-Run `/bespokeagentics:ai-waiting-ux scaffold` to generate the missing modules.
+Run `/bespoke-agentics:ai-waiting-ux scaffold` to generate the missing modules.
 ```
 
 Print to chat: count by severity (e.g. "3 critical, 7 blocking, 2 warning, 1 nit") plus the top 3 findings.

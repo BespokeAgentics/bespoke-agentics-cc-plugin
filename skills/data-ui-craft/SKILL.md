@@ -15,7 +15,7 @@ description: >
   "this UI looks off", "my data table is hard to read", "add tooltips / copy / empty states",
   "right-align these numbers", "turn these statuses into chips", "hide the secondary actions",
   "improve onboarding", "progressive disclosure", "spectrum of explicitness", or invoke
-  `/bespokeagentics:data-ui-craft`. Stack-aware (detects the project's framework) with React +
+  `/bespoke-agentics:data-ui-craft`. Stack-aware (detects the project's framework) with React +
   Tailwind worked examples and a reusable headless primitives kit. Complements `ux-audit`
   (Nielsen/Norman heuristics) — this skill is the opinionated data-display craft layer.
 args:
@@ -40,7 +40,7 @@ beginner's does not.
 </role>
 
 <context>
-The user invokes this skill via `/bespokeagentics:data-ui-craft [mode] [path]`, or implicitly when
+The user invokes this skill via `/bespoke-agentics:data-ui-craft [mode] [path]`, or implicitly when
 they're working on any data-display surface. Everything this skill enforces rolls up to three
 pillars distilled from the source teaching. Read `references/pillars.md` for the full "why"; the
 short version:
@@ -50,12 +50,12 @@ short version:
    chips; numbers are right-aligned with tabular figures so digits line up by place value; long
    free-text is truncated with a way to see the rest; inactive/deactivated records are visually
    de-emphasized; and data whose nature is temporal (an event sequence) belongs in a timeline or
-   chart, not a time-sorted table. The test: could you tell what *kind* of data a column holds with
+   chart, not a time-sorted table. The test: could you tell what _kind_ of data a column holds with
    the labels removed? If not, the form isn't doing its job.
 
 2. **The right things are hidden until needed.** Not every control deserves equal prominence. Place
    each action on a **spectrum of explicitness** — always-visible (high), behind a popover/menu
-   (medium), or revealed on hover/swipe (low) — according to how *frequently* and how *importantly*
+   (medium), or revealed on hover/swipe (low) — according to how _frequently_ and how _importantly_
    it's used. **Progressive disclosure** sequences functionality from most to least important so the
    surface stays calm. Onboarding follows the same rule: a sequenced checklist or contextual tips
    beats one overwhelming modal users dismiss and forget.
@@ -81,7 +81,7 @@ Before judging anything, learn the environment so fixes match it. Inspect:
 1. **Framework** — React / Next, Vue / Nuxt, Svelte / SvelteKit, Angular, or server-rendered
    HTML (check `package.json`, file extensions, imports).
 2. **Styling primitive** — Tailwind? CSS Modules? `styled-components` / `emotion`? vanilla-extract?
-   A component library (shadcn/ui, MUI, Chakra, Ant, Mantine, Radix)? Capture the *dominant* one —
+   A component library (shadcn/ui, MUI, Chakra, Ant, Mantine, Radix)? Capture the _dominant_ one —
    every fix and every scaffolded primitive must match it.
 3. **Table / data layer** — a data-grid library (TanStack Table, AG Grid, MUI DataGrid, Ant Table)
    or hand-rolled `<table>` / mapped `<div>`s? This decides whether a fix is a column-def option or
@@ -101,7 +101,7 @@ Find what to evaluate. Grep for the shapes that hold data:
 - Lists and cards: components named `List`, `Row`, `Item`, `Card`, `Cell`, `Feed`, `Timeline`.
 - Dashboards / detail panels: `Dashboard`, `Panel`, `Detail`, `Drawer`, `Stat`, `Metric`, `KPI`.
 - Column / field definitions: arrays of `{ header, accessor, render, cell }` or `<th>` lists — these
-  tell you each field's *data type*, which is the heart of Pillar 1.
+  tell you each field's _data type_, which is the heart of Pillar 1.
 
 For each surface, record `file:line`, the columns/fields and their apparent data types (categorical,
 numeric, currency, date/time, free text, id/code, boolean/status), and the actions present (row
@@ -110,12 +110,14 @@ it. If nothing data-like is found, tell the user and ask them to point at the su
 
 ## Phase 1 — Mode dispatch
 
-Read the `mode` arg (or infer from the command). If ambiguous, ask via AskUserQuestion.
+Arguments arrive positionally as `[mode] [path]`. A first token of `audit` / `implement` /
+`audit-and-implement` is the mode; anything else is the `path`. Read the `mode` arg (or infer from
+the invocation). If ambiguous, ask via AskUserQuestion.
 
-| Mode | Goes to |
-|------|---------|
-| `audit` | [Mode: audit](#mode-audit) only |
-| `implement` | [Mode: implement](#mode-implement) only |
+| Mode                            | Goes to                                                 |
+| ------------------------------- | ------------------------------------------------------- |
+| `audit`                         | [Mode: audit](#mode-audit) only                         |
+| `implement`                     | [Mode: implement](#mode-implement) only                 |
 | `audit-and-implement` (default) | audit → present report → ask which to apply → implement |
 
 ## Mode: audit
@@ -129,7 +131,7 @@ Read the `mode` arg (or infer from the command). If ambiguous, ask via AskUserQu
    (`Critical` / `High` / `Medium` / `Low`), and a one-line fix pointer.
 3. Calibrate severity with the rules in `references/audit-rules.md` (§ Calibration). When torn
    between two levels, choose the lower — an over-alarming report loses trust. **One finding per
-   root cause:** 12 numeric columns all left-aligned is *one* High finding with 12 instances, not 12
+   root cause:** 12 numeric columns all left-aligned is _one_ High finding with 12 instances, not 12
    findings.
 4. Also collect **Opportunities** — good patterns already present worth amplifying, and high-value
    low-effort wins.
@@ -154,6 +156,7 @@ invoked directly as `implement`, run a quick scan against `references/audit-rule
 know what to fix, then confirm the set with the user before editing.
 
 For each accepted finding, classify the change:
+
 - **In-place edit** — the surface keeps its shape; you adjust a cell renderer, a column def, an
   alignment class, add a tooltip/copy affordance, gate an action behind hover, add an empty/error
   branch. This is the default and the bulk of the work.
@@ -167,14 +170,15 @@ If any accepted fix needs a primitive the project doesn't have, ask via AskUserQ
 scaffold the kit, and where (default `src/components/data-ui/`). Then read the relevant
 `templates/*.tmpl`, substitute tokens, and write only the primitives that are actually needed:
 
-| Pillar | Templates |
-|--------|-----------|
-| 1 — Data-driven form | `NumericCell.tsx.tmpl`, `Chip.tsx.tmpl`, `StatusChip.tsx.tmpl`, `TruncatedText.tsx.tmpl`, `DataRow.tsx.tmpl` |
-| 2 — Progressive disclosure | `Popover.tsx.tmpl`, `HoverActions.tsx.tmpl`, `OnboardingChecklist.tsx.tmpl` |
-| 3 — Invisible UI | `Tooltip.tsx.tmpl`, `CopyChip.tsx.tmpl`, `CommentIndicator.tsx.tmpl`, `TableStates.tsx.tmpl` |
-| Glue | `index.ts.tmpl` (barrel), `README.md.tmpl` (how the kit maps to the pillars) |
+| Pillar                     | Templates                                                                                                    |
+| -------------------------- | ------------------------------------------------------------------------------------------------------------ |
+| 1 — Data-driven form       | `NumericCell.tsx.tmpl`, `Chip.tsx.tmpl`, `StatusChip.tsx.tmpl`, `TruncatedText.tsx.tmpl`, `DataRow.tsx.tmpl` |
+| 2 — Progressive disclosure | `Popover.tsx.tmpl`, `HoverActions.tsx.tmpl`, `OnboardingChecklist.tsx.tmpl`                                  |
+| 3 — Invisible UI           | `Tooltip.tsx.tmpl`, `CopyChip.tsx.tmpl`, `CommentIndicator.tsx.tmpl`, `TableStates.tsx.tmpl`                 |
+| Glue                       | `index.ts.tmpl` (barrel), `README.md.tmpl` (how the kit maps to the pillars)                                 |
 
 Token substitutions (resolve from Phase 0):
+
 - `{{KIT_ROOT}}` — import path for the kit (default `@/components/data-ui`).
 - `{{CN}}` — the project's class-merge helper import (default a local `cn`; if none exists, the
   `index.ts` barrel exports a tiny fallback).
@@ -187,6 +191,7 @@ system or a duplicate of a component that already exists.**
 ### Phase 2c — Apply in-place fixes
 
 For each in-place edit:
+
 1. Re-read the file (don't trust a cached snippet).
 2. Apply the **minimum** change. Right-aligning a numeric column is a class change, not a rewrite.
 3. Preserve unrelated code, comments, and formatting — never reflow the whole file.
@@ -218,6 +223,7 @@ This keeps the destructive step (editing code) gated behind an explicit, informe
 ## Phase 3 — Verify
 
 After implementing, run (or instruct the user to run):
+
 - `npx tsc --noEmit` — type-check generated/edited code. Classify any failure: generated-code bug
   (fix the template) vs. integration point (tell the user where to wire).
 - The project's linter (`npx eslint` / `biome check` / `npx next lint`).
@@ -233,13 +239,13 @@ After implementing, run (or instruct the user to run):
 
 Read only what the current mode needs.
 
-| Question | Read |
-|----------|------|
-| Why are these three pillars the right frame, with worked examples? | `references/pillars.md` |
-| What exactly does the audit check, at what severity, and how do I detect each? | `references/audit-rules.md` |
-| How do I implement each fix in React/Tailwind (and adapt to other stacks)? | `references/patterns-react.md` |
-| What do the markdown + HTML reports look like? | `references/report-format.md` |
-| What do the scaffolded primitives look like? | `templates/*.tmpl` (+ `templates/README.md.tmpl`) |
+| Question                                                                       | Read                                              |
+| ------------------------------------------------------------------------------ | ------------------------------------------------- |
+| Why are these three pillars the right frame, with worked examples?             | `references/pillars.md`                           |
+| What exactly does the audit check, at what severity, and how do I detect each? | `references/audit-rules.md`                       |
+| How do I implement each fix in React/Tailwind (and adapt to other stacks)?     | `references/patterns-react.md`                    |
+| What do the markdown + HTML reports look like?                                 | `references/report-format.md`                     |
+| What do the scaffolded primitives look like?                                   | `templates/*.tmpl` (+ `templates/README.md.tmpl`) |
 
 ## Anti-patterns to refuse
 
@@ -249,7 +255,7 @@ Call these out when found, and never generate them:
   compare magnitudes. Right-align with tabular figures and a consistent format.
 - **Enums rendered as raw text** (`"active"`, `"PENDING"`) where a chip would let the eye group by
   category at a glance.
-- **Free-text columns with no truncation** that blow out row height / column width, *and*
+- **Free-text columns with no truncation** that blow out row height / column width, _and_
   truncation with no way to read the full value.
 - **A data container with only a happy path** — no empty, loading, or error state.
 - **Icon-only buttons with no tooltip / accessible label** — the user has to click to learn what a
@@ -274,7 +280,7 @@ Call these out when found, and never generate them:
 
 ## One-line summary
 
-Treat a data view as data first and decoration never: let each field's *type* choose its
+Treat a data view as data first and decoration never: let each field's _type_ choose its
 representation, rank every control by how often it's truly needed and hide the rest accordingly, and
 supply the invisible layer (tooltips, copy, indicators, and complete states) that makes the surface
 feel finished instead of flat.

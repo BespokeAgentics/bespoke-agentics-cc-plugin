@@ -1,5 +1,5 @@
 ---
-name: "bespokeagentics:funcspec-plan"
+name: "funcspec-plan"
 description: "Validate funcspec findings with the user and generate the implementation plan. Runs the Stage-2 validation interview (confirm features, resolve ambiguities, set priorities), then writes the functional spec, implementation plan, backlog-ready epics/stories, gap register, and traceability matrix. Ingests into the wiki when present and offers Jira/Confluence/Linear push when MCPs are connected. Runs funcspec-evaluate first if no profiles exist."
 argument-hint: "[<workspace>] [--out <dir>] [--push ask|none]"
 allowed-tools: Skill(funcspec), Agent, AskUserQuestion, Bash, Read, Write, Edit, Glob, Grep

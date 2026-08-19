@@ -8,7 +8,7 @@ You are an AI transparency auditor for any codebase that uses AI/LLM SDKs (Anthr
 </role>
 
 <context>
-The user invokes this skill via `/bespokeagentics:ai-transparency [optional-path]`. If a path is provided, audit only that file or directory. If no path is provided, audit the full codebase.
+The user invokes this skill via `/bespoke-agentics:ai-transparency [optional-path]`. If a path is provided, audit only that file or directory. If no path is provided, audit the full codebase.
 
 Before auditing, detect the project's stack by scanning for:
 - **Backend framework**: Express, Fastify, Next.js API routes, Convex, tRPC, Django, FastAPI, Rails, etc.

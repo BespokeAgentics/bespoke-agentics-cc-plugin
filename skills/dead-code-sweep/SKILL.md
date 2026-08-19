@@ -43,6 +43,8 @@ in the report. When in doubt, downgrade confidence, never up.
 
 ## Arguments
 
+Arguments arrive with the invocation and are parsed as:
+
 ```
 [scope] [--base <ref>] [--report-only] [--out <dir>]
 ```
@@ -52,18 +54,18 @@ in the report. When in doubt, downgrade confidence, never up.
   `project`. State the resolved scope and why before proceeding.
 - `--base <ref>` — base for `branch` scope. Default: merge-base with the default branch
   (`origin/HEAD`, falling back to `main`/`master`).
-- `--report-only` — full analysis, zero edits. Findings + evidence + what *would* be removed.
+- `--report-only` — full analysis, zero edits. Findings + evidence + what _would_ be removed.
 - `--out <dir>` — working directory for backup + report. Default `.dead-code-sweep/<UTC-timestamp>/`.
 
 ## Phase 0 — Scope and baseline
 
 **Resolve the change set.**
 
-| Scope | Change set |
-|-------|-----------|
+| Scope         | Change set                                                                          |
+| ------------- | ----------------------------------------------------------------------------------- |
 | `uncommitted` | `git diff HEAD` (staged + unstaged) plus untracked files (`git status --porcelain`) |
-| `branch` | `git diff <merge-base>..HEAD`, plus the working tree if dirty |
-| `project` | every tracked source file; the "change set" is the whole repo |
+| `branch`      | `git diff <merge-base>..HEAD`, plus the working tree if dirty                       |
+| `project`     | every tracked source file; the "change set" is the whole repo                       |
 
 **Discover the gates from the repo's own conventions** — never invent commands. Look, in order, at:
 `package.json` scripts (typecheck/tsc, lint, build, test), `Makefile`/`justfile` targets,
@@ -73,7 +75,7 @@ per-ecosystem table. Prefer the repo's named scripts over raw tool invocations �
 the project's flags.
 
 **Run the full gates once, now, before touching anything.** Record every failure verbatim. This
-baseline is what makes "no regressions" an honest claim later: a regression is a *new* failure
+baseline is what makes "no regressions" an honest claim later: a regression is a _new_ failure
 relative to this run, and a pre-existing failure is reported as pre-existing, never silently
 absorbed or silently fixed.
 
@@ -93,12 +95,12 @@ trace method, and the liveness checklist that Phase 2 depends on.
 
 **Diff-seeded (uncommitted and branch scope).** Walk the change set and ask, for each hunk:
 
-1. What references did this change *remove*? Each removed call/import/JSX-usage points at a symbol
+1. What references did this change _remove_? Each removed call/import/JSX-usage points at a symbol
    or file that may now be orphaned. Trace each: does anything else still reference it?
-2. What did this change *replace*? New code that supersedes an older sibling (renamed function,
+2. What did this change _replace_? New code that supersedes an older sibling (renamed function,
    rewritten component, v2 next to v1) often leaves the old one live-looking. Compare added symbols
    against similarly-named or similarly-shaped existing ones.
-3. What did this change leave *inside touched files*? Unused imports, unused locals, private
+3. What did this change leave _inside touched files_? Unused imports, unused locals, private
    functions with no remaining callers, newly commented-out blocks.
 4. What tests, mocks, fixtures, and snapshots exercised the code this session removed or renamed?
 5. What dependencies did the session's changes stop using (or add and abandon)? In diff scopes,
@@ -108,7 +110,7 @@ trace method, and the liveness checklist that Phase 2 depends on.
 **Tool-assisted, always.** If the ecosystem has native detectors (knip, ts-prune, ESLint
 `no-unused-vars`, `ruff --select F401,F811,F841`, vulture, `cargo machete`, compiler warnings —
 see `references/toolchain.md`), run them and intersect their output with your scope. Tool output is
-a *candidate list*, never a verdict — every hit still passes Phase 2. Never add dependencies to the
+a _candidate list_, never a verdict — every hit still passes Phase 2. Never add dependencies to the
 user's project to run a detector; ephemeral runners (`npx`, `bunx`, `uvx`) are fine, and skipping a
 tool that isn't cheaply runnable is fine too.
 
@@ -135,14 +137,14 @@ published-package roots, `.d.ts`); explicit keep-markers (`@keep`, `@public`, `@
 Then classify:
 
 - **High confidence — auto-remove.** All of: zero non-test references found by at least two
-  independent search strategies (e.g., a detector hit *and* your own grep sweep); no liveness
+  independent search strategies (e.g., a detector hit _and_ your own grep sweep); no liveness
   checklist match; deadness attributable to this scope's changes (diff scopes) or clearly
   established (project scope); gates exist and run. Its dedicated tests/mocks/snapshots join it in
   the same wave — they are one logical unit. Test-only-referenced code qualifies as high **when
   the change set itself removed its last production reference** — the diff is the author's
   expressed intent to migrate away, and the stale tests join the removal unit.
 - **Medium confidence — batch-confirm.** Dead by primary analysis but carrying one risk marker:
-  production code referenced *only* by its own tests where the diff shows no such intent (project
+  production code referenced _only_ by its own tests where the diff shows no such intent (project
   scope, or the code was already test-only before this session — it may be intended public API,
   or half-built work); exported from a package barrel or root; a generic
   name with near-miss string matches; a commented-out block (deleting comments is a judgment call);
@@ -162,7 +164,7 @@ Skip this phase entirely under `--report-only` (including auto-downgrade from a 
 **Back up before the first edit.** Create `<out>/backup/` and, before modifying or deleting any
 file, copy its pre-sweep version there under its relative path. Write a `.gitignore` containing `*`
 into `<out>/` so the sweep's own artifacts never pollute the user's status. This backup is what
-makes restore trivial for tracked *and* untracked files, without touching git state.
+makes restore trivial for tracked _and_ untracked files, without touching git state.
 
 **Git state is the user's.** Never commit, stage, stash, or switch branches. In `uncommitted`
 scope the user's session work is sitting in the working tree — the sweep's only legitimate edits
@@ -209,7 +211,7 @@ Write `<out>/report.md` and give the user a compact inline summary. The report c
 7. **Restore instructions** — the backup location and the literal copy command per unit, plus
    "restore everything": `cp -R <out>/backup/. <repo-root>/`.
 
-A clean session is a valid outcome: "nothing to sweep" plus the evidence you looked is a *good*
+A clean session is a valid outcome: "nothing to sweep" plus the evidence you looked is a _good_
 report. Don't pad it, and don't manufacture findings to seem thorough.
 
 If the project has a wiki vault, log the sweep per the project's conventions (`wiki/_log.md`).

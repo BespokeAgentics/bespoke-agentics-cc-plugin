@@ -1,5 +1,5 @@
 ---
-name: bespokeagentics:xstate-refactor
+name: xstate-refactor
 description: "Refactor a piece of functionality + its UI into an explicit XState v5 state machine, statechart, or actor system — with a code-grounded migration plan, a state↔UI coverage matrix, deterministic model-based tests, and a deprecation path for the old code. Use this whenever someone points at a feature and says 'convert this to XState', 'this component's boolean flags are out of control', 'turn this flow into a state machine/statechart', 'model this as actors', 'refactor this useState/useEffect soup', 'make impossible states impossible here', 'this wizard/checkout/upload/polling logic keeps breaking', or asks to migrate ad-hoc state logic (reducers, flag combinations, imperative orchestration, saga-like effects) into explicit states. It analyzes every code path and UI dependency of the target, designs the statechart, validates the model with an AskUserQuestion interview, then (on approval) implements the machine, wires the UI so every state and transition has a visible representation, generates deterministic path-coverage + UI state-coverage tests, installs XState v5 if missing, and deprecates the old code behind a verified checklist. Distinct from plan-review (audits a document) and data-ui-craft (display craft): this one restructures state LOGIC."
 ---
 
@@ -15,7 +15,7 @@ Three things make this skill valuable:
 
 - **The statechart already exists — implicitly.** Every `isLoading && !error`, every early return,
   every disabled button encodes a state the author had in mind. The analysis phase's job is
-  archaeology, not invention: enumerate the *actual* reachable states (including the buggy,
+  archaeology, not invention: enumerate the _actual_ reachable states (including the buggy,
   unintended ones), the events that move between them, and every piece of UI that depends on them.
   A migration designed from the real code paths is trustworthy; one designed from the component's
   apparent purpose is a rewrite in disguise.
@@ -90,10 +90,10 @@ framework, test runner, TS, mode/style, dirs.
 
 Before each phase, if its expected outputs already exist (and `--force` is not set), skip it.
 
-| Phase | Skip condition                                   | Skip message                                        |
-| ----- | ------------------------------------------------ | --------------------------------------------------- |
-| 1     | `{ANALYSIS_DIR}/behavior-map.md` exists          | `Phase 1: Skipping — behavior map already exists`   |
-| 2     | `{ANALYSIS_DIR}/state-model.md` exists           | `Phase 2: Skipping — state model already drafted`   |
+| Phase | Skip condition                                       | Skip message                                      |
+| ----- | ---------------------------------------------------- | ------------------------------------------------- |
+| 1     | `{ANALYSIS_DIR}/behavior-map.md` exists              | `Phase 1: Skipping — behavior map already exists` |
+| 2     | `{ANALYSIS_DIR}/state-model.md` exists               | `Phase 2: Skipping — state model already drafted` |
 | 4     | `{OUT_DIR}/{TARGET_SLUG}-xstate-migration.md` exists | Ask whether to overwrite or resume into implement |
 
 Phase 3 (interview) is never auto-skipped when the state model is new or changed — it is the gate
@@ -129,7 +129,7 @@ Summary
   machine vs hierarchical/parallel statechart vs actor system per the decision guide; name states in
   the domain's language; put every side effect into an invoked/spawned actor or action; draft the
   state↔UI coverage matrix per `references/ui-coverage.md`, marking every state with no current UI as
-  ⚠ GAP. Include a mermaid `stateDiagram-v2` so the user can *see* the model. Flag anything the code
+  ⚠ GAP. Include a mermaid `stateDiagram-v2` so the user can _see_ the model. Flag anything the code
   allowed that the model forbids — those are the bugs you're fixing, and the user must confirm each).
 - **Phase 3** — run the interview with AskUserQuestion. Batch questions; each inferred-but-unconfirmed
   element gets validated: "the code allows loading+error simultaneously — bug to fix, or intended?";
@@ -149,7 +149,7 @@ Summary
      context/events. No UI changes yet.
   3. **Tests before wiring**: generate the deterministic tests per `references/testing.md` — path
      coverage via `createTestModel` from `xstate/graph`, plus pure `createActor` unit tests for
-     guards/context. Run them; the machine must be green *before* the UI moves.
+     guards/context. Run them; the machine must be green _before_ the UI moves.
   4. **Wire the UI**: swap the component onto `useMachine`/`useActor`/`useSelector`, one UI
      touchpoint at a time, consulting the coverage matrix. Add the UI state-coverage tests.
   5. **Deprecate**: retire old state code per the checklist — every old state variable/effect/handler

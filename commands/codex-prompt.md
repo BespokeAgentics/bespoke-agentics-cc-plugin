@@ -1,5 +1,5 @@
 ---
-name: bespokeagentics:codex-prompt
+name: codex-prompt
 description: Turn session context or a supplied task into a well-formed Codex prompt
 argument-hint: [prompt-or-context]
 allowed-tools: Skill(codex-prompt-builder)

@@ -1,5 +1,5 @@
 ---
-name: bespokeagentics:ux-audit-code
+name: ux-audit-code
 description: Audit front-end code against the UX anti-pattern library (skip visual analysis)
 argument-hint: <path-to-components>
 allowed-tools: Skill(ux-audit), Read, Glob, Grep, Bash, Write, Agent

@@ -1,5 +1,5 @@
 ---
-name: "bespokeagentics:funcspec-status"
+name: "funcspec-status"
 description: "Show the state of a funcspec run: pages inventoried vs. profiled vs. visually verified, open/resolved/deferred ambiguities (blocking flagged), synthesis freshness, and which deliverables exist. Read-only."
 argument-hint: "[<workspace>] [--out <dir>]"
 allowed-tools: Bash, Read, Glob, Grep
@@ -23,7 +23,7 @@ Default `--out` is `<workspace>/docs/funcspec` (workspace auto-detected from CWD
 ## Process
 
 1. If `<out>/` is missing, report "no funcspec run found" and point to
-   `/bespokeagentics:funcspec-evaluate`.
+   `/bespoke-agentics:funcspec-evaluate`.
 2. Read `page-inventory.json`, `profiles/*.json`, `synthesis.json`, and list which of
    the five deliverables exist (`functional-spec.md`, `implementation-plan.md`,
    `backlog.md`, `gap-register.md`, `traceability.md`).

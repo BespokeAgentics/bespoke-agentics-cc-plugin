@@ -100,7 +100,7 @@ Tick these and the verdict flips to 🟢. Derived from the confirmed regressions
 
 - [ ] {{restore the single sticky element (contract R1) — `FeatureHeader.tsx:41`}}
 - [ ] {{map the status enum to its label ("Internal Review")}}
-- [ ] {{re-run `/bespokeagentics:wireframe-parity {{SLUG}} --app {{APP_URL}}` — expect 🟢}}
+- [ ] {{re-run `/bespoke-agentics:wireframe-parity {{SLUG}} --app {{APP_URL}}` — expect 🟢}}
 
 ## Appendix — coverage
 

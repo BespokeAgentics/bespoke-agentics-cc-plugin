@@ -1,5 +1,5 @@
 ---
-name: bespokeagentics:ux-audit-visual
+name: ux-audit-visual
 description: Audit screenshots, GIFs, or video recordings for UX issues (skip code analysis)
 argument-hint: <path-to-image-or-video>
 allowed-tools: Skill(ux-audit), Read, Bash, Write, Agent

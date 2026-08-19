@@ -37,7 +37,7 @@ that into a Next.js app where the design is faithfully reproduced, the content i
 Tina collections, and every editable string/image is click-to-edit on the live page.
 
 The defining work is **content externalization + Tina wiring**, not just a framework port. A pretty
-Next.js clone that still hardcodes its copy has missed the point — the deliverable is *editable*.
+Next.js clone that still hardcodes its copy has missed the point — the deliverable is _editable_.
 
 ## When to use
 
@@ -47,25 +47,26 @@ in-browser-Babel setup"). They may not name the steps — infer them. This skill
 inspects whatever prototype it's handed (page count, design system, image slots, tweak knobs all
 vary) and generates from that. It is not specialized to ProTec.
 
-**Not this skill:** a design *zip* → component library + Storybook is `claude-design-to-app-workflow`
-(`design-zip-to-library`). If the user wants only the library, use that. If they have a zip *and*
+**Not this skill:** a design _zip_ → component library + Storybook is `claude-design-to-app-workflow`
+(`design-zip-to-library`). If the user wants only the library, use that. If they have a zip _and_
 want an editable deployed app, run that skill first for a clean component library, then this one to
-wire it into Next.js + Tina (this skill also handles a raw prototype directly).
+wire it into Next.js + Tina (this skill also handles a raw prototype directly). It is also a
+companion to `/bespoke-agentics:funcspec-evaluate`.
 
 ## Configuration (flags)
 
 Read these from `args` (or ask if ambiguous). Sensible defaults mean you can run with none.
 
-| Flag | Default | Options | Effect |
-|------|---------|---------|--------|
-| `--deploy` | `cloudflare` | `cloudflare`, `vercel` | Deploy target. Cloudflare = OpenNext on Workers; Vercel = native. Both always emitted-able. See `references/deploy-cloudflare.md` / `deploy-vercel.md`. |
-| `--db` | derived | `upstash`, `mongodb` | Tina datalayer. **`upstash` (Redis over HTTP) is the only one that runs on Cloudflare Workers**; `mongodb` (raw TCP) is Vercel-only in practice. Default: `upstash` for cloudflare, `upstash` for vercel (pick `mongodb` only if the user wants document storage on Vercel). |
-| `--tina` | `self-hosted` | `self-hosted`, `cloud` | Open-source self-hosted backend (default) vs Tina Cloud (managed — adds search, runtime branch switch, media CDN; not open source). |
-| `--editing` | `visual` | `visual`, `forms` | `visual` = on-page click-to-edit (`useTina`+`tinaField`); `forms` = `/admin` dashboard only. |
-| `--media` | derived | `git`, `r2`, `s3` | Where images live. Default: `git` (static, simplest); `r2` for cloudflare at scale; `s3` for vercel. |
-| `--name` | derived | any | App/package name + Worker name. Derived from the source (e.g. `protec`). |
-| `--out` | `./<name>-app` | any path | Where the Next.js app is written. Don't write into the prototype's folder. |
-| `--pages` | `all` | `all`, comma-list | Which prototype pages to port (e.g. `home,services`). |
+| Flag        | Default        | Options                | Effect                                                                                                                                                                                                                                                                       |
+| ----------- | -------------- | ---------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `--deploy`  | `cloudflare`   | `cloudflare`, `vercel` | Deploy target. Cloudflare = OpenNext on Workers; Vercel = native. Both always emitted-able. See `references/deploy-cloudflare.md` / `deploy-vercel.md`.                                                                                                                      |
+| `--db`      | derived        | `upstash`, `mongodb`   | Tina datalayer. **`upstash` (Redis over HTTP) is the only one that runs on Cloudflare Workers**; `mongodb` (raw TCP) is Vercel-only in practice. Default: `upstash` for cloudflare, `upstash` for vercel (pick `mongodb` only if the user wants document storage on Vercel). |
+| `--tina`    | `self-hosted`  | `self-hosted`, `cloud` | Open-source self-hosted backend (default) vs Tina Cloud (managed — adds search, runtime branch switch, media CDN; not open source).                                                                                                                                          |
+| `--editing` | `visual`       | `visual`, `forms`      | `visual` = on-page click-to-edit (`useTina`+`tinaField`); `forms` = `/admin` dashboard only.                                                                                                                                                                                 |
+| `--media`   | derived        | `git`, `r2`, `s3`      | Where images live. Default: `git` (static, simplest); `r2` for cloudflare at scale; `s3` for vercel.                                                                                                                                                                         |
+| `--name`    | derived        | any                    | App/package name + Worker name. Derived from the source (e.g. `protec`).                                                                                                                                                                                                     |
+| `--out`     | `./<name>-app` | any path               | Where the Next.js app is written. Don't write into the prototype's folder.                                                                                                                                                                                                   |
+| `--pages`   | `all`          | `all`, comma-list      | Which prototype pages to port (e.g. `home,services`).                                                                                                                                                                                                                        |
 
 `--deploy` drives the defaults for `--db` and `--media` and which config templates are emitted. When
 a requested combination is unsafe (e.g. `--deploy cloudflare --db mongodb`), **warn and proceed only
@@ -108,18 +109,18 @@ knobs — candidate Tina fields), `fonts`, and **`content_candidates`** — the 
 in the JSX that should become editable. See `references/analysis.md`.
 
 Then **read the actual source** the manifest points to — at minimum the design-system tokens, one or
-two page JSX files, and the tweaks panel — to learn *how* it's built and to sanity-check the content
+two page JSX files, and the tweaks panel — to learn _how_ it's built and to sanity-check the content
 inventory. `references/analysis.md` covers the runtime-Babel prototype anatomy in full.
 
 ### Phase 2 — Plan & confirm
 
 Before scaffolding (it writes many files) and before any deploy-specific choices, show a tight plan:
 the target stack (Next.js App Router + TS + Tailwind v4 + self-hosted Tina), the resolved
-**deploy target + datalayer + media** and *why* (surface the Cloudflare-vs-Vercel tradeoff —
+**deploy target + datalayer + media** and _why_ (surface the Cloudflare-vs-Vercel tradeoff —
 `references/deploy-cloudflare.md` §tradeoffs), the **content model** (the collections + the
 blocks/sections you'll model each page as — `references/content-modeling.md`), the **editable-fields
 inventory** (what becomes click-to-edit), the pages to port (`--pages`), and the app layout. This is
-*confirm the model*, not re-derive it. Proceed; adjust to corrections.
+_confirm the model_, not re-derive it. Proceed; adjust to corrections.
 
 ### Phase 3 — Scaffold the Next.js + Tina app
 
@@ -154,11 +155,12 @@ The layout it produces (see `references/self-hosted-backend.md`):
 ```
 
 The scaffolder pre-writes every config file from verified templates (`assets/templates/`), so Phases
-4–7 are mostly *filling* a working skeleton, not configuring one.
+4–7 are mostly _filling_ a working skeleton, not configuring one.
 
 ### Phase 4 — Tokens & design system
 
 Port the prototype's `_ds` design system into the app:
+
 1. Copy the token sheets (`_ds/<id>/tokens/*.css` + `styles.css`) into the app and generate a Tailwind
    v4 `@theme` layer so the design's `--flame-500`/`--ink-700`/etc. drive utilities. The inline-style →
    utility-class mapping and the `@theme inline` theming model are the **same playbook** as the sibling
@@ -179,6 +181,7 @@ interactive or calls `useTina`**; `<image-slot>` → `next/image` bound to a Tin
 ### Phase 6 — Content modeling & Tina schema (the heart)
 
 This is where "editable" is won. Follow `references/content-modeling.md` + `references/tina-schema.md`:
+
 1. **Externalize** each page's hardcoded copy/images into a `content/` file. Model a marketing page as
    a **blocks list** (`object` + `list: true` + `templates: [hero, services, cta, …]`) so the editor can
    reorder/add sections — the page-builder pattern.
@@ -193,6 +196,7 @@ This is where "editable" is won. Follow `references/content-modeling.md` + `refe
 ### Phase 7 — Backend, auth, media & deploy config
 
 Finalize per `references/self-hosted-backend.md` + `references/deploy-<target>.md`:
+
 - `tina/database.ts` datalayer for `--db` (Upstash `RedisLevel` or `MongodbLevel`), `GitHubProvider`,
   and the `TINA_PUBLIC_IS_LOCAL` local/prod split (`createLocalDatabase()` locally).
 - `pages/api/tina/[...routes].ts` (`TinaNodeBackend`, Auth.js in prod / `LocalBackendAuthProvider` local).
@@ -214,25 +218,26 @@ Finalize per `references/self-hosted-backend.md` + `references/deploy-<target>.m
 - Hand off: env checklist (GitHub token, `NEXTAUTH_SECRET`, datalayer creds), the deploy command for the
   target, how to change the seed admin password, and the **self-hosted caveats** (no search, build-time
   branch only, media strategy). Summarize what became editable and any judgment calls.
+- If a `wiki/` vault exists, the port is ingested and logged per the wiki-first mandate.
 - Offer the next step: point the client at `/admin` to set their password, or `--deploy` the other target.
 
 ## Reference map
 
 Read these as the phase calls for them — don't preload everything.
 
-| Need | Read |
-|------|------|
-| Interpret `analysis.json`; runtime-Babel prototype anatomy; content-candidate judgment | `references/analysis.md` |
-| Runtime-Babel JSX → Next.js App Router (RSC/client split, next/image, lucide, globals, motion) | `references/component-porting.md` |
-| Externalize baked content → collections/blocks; map tweak knobs → fields | `references/content-modeling.md` |
-| `tina/config.tsx`, field types, blocks, `useTina`/`tinaField`, `/admin`, preview router, caching | `references/tina-schema.md` |
-| `database.ts`, `[...routes].ts`, auth, env, local/prod split, the demo file layout | `references/self-hosted-backend.md` |
-| Cloudflare deploy: OpenNext, wrangler, Upstash, R2, gotchas + the CF-vs-Vercel tradeoff | `references/deploy-cloudflare.md` |
-| Vercel deploy: native, Upstash-via-Marketplace/Mongo, git env fallbacks, gotchas | `references/deploy-vercel.md` |
-| Wave construction, porter contract, between-wave gates, reconciliation | `references/parallel-porting.md` |
-| The cross-cutting failure catalog (transpilePackages, edge ban, caching, admin rewrite, version pins) | `references/gotchas.md` |
-| Token sheet → Tailwind v4 `@theme` (shared) | `claude-design-to-app-workflow/references/tokens-and-tailwind.md` |
-| Port one component's styles/props (shared playbook) | `claude-design-to-app-workflow/references/component-conversion.md` |
+| Need                                                                                                  | Read                                                               |
+| ----------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------ |
+| Interpret `analysis.json`; runtime-Babel prototype anatomy; content-candidate judgment                | `references/analysis.md`                                           |
+| Runtime-Babel JSX → Next.js App Router (RSC/client split, next/image, lucide, globals, motion)        | `references/component-porting.md`                                  |
+| Externalize baked content → collections/blocks; map tweak knobs → fields                              | `references/content-modeling.md`                                   |
+| `tina/config.tsx`, field types, blocks, `useTina`/`tinaField`, `/admin`, preview router, caching      | `references/tina-schema.md`                                        |
+| `database.ts`, `[...routes].ts`, auth, env, local/prod split, the demo file layout                    | `references/self-hosted-backend.md`                                |
+| Cloudflare deploy: OpenNext, wrangler, Upstash, R2, gotchas + the CF-vs-Vercel tradeoff               | `references/deploy-cloudflare.md`                                  |
+| Vercel deploy: native, Upstash-via-Marketplace/Mongo, git env fallbacks, gotchas                      | `references/deploy-vercel.md`                                      |
+| Wave construction, porter contract, between-wave gates, reconciliation                                | `references/parallel-porting.md`                                   |
+| The cross-cutting failure catalog (transpilePackages, edge ban, caching, admin rewrite, version pins) | `references/gotchas.md`                                            |
+| Token sheet → Tailwind v4 `@theme` (shared)                                                           | `claude-design-to-app-workflow/references/tokens-and-tailwind.md`  |
+| Port one component's styles/props (shared playbook)                                                   | `claude-design-to-app-workflow/references/component-conversion.md` |
 
 ## Principles
 

@@ -29,7 +29,7 @@
     },
     {
       "id": "fix-mode-skips-opportunities",
-      "prompt": "/bespokeagentics:ui-issue-to-plan ./bug.mp4 modal-focus-trap --mode fix",
+      "prompt": "/bespoke-agentics:ui-issue-to-plan ./bug.mp4 modal-focus-trap --mode fix",
       "expect": [
         "skips Phase 2.5 opportunity synthesis entirely (no opportunities.md)",
         "interview skips the framing beat and the opportunities round",
@@ -60,7 +60,7 @@
     },
     {
       "id": "video-not-of-this-repo",
-      "prompt": "/bespokeagentics:ui-issue-to-plan ~/Downloads/some-other-app.mp4",
+      "prompt": "/bespoke-agentics:ui-issue-to-plan ~/Downloads/some-other-app.mp4",
       "setup": "the recorded app does not match the current repo; nothing grounds",
       "expect": [
         "grounding resolves little/nothing and the skill flags the mismatch loudly",
@@ -70,7 +70,7 @@
     },
     {
       "id": "no-ground-flag",
-      "prompt": "/bespokeagentics:ui-issue-to-plan ./bug.mp4 layout-shift 2 --no-ground",
+      "prompt": "/bespoke-agentics:ui-issue-to-plan ./bug.mp4 layout-shift 2 --no-ground",
       "expect": [
         "skips Phase 2 grounding entirely",
         "still runs frame analysis and the interview",

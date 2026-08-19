@@ -15,32 +15,32 @@ Two modes, one goal: enforced code quality gates.
 Most common invocation — install everything with defaults:
 
 ```
-/bespokeagentics:biome-guardrails
+/bespoke-agentics:biome-guardrails
 ```
 
 Skip ESLint sidecar (Biome-only):
 ```
-/bespokeagentics:biome-guardrails --no-eslint
+/bespoke-agentics:biome-guardrails --no-eslint
 ```
 
 Skip Claude Code hooks:
 ```
-/bespokeagentics:biome-guardrails --no-hooks
+/bespoke-agentics:biome-guardrails --no-hooks
 ```
 
 Custom source directory:
 ```
-/bespokeagentics:biome-guardrails --src app/
+/bespoke-agentics:biome-guardrails --src app/
 ```
 
 Brownfield: read-only audit of typing debt and enforcement holes:
 ```
-/bespokeagentics:biome-guardrails --audit
+/bespoke-agentics:biome-guardrails --audit
 ```
 
 Brownfield: audit, then install ratchet enforcement (no config overwrites):
 ```
-/bespokeagentics:biome-guardrails --ratchet
+/bespoke-agentics:biome-guardrails --ratchet
 ```
 </quick_start>
 

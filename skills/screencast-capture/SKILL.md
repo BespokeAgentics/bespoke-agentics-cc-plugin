@@ -10,8 +10,8 @@ the `gif_creator` tool, then turn that recording into a clean **MP4** and offer 
 `screencast-highlight-reel` for a narrated cut.
 
 This is the **capture** companion to `screencast-highlight-reel`. That skill takes a finished
-screencast and *polishes* it (grounds it in the codebase, narrates it, renders a highlight reel);
-this skill *produces* the screencast in the first place, so a human never has to screen-record
+screencast and _polishes_ it (grounds it in the codebase, narrates it, renders a highlight reel);
+this skill _produces_ the screencast in the first place, so a human never has to screen-record
 themselves. The two chain: **capture → reel**.
 
 ## Capture engines
@@ -19,7 +19,7 @@ themselves. The two chain: **capture → reel**.
 Pick how the pixels are captured with `--engine` (default `chrome-gif`):
 
 - **`chrome-gif`** (default, zero-setup) — records the browser **tab** via the `gif_creator` MCP tool,
-  exports a GIF, converts it to MP4. No OS permissions, and it captures *only* the tab (nothing else
+  exports a GIF, converts it to MP4. No OS permissions, and it captures _only_ the tab (nothing else
   on screen leaks). Limits: the Chrome capture is **hard-capped ~1200px** and the GIF is 256-color
   (dithered) — fine for quick demos, soft/grainy for polished ones.
 - **`screen`** (higher fidelity) — records a chosen **monitor** with ffmpeg
@@ -33,7 +33,7 @@ Two facts shape everything below:
 
 - **You drive the browser as the main agent, not through a subagent.** The capture is interactive —
   the user logs in during a manual gate (Phase 0.5) and answers the handoff question (Phase 4), and
-  neither works from a subagent. Load the browser tools into *this* session and drive them directly.
+  neither works from a subagent. Load the browser tools into _this_ session and drive them directly.
 - **Both engines end at an MP4** (the reel's input contract). The `chrome-gif` engine must **convert**
   its GIF — a GIF reports no container duration, so the reel's frame-extractor would fall back to
   drift-prone frame-index timestamps; `scripts/gif_to_mp4.sh` gives it real-duration, constant-rate
@@ -42,7 +42,7 @@ Two facts shape everything below:
 ## Arguments (`$ARGUMENTS`)
 
 ```
-['<start-url-or-flow>'] [capture-label] [--url <url>] [--out <dir>] [--fps <n>] [--overlays clean|clicks|full] [--reel] [--no-reel] [--interval <sec>] [--download-dir <dir>] [--tab <id>] [--force]
+['<start-url-or-flow>'] [capture-label] [--engine chrome-gif|screen] [--url <url>] [--out <dir>] [--fps <n>] [--overlays clean|clicks|full] [--display <idx>] [--crf <n>] [--crop auto|off|<W:H:X:Y>] [--reel] [--no-reel] [--interval <sec>] [--download-dir <dir>] [--tab <id>] [--force]
 ```
 
 - `start-url-or-flow` (optional) — a starting URL, a one-line description of what to record, or both. Whatever is missing is elicited in the Phase 0 interview.
@@ -97,7 +97,7 @@ Summary + (wiki log if a vault exists)
 
 The `screen` engine produces `{MP4_PATH}` in Phase 1 and skips Phases 2–3.
 
-Record only what the user asked for. The recording is the raw material; the *story* (which slices,
+Record only what the user asked for. The recording is the raw material; the _story_ (which slices,
 what narration) is the reel's job and the user's call — do not editorialize the capture.
 
 ### Workflow steps
@@ -126,7 +126,7 @@ what narration) is the reel's job and the user's call — do not editorialize th
 
 4. **Phase 0.5 — Manual setup gate.** Create a fresh tab (`tabs_create_mcp`) unless `--tab` was given;
    record its `tabId` and pass it to **every** subsequent browser call. `navigate{tabId, url}` to the
-   start URL (an explicit `tabId` — a standalone `navigate` targets the *first* tab in the group, not
+   start URL (an explicit `tabId` — a standalone `navigate` targets the _first_ tab in the group, not
    your new one). If the flow needs authentication or a
    cookie/consent banner appears, **pause and hand control to the user**: ask them to log in or
    dismiss the banner themselves. You never type passwords or other credentials (a prohibited
@@ -146,19 +146,23 @@ what narration) is the reel's job and the user's call — do not editorialize th
      discrete frames), then `screen_record.sh stop {MP4_PATH}` (SIGINT → finalized MP4). This writes
      `{MP4_PATH}` directly and prints its duration — **skip Phases 2–3**, go to Phase 4.
 
-6. **Phase 2 — Export + relocate.** *(chrome-gif only — the `screen` engine already has `{MP4_PATH}`.)*
+6. **Phase 2 — Export + relocate.** _(chrome-gif only — the `screen` engine already has `{MP4_PATH}`.)_
    Export with the overlay options mapped from `OVERLAYS`:
    `gif_creator{action:export, tabId, download:true, filename:"{CAPTURE_SLUG}.gif", options:{...}}`.
    The GIF lands in Chrome's download directory, so move it into place:
+
    ```bash
    bash ${CLAUDE_PLUGIN_ROOT}/skills/screencast-capture/scripts/find_download.sh "{CAPTURE_SLUG}*.gif" "{GIF_PATH}" "{DOWNLOAD_DIR}"
    ```
+
    If it can't find the file, ask the user where Chrome saved it and retry with the right `--download-dir`.
 
-7. **Phase 3 — Convert to MP4.** *(chrome-gif only.)* Convert the GIF:
+7. **Phase 3 — Convert to MP4.** _(chrome-gif only.)_ Convert the GIF:
+
    ```bash
    bash ${CLAUDE_PLUGIN_ROOT}/skills/screencast-capture/scripts/gif_to_mp4.sh "{GIF_PATH}" "{MP4_PATH}" {FPS}
    ```
+
    The script prints the MP4's real duration. Keep it (both engines — the `screen` engine gets duration
    from `screen_record.sh stop`): it drives the reel interval,
    `INTERVAL = --interval value, else max(2, min(4, round(duration / 8)))`.

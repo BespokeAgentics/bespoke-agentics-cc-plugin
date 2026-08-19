@@ -17,6 +17,7 @@ Convert a project folder into a well-formed, distributable Claude Code plugin. T
 ## Input
 
 The user provides a folder path. The folder may contain:
+
 - A `.claude/` directory with commands, skills, hooks, agents (pre-plugin state)
 - An already-structured plugin with `commands/`, `skills/`, `agents/`, `hooks/` at root level
 - A mix of both
@@ -30,46 +31,54 @@ Scan the provided folder to understand its current state. Build a complete inven
 
 Check for these indicators:
 
-| Indicator | Meaning |
-|-----------|---------|
-| `.claude-plugin/plugin.json` exists | Already a plugin — audit and optimize mode |
-| `.claude/` directory exists with skills/commands/agents | Pre-plugin — needs conversion |
-| Neither exists | Fresh scaffold — needs everything |
+| Indicator                                               | Meaning                                    |
+| ------------------------------------------------------- | ------------------------------------------ |
+| `.claude-plugin/plugin.json` exists                     | Already a plugin — audit and optimize mode |
+| `.claude/` directory exists with skills/commands/agents | Pre-plugin — needs conversion              |
+| Neither exists                                          | Fresh scaffold — needs everything          |
 
 ### 1b. Inventory All Components
 
 For each component type, scan and catalog:
 
 **Skills** — check both `.claude/skills/` and `skills/`:
+
 - List each skill directory and its SKILL.md
 - Note whether it has `references/`, `templates/`, `scripts/` subdirectories
 - Extract frontmatter (name, description)
 
 **Commands** — check both `.claude/commands/` (including subdirectories) and `commands/`:
+
 - List each command .md file
 - Extract frontmatter (name, description, argument-hint, allowed-tools)
 - Note the dispatch pattern (single skill, routing, orchestration)
 
 **Agents** — check both `.claude/agents/` and `agents/`:
+
 - List each agent .md file
 - Extract frontmatter (name, description, tools, model)
 
 **Hooks** — check for `hooks/hooks.json` or `.claude/hooks.json` or `.claude/settings.json`:
+
 - List each hook type and its matchers
 - Note any scripts referenced
 
 **Scripts** — check `scripts/` and `.claude/scripts/`:
+
 - List executable files
 - Note which hooks or skills reference them
 
 ### 1c. Present Inventory to User
 
 Show the user what was found and ask:
+
 - Plugin name (suggest based on folder name, kebab-case)
 - Author name
 - Brief description of the plugin's purpose
 - Any components to exclude or add
-- The namespace prefix for commands (e.g., `verndale`, `bespokeagentics`)
+- Whether any commands should be grouped into subdirectories (a
+  `commands/<group>/` directory becomes a `<group>:` namespace). Never ask for a
+  plugin-name prefix — Claude Code adds the plugin name itself.
 
 ## Phase 2: Restructure
 

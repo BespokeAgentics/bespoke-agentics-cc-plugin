@@ -9,20 +9,20 @@ description: "Live cognitive-dissonance audit of an app flow: drive the running 
 
 Cognitive dissonance in a product is the gap between what a user set out to do and what the
 product actually put them through. It cannot be found by reading code or looking at screenshots —
-those show the product's *side* of the conversation. It is found by **being the user**: forming an
+those show the product's _side_ of the conversation. It is found by **being the user**: forming an
 intent, attempting the flow in the running app, and measuring, at every step, the delta between
 what a reasonable person would expect next and what actually happened.
 
 The load-bearing discipline is **pre-registration**. Hindsight makes every outcome look
 predictable — if you act first and rationalize afterward, you will find nothing, because you (with
 the full DOM, the codebase, and the docs) can explain anything. So the expectation for each step
-is written down *before* the action is taken, and the finding is the recorded delta. The walk
+is written down _before_ the action is taken, and the finding is the recorded delta. The walk
 ledger is the evidence; a finding without a pre-registered expectation is an anecdote.
 
 Two corollaries:
 
 - **Your own confusion is first-class evidence.** You have more context than any human user ever
-  will. If *you* hesitate over which button maps to the intent, misclick, or get lost — record it.
+  will. If _you_ hesitate over which button maps to the intent, misclick, or get lost — record it.
   A human with less has it worse.
 - **A walk that didn't happen produces guesses, not findings.** If no app is running and none can
   be started, stop and say so (offer the code-level `ux-audit` skill instead). Never synthesize a
@@ -32,6 +32,8 @@ This skill is read-only with respect to the product: it never edits application 
 outputs are the walk ledger and the report.
 
 ## Arguments
+
+Parse from whatever the user typed on invocation:
 
 ```
 ['<flow-or-url>'] [--persona '<description>'] [--depth quick|standard|deep]
@@ -74,8 +76,8 @@ Then run ONE AskUserQuestion round covering, as needed:
    be trying to accomplish".
 2. **Persona** — who is walking: first-time visitor, returning user, admin. The persona determines
    what counts as "reasonable expectation" and therefore the severity of every finding.
-3. **Intent statement** — one sentence in the persona's voice: *"As a first-time visitor, I want
-   to create an account and reach a screen where I can start using the product."* Propose a
+3. **Intent statement** — one sentence in the persona's voice: _"As a first-time visitor, I want
+   to create an account and reach a screen where I can start using the product."_ Propose a
    phrasing; let the user correct it.
 4. **Success criterion** — what "done" observably looks like. Freeze this BEFORE walking; the
    end-of-walk thread test (and rule PV4) is measured against it.
@@ -105,6 +107,7 @@ forward is such a trick, that IS a finding (GE1 or MB3) — record it, then use 
 continue the walk, marked `[non-user assist]` in the ledger.
 
 **Walls and hazards:**
+
 - Login/consent walls: pause and ask the user to log in themselves — never type credentials.
   Record the wall's position in the flow.
 - Do not trigger JS `alert`/`confirm` dialogs (they freeze the automation). If a flow step would,
@@ -116,9 +119,10 @@ continue the walk, marked `[non-user assist]` in the ledger.
   ledger beats a completed walk that cheated.
 
 **End-of-walk thread test.** Re-read the whole ledger and answer three questions in writing:
+
 1. Was the frozen intent delivered — does the final OBSERVE satisfy the success criterion?
 2. What is the total attention tax — count of `partial`/`dissonant` steps a user paid on the way?
-3. Did any step change what the persona would now believe the product *is*? (That belief-shift is
+3. Did any step change what the persona would now believe the product _is_? (That belief-shift is
    where PV findings live.)
 
 ## Phase 3 — Classify
@@ -127,7 +131,7 @@ Read `references/dissonance-catalog.md` in full. Convert every `partial`/`disson
 every thread-test failure into findings:
 
 - Exactly one rule ID per finding (GE1–GE4, GV1–GV4, MB1–MB5, PV1–PV4); when two fit, the catalog's
-  tie-break applies (classify where the gap *opened*).
+  tie-break applies (classify where the gap _opened_).
 - One finding per root cause — steps sharing a cause merge into one finding with multiple evidence
   entries.
 - Severity per the catalog's scale: P0 intent-breaking, P1 trust-eroding, P2 attention-tax —
@@ -188,19 +192,19 @@ entry. Then **offer** (never assume): open the confirmed P0s as tasks, or hand t
 
 ## Degradation
 
-| Missing | Behavior |
-|---|---|
-| No browser tools at all | Stop before Phase 2; offer `ux-audit` (code/screenshot heuristics) instead |
-| No running app, none startable | Stop honestly; never simulate the walk from source |
-| Login wall the user can't clear | Walk what is reachable; everything behind it goes to "Not walked" |
-| App is not this repo's | Run `experiential-only` (no grounding); say so in the report header |
-| `--gif` capture fails | The text ledger stands alone; note the capture failure |
+| Missing                         | Behavior                                                                   |
+| ------------------------------- | -------------------------------------------------------------------------- |
+| No browser tools at all         | Stop before Phase 2; offer `ux-audit` (code/screenshot heuristics) instead |
+| No running app, none startable  | Stop honestly; never simulate the walk from source                         |
+| Login wall the user can't clear | Walk what is reachable; everything behind it goes to "Not walked"          |
+| App is not this repo's          | Run `experiential-only` (no grounding); say so in the report header        |
+| `--gif` capture fails           | The text ledger stands alone; note the capture failure                     |
 
 ## Boundaries with sibling skills
 
 - `ux-audit` evaluates artifacts (code, screenshots, recordings) against Nielsen/Norman heuristics
   — it never touches the running app. This skill only claims what it experienced live.
-- `ui-issue-to-plan` starts from a *human's* narrated recording; this skill generates the
+- `ui-issue-to-plan` starts from a _human's_ narrated recording; this skill generates the
   experience itself.
 - `data-ui-craft` fixes display craft on data-dense surfaces; this skill audits flows and writes
   no production code.

@@ -59,7 +59,7 @@ highest-impact finding and the single best opportunity. End with one recommended
 1. {Critical fixes} 2. {High} 3. {quick-win Low/Medium} 4. {opt-in Opportunities}
 
 ## Next step
-Run `/bespokeagentics:data-ui-craft implement {scope}` to apply the accepted set.
+Run `/bespoke-agentics:data-ui-craft implement {scope}` to apply the accepted set.
 ```
 
 ---

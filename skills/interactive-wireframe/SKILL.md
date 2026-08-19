@@ -16,7 +16,7 @@ different decision than the one the prose was heading toward.
 Two properties do the work, and neither is optional:
 
 1. **Grounded in real code.** Real tokens, real labels, real enums, real roles,
-   cited to real paths. This is what makes the wireframe *predictive* rather than
+   cited to real paths. This is what makes the wireframe _predictive_ rather than
    merely illustrative — collisions, widths and contrast failures only appear
    with real values. Invented values produce a confident-looking picture of a
    product that does not exist.
@@ -37,6 +37,28 @@ viewport.
 **Skip it** when the design is already settled (just build it), when the change
 is cosmetic (a colour, a copy edit), or when you are evaluating an interface that
 already exists — that is a UX audit, not a wireframe.
+
+## Arguments
+
+```
+'<surface>' [--slug <name>] [--rounds N] [--port N] [--out <dir>] [--spec <path>] [--fresh] [--ttl <days>] [--no-verify] [--no-serve]
+```
+
+`<surface>` is required — a route, a component name, a page, or a description
+("the feature detail header", "the checkout summary step"). Ambiguous targets
+get clarified in Phase 0, before grounding starts.
+
+| Flag            | Default                                                    | Effect                                                                                                                                                                   |
+| --------------- | ---------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `--slug <name>` | derived from the surface                                   | names `wireframes/<slug>/` and the spec — Phase 0                                                                                                                        |
+| `--rounds N`    | as many as the change needs                                | caps the interview: `1` for a quick sketch, 4–8 for a screen restructure — Phase 4                                                                                       |
+| `--port N`      | `8791`                                                     | serve port; 8787 is never auto-probed, pass it to force it — Phase 3                                                                                                     |
+| `--out <dir>`   | `./wireframes`                                             | where the wireframe HTML, grounding notes and library are written                                                                                                        |
+| `--spec <path>` | wiki plans dir if a vault exists, else `./plans/<slug>.md` | where the spec lands — Phase 6                                                                                                                                           |
+| `--fresh`       | off                                                        | ignore the reuse library for this run — everything grounded and authored from scratch. The run still harvests at the end; a fresh run heals the library — Phases 1 and 6 |
+| `--ttl <days>`  | `14`                                                       | cache trust window — Phase 1                                                                                                                                             |
+| `--no-verify`   | off                                                        | skip the browser-verification pass; everything unmeasured is then labelled "not verified" in the spec rather than claimed — Phase 5                                      |
+| `--no-serve`    | off                                                        | build the file only, don't start a server — browser automation will not work                                                                                             |
 
 ## The loop
 
@@ -191,7 +213,7 @@ behavioural "failure" is a measurement artifact until proven otherwise. The
 playbook lists each failure mode and its workaround.
 
 If browser automation is unavailable, serve the wireframe, hand the user the URL,
-and interview against what *they* see — then label every unmeasured claim
+and interview against what _they_ see — then label every unmeasured claim
 **"not verified"** in the spec. A false green retires a test nobody ran.
 
 ## Phase 6 — Emit the spec
@@ -214,9 +236,14 @@ ledger, refresh `_index.md` — and list what was harvested in the final report.
 Harvest runs even under `--fresh`.
 
 The spec's **Verification** table is not just a record — it is the frozen
-snapshot that **`/bespokeagentics:wireframe-parity`** re-measures against the
+snapshot that **`/bespoke-agentics:wireframe-parity`** re-measures against the
 built UI once the feature is implemented, decision by decision. Keep those
 numbers real and complete; they are the contract the parity reviewer checks.
+
+Close the run with the wireframe URL, the decision count, what the verification
+pass measured, and anything left open — then **offer** to start implementing.
+**No production code is written** unprompted; the output is a wireframe plus a
+spec.
 
 ## Artifacts
 
@@ -258,15 +285,15 @@ id, the choice, and whether the wireframe validated it.
 
 ## Reference files
 
-| File | Read when |
-|---|---|
-| `references/grounding.md` | Phase 1 — what to extract, where it lives per ecosystem, the no-design-system path |
-| `references/control-overlay.md` | Phase 2 — deriving axes, axis types, variant-CSS scoping, comparison sheet |
-| `references/layout-patterns.md` | Phase 2 — sticky stacks, scroll anchoring, nested buttons, focus guards, and six more |
-| `references/interview.md` | Phase 4 — round structure, ASCII previews, UI dimensions, contradiction hunting |
-| `references/browser-verification.md` | Phase 5 — hidden-tab checklist, the four assertion families |
-| `references/spec-template.md` | Phase 6 — the output shape and where it goes |
-| `references/reuse-library.md` | Phases 1/2/4/6 — cache TTL, fragment markers, decisions ledger, harvest |
-| `references/live-feedback.md` | Phases 3–5 — browser-comment schemas, feedback subcommands, channel setup, triage, degradation matrix |
-| `assets/wireframe-scaffold.html` | Phase 2 — copy this; four marked REPLACE regions |
-| `scripts/serve-wireframe.sh` | Phase 3 — `start` / `status` / `stop` / `url` / `feedback` / `await-feedback` / `reply` |
+| File                                 | Read when                                                                                             |
+| ------------------------------------ | ----------------------------------------------------------------------------------------------------- |
+| `references/grounding.md`            | Phase 1 — what to extract, where it lives per ecosystem, the no-design-system path                    |
+| `references/control-overlay.md`      | Phase 2 — deriving axes, axis types, variant-CSS scoping, comparison sheet                            |
+| `references/layout-patterns.md`      | Phase 2 — sticky stacks, scroll anchoring, nested buttons, focus guards, and six more                 |
+| `references/interview.md`            | Phase 4 — round structure, ASCII previews, UI dimensions, contradiction hunting                       |
+| `references/browser-verification.md` | Phase 5 — hidden-tab checklist, the four assertion families                                           |
+| `references/spec-template.md`        | Phase 6 — the output shape and where it goes                                                          |
+| `references/reuse-library.md`        | Phases 1/2/4/6 — cache TTL, fragment markers, decisions ledger, harvest                               |
+| `references/live-feedback.md`        | Phases 3–5 — browser-comment schemas, feedback subcommands, channel setup, triage, degradation matrix |
+| `assets/wireframe-scaffold.html`     | Phase 2 — copy this; four marked REPLACE regions                                                      |
+| `scripts/serve-wireframe.sh`         | Phase 3 — `start` / `status` / `stop` / `url` / `feedback` / `await-feedback` / `reply`               |

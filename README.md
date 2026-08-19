@@ -29,7 +29,7 @@ claude --plugin-dir ./bespoke-agentics-plugin
 | **workflow-analyzer** | Client workflow analysis from video recordings. Produces application inventory, challenge mapping, and AI automation recommendations. |
 | **setup-plugin** | Scaffold, optimize, and package a folder as a well-formed Claude Code plugin. Converts `.claude/` directories into distributable plugins. |
 | **pi-assistant** | Understand the pi.dev coding agent, customize its harness, build Pi skills/extensions/packages, and search for or install Pi packages. |
-| **spec-elicitation** | Interview-driven spec development that turns vague ideas into complete implementation specifications. Also available as `/bespokeagentics:spec-elicitation`. |
+| **spec-elicitation** | Interview-driven spec development that turns vague ideas into complete implementation specifications. Also available as `/bespoke-agentics:spec-elicitation`. |
 | **biome-guardrails** | Install Biome.js + sidecar ESLint as strict AI-code guardrails in a JS/TS project — or audit an existing codebase for weak-typing debt (`--audit`) and install ratchet enforcement that blocks new `any` and oversized files without breaking the build (`--ratchet`). |
 | **bun-workspace** | Convert sibling Node/Bun repos into a Bun workspace monorepo, audit one, or add a package. |
 | **git-submodules** | Add/convert/init/audit Git submodules safely. |
@@ -41,7 +41,7 @@ claude --plugin-dir ./bespoke-agentics-plugin
 
 ## Spec Interviewer UI
 
-The interactive web interface lives in `apps/spec-interviewer/`. It loads `commands/spec-elicitation.md` as the source of truth, starts a Claude Agent SDK session, renders `AskUserQuestion` calls as structured form cards, and writes the final Markdown spec inside this repository.
+The interactive web interface lives in `apps/spec-interviewer/`. It loads `skills/spec-elicitation/SKILL.md` as the source of truth, starts a Claude Agent SDK session, renders `AskUserQuestion` calls as structured form cards, and writes the final Markdown spec inside this repository.
 
 ```bash
 cd apps/spec-interviewer
@@ -61,10 +61,10 @@ All Pi tasks route through the `pi-assistant` skill. Describe the task in natura
 
 | Command | Description |
 |---------|-------------|
-| `/bespokeagentics:ux-audit-code` | Code-only audit against UX anti-pattern library |
-| `/bespokeagentics:ux-audit-visual` | Visual analysis of screenshots, GIFs, or video |
-| `/bespokeagentics:ux-audit-quick` | Quick heuristic spot-check on a single component |
-| `/bespokeagentics:ux-audit-a11y` | Accessibility-focused audit (ARIA, keyboard nav, color) |
+| `/bespoke-agentics:ux-audit-code` | Code-only audit against UX anti-pattern library |
+| `/bespoke-agentics:ux-audit-visual` | Visual analysis of screenshots, GIFs, or video |
+| `/bespoke-agentics:ux-audit-quick` | Quick heuristic spot-check on a single component |
+| `/bespoke-agentics:ux-audit-a11y` | Accessibility-focused audit (ARIA, keyboard nav, color) |
 
 ### Wiki Skills
 

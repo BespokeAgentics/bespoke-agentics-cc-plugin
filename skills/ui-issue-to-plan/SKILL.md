@@ -4,7 +4,7 @@ description: "Turn a narrated screen recording into a grounded, code-aware imple
 ---
 
 You are the UI-Issue-to-Plan Orchestrator. A user has recorded themselves narrating a problem,
-a desired change, or how a flow *should* work in the UI of the project that is **open in this
+a desired change, or how a flow _should_ work in the UI of the project that is **open in this
 session**. Treat the screencast as a **design starting point, not just a bug report** — it carries
 defects to fix, desires to build, and opportunities to improve the experience. Your job is to turn
 it into a precise, code-grounded implementation plan: read the screens, transcribe the narration,
@@ -12,9 +12,10 @@ find the real source files behind what's on screen, surface grounded improvement
 interview the user to lock the full intent (fix **and** improve), and write the plan.
 
 Two things make this skill valuable:
-- **Grounding** — the video is of *this* repo, so every finding points back to actual code
+
+- **Grounding** — the video is of _this_ repo, so every finding points back to actual code
   (`file:line`), not generic advice.
-- **Intent over symptoms** — people record a walkthrough because the experience is easier to *show*
+- **Intent over symptoms** — people record a walkthrough because the experience is easier to _show_
   than to spell out. Don't tunnel on the literal defect; elicit what they actually want the flow to
   become. A plan that only patches the reported bug under-serves them.
 
@@ -74,12 +75,12 @@ Print a pre-flight summary block: video, issue label, dirs, interval, flags, rep
 
 Before each phase, if its expected outputs already exist (and `--force` is not set), skip that phase.
 
-| Phase | Skip condition | Skip message |
-| ----- | -------------- | ------------ |
-| 0 | `{FRAMES_DIR}/manifest.json` exists AND `dedup_applied: true` (or `--skip-dedup`) | `Phase 0: Skipping — manifest.json with {N} frames already exists` |
-| 1 | `{ANALYSIS_DIR}/observed-ui-map.md` AND `{ANALYSIS_DIR}/issue-summary.md` exist | `Phase 1: Skipping — observed UI map and issue summary found` |
-| 2 | `{ANALYSIS_DIR}/component-source-map.md` exists (or `--no-ground`) | `Phase 2: Skipping — component-source map found` |
-| 2.5 | `{ANALYSIS_DIR}/opportunities.md` exists (or `MODE == fix`) | `Phase 2.5: Skipping — opportunities already synthesized` |
+| Phase | Skip condition                                                                    | Skip message                                                       |
+| ----- | --------------------------------------------------------------------------------- | ------------------------------------------------------------------ |
+| 0     | `{FRAMES_DIR}/manifest.json` exists AND `dedup_applied: true` (or `--skip-dedup`) | `Phase 0: Skipping — manifest.json with {N} frames already exists` |
+| 1     | `{ANALYSIS_DIR}/observed-ui-map.md` AND `{ANALYSIS_DIR}/issue-summary.md` exist   | `Phase 1: Skipping — observed UI map and issue summary found`      |
+| 2     | `{ANALYSIS_DIR}/component-source-map.md` exists (or `--no-ground`)                | `Phase 2: Skipping — component-source map found`                   |
+| 2.5   | `{ANALYSIS_DIR}/opportunities.md` exists (or `MODE == fix`)                       | `Phase 2.5: Skipping — opportunities already synthesized`          |
 
 Phase 3 (interview) and Phase 4 (plan) are never auto-skipped — they are the point of the run. If
 `{OUT_DIR}/{ISSUE_SLUG}.md` already exists and `--force` is not set, ask whether to overwrite.
@@ -151,6 +152,8 @@ Total files generated: {N}
 ```
 
 Use `-` for skipped (already existed) and `x` for failed (with a brief reason).
+
+Then offer to start the P0 task from the plan — but **do not edit code until the user says so**.
 
 ## Error handling
 

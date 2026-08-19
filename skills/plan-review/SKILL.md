@@ -1,5 +1,5 @@
 ---
-name: bespokeagentics:plan-review
+name: plan-review
 description: "Review a written implementation plan, spec, or issue/bug report and pressure-test it BEFORE any code is written — ground it in THIS repo's actual source to surface the gaps the document hides, flag ambiguities, risks, and untestable acceptance criteria, then recommend concrete improvements. Use this whenever someone hands you a local plan/spec/ticket/design-doc markdown and says 'review this plan', 'is this plan complete', 'what's missing from this spec', 'find the gaps in this issue', 'pressure-test/red-team this proposal', 'is this ready to build', 'critique my ./plans/*.md', 'sanity-check this bug report before I start', 'what did I miss here', or just attaches a plan and asks 'anything wrong with this before we start?'. It reads the artifact, decomposes it into claims/tasks/assumptions/acceptance-criteria, maps every referenced (and implied) component to real source file:line in the current repo, reviews it across completeness/feasibility/risk/clarity/scope lenses, runs an AskUserQuestion interview to validate and prioritize the findings, then writes a READ-ONLY review report plus a color-coded gap register to ./reviews/ — never modifying the original. Distinct from repo-audit (which audits the codebase) and ux-audit (which audits a UI): this one audits a DOCUMENT against the code."
 ---
 
@@ -179,7 +179,10 @@ Use `-` for skipped (already existed) and `x` for failed (with a brief reason).
 - `ARTIFACT_SLUG` must be consistent across all file names — fix it once in Phase 0 and reuse.
 - **This skill is strictly read-only on the input.** It writes a review report and intermediate
   analysis files; it never edits, moves, or overwrites the artifact under review. If the user wants
-  the improvements applied, that is a separate, explicit follow-up — offer it, don't assume it.
+  the improvements applied, that is a separate, explicit follow-up — offer it, don't assume it. After
+  the final summary block, **offer** exactly two follow-ups: apply the P0 fixes into a _revised copy_
+  of the artifact, or open the first blocker as a task. Do neither — and touch no code — unless the
+  user says so.
 - A finding is only as good as its evidence. Every finding cites a **quote from the artifact** (what
   the plan says or fails to say) and, where grounding applies, a **`file:line` from the repo** (what
   the code actually does). No evidence → not a finding, or downgrade to an open question.

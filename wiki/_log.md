@@ -1,6 +1,6 @@
 ---
 type: log
-updated: 2026-07-27
+updated: 2026-08-19
 ---
 
 # Wiki Operation Log
@@ -9,28 +9,85 @@ Chronological record of all bootstrap, maintenance, and schema evolution operati
 
 ---
 
+## 2026-08-19 — Command surface de-duplication — 18 wrapper commands folded into their skills
+
+**Trigger**: the Claude Code `/` picker showed each capability multiple times, e.g.
+`/bespoke-agentics:bespokeagentics:dead-code-sweep` next to
+`/bespoke-agentics:dead-code-sweep`.
+
+**Root cause, two independent defects.**
+
+1. **Namespace stutter.** 29 root commands and 5 `SKILL.md` files declared
+   `name: "bespokeagentics:<leaf>"`. Claude Code already prefixes the plugin
+   name, so the published form was `/bespoke-agentics:bespokeagentics:<leaf>`.
+   The rule that produced this was written down in
+   `skills/setup-plugin/references/plugin-structure.md` ("Full name:
+   `bespoke-agentics` → `bespokeagentics:`") and in `setup-plugin/SKILL.md`,
+   so every new command inherited it.
+2. **Double publication.** 18 capabilities shipped as BOTH a skill and a thin
+   wrapper command whose body restated the skill and delegated to it. Two
+   registries, two picker rows, one capability.
+
+**Changes.**
+
+- Stripped the bogus prefix from all 29 command `name:` fields and all 5
+  `SKILL.md` `name:` fields. Names now equal the filename / directory.
+- Folded the 18 wrapper commands into their skills and deleted them. Each fold
+  ported only the genuinely unique artifact — the argument/flag contract — into
+  the skill body; process and output sections were dropped as restatements.
+  Commands dropped from 67 to 49.
+- Rewrote 104 `/bespokeagentics:` references across 23 files to
+  `/bespoke-agentics:`, plus eval prompts in three `evals.json` files,
+  `scripts/ai-transparency-check.sh`, and the xstate migration-plan template.
+- Corrected the guidance that caused it: the naming table now says a command
+  `name` is kebab-case matching the filename, and a new **Namespace Selection**
+  section states that the namespace names the _group_ (`wiki:query`,
+  `bun:add`), never the plugin. Added a **Commands vs. skills: do not ship
+  both** rule.
+- Updated the `commands/` tree in `CLAUDE.md`, which listed 13 files that no
+  longer exist.
+
+**Collateral defect found and fixed.** `apps/spec-interviewer` read
+`commands/spec-elicitation.md` at runtime (`server/interview.ts`, two
+`fs.readFile` call sites). Deleting that command would have hard-broken the app
+with ENOENT. Repointed to `skills/spec-elicitation/SKILL.md`, along with the
+matching claims in `README.md`, `apps/spec-interviewer/README.md`, and that
+app's `package.json` description.
+
+**Known loss**: `commands/spec-elicitation.md` carried `model: opus`. No
+`SKILL.md` in this plugin uses a `model:` field, so that pin did not survive the
+fold. `apps/spec-interviewer` still defaults to `opus` independently.
+
+**Not done**: version not bumped and nothing committed. The removal of 18
+commands is breaking for anyone who types them; the `bump-version.sh` pre-commit
+hook only bumps PATCH.
+
+---
+
 ## 2026-07-27 — Skill audit — skill-reverse-engineer run against data-ui-craft
 
-**Operation**: `/bespokeagentics:skill-reverse-engineer skills/data-ui-craft --mode audit` — read-only determinism audit. Nothing in the target was modified.
+**Operation**: `/bespoke-agentics:skill-reverse-engineer skills/data-ui-craft --mode audit` — read-only determinism audit. Nothing in the target was modified.
 
 **Verdict**: 🟡 improvisation-dependent. Of 20 reconstructed steps, **0 are owned by a bundled artifact and 12 are mechanical work the model re-derives every run**. The judgment layer is strong (stable-ID `DF*`/`PD*`/`IU*` rule catalog with detection cues + default severities, an explicit calibration section, 15 real `.tmpl` files, a literal markdown report template, 0 ALL-CAPS directives, correct progressive disclosure, a properly gated destructive step); the mechanical layer does not exist — `skills/data-ui-craft/` has no `scripts/` directory.
 
 **Findings**: 0 CRITICAL · 4 HIGH · 5 MEDIUM · 3 LOW.
-- **H1 (DS1)** stack detection + surface discovery as prose (`SKILL.md:77-109`) — the audit's *scope* varies run to run → `detect_stack.py`, `find_surfaces.py`
+
+- **H1 (DS1)** stack detection + surface discovery as prose (`SKILL.md:77-109`) — the audit's _scope_ varies run to run → `detect_stack.py`, `find_surfaces.py`
 - **H2 (DS4)** `templates/index.ts.tmpl:5-21` exports 13 modules a partial scaffold won't have written, against "write only the primitives that are actually needed" (`SKILL.md:168`) → `scaffold_kit.py` generating the barrel from the selected set
 - **H3 (TP2)** 118-line HTML report skeleton retyped every run (`references/report-format.md:72-189`) → `assets/audit-report.html` + `render_report.py`
 - **H4 (CT1)** findings never leave context — counts tallied by the model, md/html written independently, `implement` re-scans by design (`SKILL.md:153-154`) → `./data-ui-craft-audit.json` + `assets/rules.json`
 - **M1 (KM4)** cross-stack adapter mapping stated 11× and already divergent · **M2 (AM3)** `{{CN}}` contract contradicts itself across 3 files · **M3 (VF1)** layout sanity pass = 5 decidable conditions, no check, optional trigger · **M4 (AM2)** no degradation section for tsc/linter/browser · **M5 (CT3)** no argument grammar · **L1 (KM5)** severity palette is an uncited copy of `ux-audit`'s (verified identical today, no drift check) · **L2 (RB2)** two instructions cite an authoring-time conversation no run can see · **L3 (RB5)** fixed root-level report paths silently overwrite the prior audit
 
-**Essential-judgment register** (8 entries — the AI-reliance that must stay): applying detection patterns as *proxies*, severity calibration, data-type inference from column defs, respecting deliberate product choices, frequency × importance placement, PM-facing prose, in-place fix application, Opportunity selection.
+**Essential-judgment register** (8 entries — the AI-reliance that must stay): applying detection patterns as _proxies_, severity calibration, data-type inference from column defs, respecting deliberate product choices, frequency × importance placement, PM-facing prose, in-place fix application, Opportunity selection.
 
 **Host state**: `no-host` — the cwd is the plugin repo that authors the skill, not a data-dense app it operates on, so KM1–KM3 were not gradeable; both candidate host facts failed the materialization test on their own merits regardless (stack = recomputable in <1s → runtime script; surfaces = volatile working state → anti-list).
 
 **Files added**:
+
 - `reviews/skill-re-data-ui-craft.md` — the read-only report
 - `reviews/skill-re-data-ui-craft.host-context.json` — host-state sidecar + `knowledge_sources` worklist
 
-**Corrections made during the run**: `inventory.py` reported 1 broken internal reference — verified false positive (its `REF_PATH` regex truncates `templates/README.md.tmpl` at `.md`; the file exists). The target has 0 broken references. Logged as a defect in the *auditing* skill, out of scope for this run.
+**Corrections made during the run**: `inventory.py` reported 1 broken internal reference — verified false positive (its `REF_PATH` regex truncates `templates/README.md.tmpl` at `.md`; the file exists). The target has 0 broken references. Logged as a defect in the _auditing_ skill, out of scope for this run.
 
 **Not executed**: the 13 `.tsx.tmpl` files were reviewed statically — no React/TypeScript toolchain was exercised, so H2's barrel mismatch is a reading of the template against `SKILL.md:168`, not an observed `tsc` failure.
 
@@ -38,11 +95,12 @@ Chronological record of all bootstrap, maintenance, and schema evolution operati
 
 ## 2026-07-22 — New skill + command — wireframe-parity (v1.20.0)
 
-**Operation**: Added the `wireframe-parity` skill + `/bespokeagentics:wireframe-parity` command — a read-only reviewer that confirms an implemented UI matches the wireframe an `interactive-wireframe` spec settled.
+**Operation**: Added the `wireframe-parity` skill + `/bespoke-agentics:wireframe-parity` command — a read-only reviewer that confirms an implemented UI matches the wireframe an `interactive-wireframe` spec settled.
 
 **What it does**: The post-implementation companion to `interactive-wireframe`. It does not invent the "intended" side — the wireframe already froze it: the spec's **Verification** table is a snapshot of `__wf` measurements (band contiguity, contrast + AA/AAA, `button button` count, off-screen focusables), **The contract** holds structural invariants + numbers, the **Decisions** table + `_library/decisions.md` ledger record what was settled, and the **States** table is the overlay's axes resolved (each row reproducible as a wireframe URL). Two passes: **(1) structural** — parallel `Explore` agents ground every settled decision/state/label in the real implementation (`file:line`), honored/drifted/missing (the `--no-browser` floor); **(2) measured** — serves the wireframe (reusing `interactive-wireframe`'s `scripts/serve-wireframe.sh`) and injects the **same** dependency-free probe (`assets/wf-probe.js`, a standalone copy of the scaffold's `__wf` kit + two parity extras `texts()`/`token()`) into **both** the wireframe and the running app via claude-in-chrome, drives each to the matching state, and diffs band geometry / contrast / markup / focusables / labels / tokens apples-to-apples. Parity is invariant-**within-tolerance** (±2px geometry, same AA/AAA verdict, contiguity as the contract requires), never pixel-identity (user declined strict). Auth-gated states are labelled "not measured", never assumed; a backgrounded-tab behavioural "failure" is a measurement artifact. Because **spec Decisions are the parity contract** and a build sometimes evolves past the wireframe on purpose, an AskUserQuestion interview classifies each divergence as **regression** / **intended-evolution** / **out-of-scope** before any is called a failure; `--depth deep` adversarially verifies each first. Writes a read-only `./reviews/<slug>-parity.md` (verdict 🟢/🟡/🔴, decision-by-decision parity table, measured table intended/spec-frozen/as-built/Δ, label fidelity, color-coded divergence register, honest "not measured" coverage, definition-of-parity checklist), offers (doesn't assume) to open P0 regressions as tasks or refresh the stale ledger, and wiki-ingests + logs when a vault exists.
 
 **Files added**:
+
 - `skills/wireframe-parity/SKILL.md` (6-phase pipeline, cloned from the plan-review reviewer scaffold)
 - `skills/wireframe-parity/references/` — `resolve-and-parse.md`, `grounding.md`, `measurement.md`, `interview.md`, `report-synthesis.md`
 - `skills/wireframe-parity/assets/wf-probe.js` — the injectable measurement kit
@@ -50,6 +108,7 @@ Chronological record of all bootstrap, maintenance, and schema evolution operati
 - `commands/wireframe-parity.md`
 
 **Files modified**:
+
 - `skills/interactive-wireframe/SKILL.md` + `references/spec-template.md` — cross-links noting the Verification table + Decisions are what wireframe-parity re-measures post-implementation
 
 **Design/reuse basis**: mirrors `plan-review`'s scaffold (thin command → phased skill with per-phase references, parallel `Explore` grounding to `file:line`, `--depth deep` adversarial verification, AskUserQuestion gate, `./reviews/` output with 🟢/🟡/🔴 + color-coded register + wiki ingestion), fused with `interactive-wireframe`'s in-page `__wf` assertions and `funcspec`'s code-said-X-render-shows-Y contradiction check. `wf-probe.js` is a faithful copy of the scaffold `__wf` methods (geometry/contrast/markup/focusables/behaviour) injected into both sides so the diff is drift-proof; a `methods()` self-report supports the drift check.
@@ -58,7 +117,7 @@ Chronological record of all bootstrap, maintenance, and schema evolution operati
 
 **Registration**: `CLAUDE.md` (new "When to Use the Wireframe-Parity Command" section + paragraph, Getting Started item 29, structure tree skills/ + commands/), `.claude-plugin/plugin.json` and `marketplace.json` (keywords `wireframe-parity`/`design-parity`/`as-built-review`/`visual-parity`/`ui-parity`, version → 1.20.0).
 
-**Relationship to existing skills**: post-implementation companion to `interactive-wireframe` (consumes its spec + wireframe + `_library/decisions.md`); distinct from `plan-review` (audits a document *before* build) and `ux-audit` (heuristics on a UI) — this audits a *built UI against the wireframe that specified it*.
+**Relationship to existing skills**: post-implementation companion to `interactive-wireframe` (consumes its spec + wireframe + `_library/decisions.md`); distinct from `plan-review` (audits a document _before_ build) and `ux-audit` (heuristics on a UI) — this audits a _built UI against the wireframe that specified it_.
 
 ---
 
@@ -69,10 +128,12 @@ Chronological record of all bootstrap, maintenance, and schema evolution operati
 **What it does**: While a served wireframe is open in the browser, the user enters comment mode (✎ button or `c`), picks any element (hover-highlight, click — the click is swallowed, never triggering the underlying control), and comments; the payload carries the derived CSS selector, nearest `data-z` zone, nearest `▼ FRAGMENT` name, text snippet, bounding rect, the full axis state `WF.S`, and the URL hash — pinning exactly what was on screen. Transport is layered: the page POSTs same-origin to the serve script's new `POST /__feedback` (loopback-only, ≤64KB, JSON-validated) → `<slug>/.feedback.jsonl`; agent replies (via the new `reply` subcommand or the channel's `reply` tool) append `<slug>/.replies.jsonl`, which the page polls (~2s, backoff) into a thread panel with sent/queued/replied statuses; the thread survives rebuild-between-rounds reloads via one-shot reconstruction. **Layer 1** (every session): `feedback` (cursor-based drain, exit 0/1), `await-feedback` (blocking, exit 0/124 — run as a background Bash task that wakes the agent), `reply --to <fb-id>`; `start` auto-replaces live pre-v2 servers (`"v":2` state marker). **Layer 2** (optional, research preview): `channels/wireframe-feedback/server.ts` — an MCP channel (`capabilities.experimental['claude/channel']`) that watches the same files and pushes each comment into the running session as a `<channel>` event (meta `fb_id/slug/kind`), plus a `reply` tool; registered via the target project's `.mcp.json` (offered once), launched with `claude --dangerously-load-development-channels server:wireframe-feedback`; liveness is probed by the reply tool's visibility (channel live → never also poll, preventing double delivery). Degrades gracefully: no endpoint/`file://` → clipboard-copy fallback with a visible hint. Comment text is framed as end-user feedback to triage (change → rebuild, question → reply, approval → decision row), never as instructions. Also fixed a latent serve-script bug: `port_holder` could abort the port scan under `set -euo pipefail` when a port was in TIME_WAIT (busy to bind, invisible to lsof), and `port_free` now probes with SO_REUSEADDR to mirror the server's own bind.
 
 **Files added**:
+
 - `channels/wireframe-feedback/server.ts` + `package.json` — the channel server (Bun + @modelcontextprotocol/sdk)
 - `skills/interactive-wireframe/references/live-feedback.md` — schemas, subcommand contracts, channel setup, triage protocol, degradation matrix, security gate
 
 **Files modified**:
+
 - `skills/interactive-wireframe/scripts/serve-wireframe.sh` — `do_POST`, `"v":2` + auto-relaunch, `feedback`/`await-feedback`/`reply`, port-helper fixes
 - `skills/interactive-wireframe/assets/wireframe-scaffold.html` — feedback kit (`__wfFb` harness IIFE + `.wf-fb-*` chrome; `__wfFb.comment()` programmatic test hook)
 - `skills/interactive-wireframe/SKILL.md` — Phase 3 endpoint + channel offer + liveness rule, Phase 4 browser-comments bullet, artifacts/gitignore, reference table
@@ -89,12 +150,14 @@ Chronological record of all bootstrap, maintenance, and schema evolution operati
 
 **Operation**: Added a per-project reuse mechanism to the `interactive-wireframe` skill — grounding cache, fragment library, and decisions ledger under `<out>/_library/` + `<out>/_index.md`, consumed at grounding/build/interview time and auto-harvested at spec emission.
 
-**What it does**: Repeat wireframe runs in the same project start warm instead of re-deriving everything. Motivating evidence (CUMULATIVE_OS, 2 real runs): byte-identical token tables across both runs' `grounding.md` (the second hand-wrote "reused verbatim — see <other-slug>"), ~17% of each wireframe file being project chrome rebuilt from scratch, and settled decisions (`structure: flat`, `railW: 236`) carried between runs by hand. Three layers: **grounding cache** (`_library/grounding-cache.md`, per-section `verified` dates, TTL-trusted — default 14 days, `--ttl <days>` — with the three honest label states `cached — verified` / `cached — re-verified` / re-derived-on-drift; drift is a Gaps finding); **fragment library** (`_library/fragments/*.{html,css}`, self-describing headers with origin/sources/token-deps/feeds, injected into the scaffold's REPLACE regions wrapped in `▼ FRAGMENT … ▲ /FRAGMENT` markers so harvest is a mechanical diff); **decisions ledger** (`_library/decisions.md`, append-only, reopened rows marked superseded; verdicts imported into round 1 as fixed context with one "reopen?" affordance, landing in specs as `Settled by: carried (<slug>/Dn)`). Harvest runs automatically at Phase 6 (settled-context heuristic, cap 5 fragments; even under `--fresh`, which skips only consumption); projects with prior runs but no library get a one-time backfill offer (backfilled entries earn `verified:` only after their `path:line` anchors pass a grep). Library is per-out-dir — tokens never transfer between products; slugs must not start with `_`.
+**What it does**: Repeat wireframe runs in the same project start warm instead of re-deriving everything. Motivating evidence (CUMULATIVE*OS, 2 real runs): byte-identical token tables across both runs' `grounding.md` (the second hand-wrote "reused verbatim — see <other-slug>"), ~17% of each wireframe file being project chrome rebuilt from scratch, and settled decisions (`structure: flat`, `railW: 236`) carried between runs by hand. Three layers: **grounding cache** (`_library/grounding-cache.md`, per-section `verified` dates, TTL-trusted — default 14 days, `--ttl <days>` — with the three honest label states `cached — verified` / `cached — re-verified` / re-derived-on-drift; drift is a Gaps finding); **fragment library** (`_library/fragments/*.{html,css}`, self-describing headers with origin/sources/token-deps/feeds, injected into the scaffold's REPLACE regions wrapped in `▼ FRAGMENT … ▲ /FRAGMENT` markers so harvest is a mechanical diff); **decisions ledger** (`_library/decisions.md`, append-only, reopened rows marked superseded; verdicts imported into round 1 as fixed context with one "reopen?" affordance, landing in specs as `Settled by: carried (<slug>/Dn)`). Harvest runs automatically at Phase 6 (settled-context heuristic, cap 5 fragments; even under `--fresh`, which skips only consumption); projects with prior runs but no library get a one-time backfill offer (backfilled entries earn `verified:` only after their `path:line` anchors pass a grep). Library is per-out-dir — tokens never transfer between products; slugs must not start with `*`.
 
 **Files added**:
+
 - `skills/interactive-wireframe/references/reuse-library.md` — the single source of truth (layout, three layers, TTL rules, per-phase consumption, harvest algorithm, backfill, honesty rules)
 
 **Files modified**:
+
 - `skills/interactive-wireframe/SKILL.md` — Phase 1 cache-first check, Phase 2 fragment injection, Phase 4 ledger bullet, Phase 6 harvest step, Artifacts tree (`_index.md` + `_library/`), reference-files table row
 - `skills/interactive-wireframe/references/{grounding,interview,spec-template}.md` — cache-first pointer + cached-label heading form; "Consuming the decisions ledger" subsection; `carried (<slug>/Dn)` legend
 - `skills/interactive-wireframe/assets/wireframe-scaffold.html` — banner note on seeding regions 1–3 from fragments (harness untouched)
@@ -111,6 +174,7 @@ Chronological record of all bootstrap, maintenance, and schema evolution operati
 **What it does**: Makes a codebase a good place for coding agents to work — the verification loop is the bottleneck, not generation. `fast-ci` swaps native tooling (TypeScript 7 GA, oxlint/oxfmt, uv, ruff; `TC*`/`LN*` catalogs) and splits fast pre-merge vs post-merge/merge-queue lanes; `issue-to-agent` dispatches claude-code-action v1 agents from triage labels (auto-triage, repro-on-label, PoC-on-label; injection-aware, zizmor-verified); `chore-crons` schedules agents onto the neglected tail (regression backfill, SDK gaps, skill tuning; single rolling channel, self-verification required); `proof-of-work` gives agents evidence tooling (agent-browser/Playwright capture, `evidence/` manifests, presigned-URL storage, PR evidence comments); `hermetic-deploy` builds one-command isolated instances (`H*` catalog, Compose `-p` namespacing, ephemeral ports, `dev-stack.sh` contract, N-instances verification); `sim-data` produces deterministic production-shaped seed scenarios (aggregate shape-mining, copycat/faker or Greenmask/anon with human-reviewed masking, double-seed determinism proofs).
 
 **Files added**:
+
 - `skills/fast-ci/` — SKILL.md + `references/{toolchain,pipeline-split}.md`
 - `skills/issue-to-agent/` — SKILL.md + `references/workflows.md`
 - `skills/chore-crons/` — SKILL.md + `references/cron-recipes.md`
@@ -136,6 +200,7 @@ Chronological record of all bootstrap, maintenance, and schema evolution operati
 **What it does**: Deploys parallel read-only subagents to profile every subsystem of a project/monorepo, then plans (dry-run, with diffs) and — on approval — writes a layered CLAUDE.md/AGENTS.md context hierarchy plus large-codebase config (Read deny rules, `additionalDirectories`, `claudeMdExcludes`, a SessionStart hook, code-intelligence recommendations). Implements the canonical "Set up Claude Code in a monorepo or large codebase" guidance. CLAUDE.md is the per-directory source of truth; AGENTS.md is a thin pointer. Idempotent via `progressive-disclosure:managed` sentinels. Reviews any `wiki/` for context and logs its own runs here.
 
 **Files added**:
+
 - `skills/progressive-disclosure/SKILL.md` (6-phase pipeline)
 - `skills/progressive-disclosure/references/` — `large-codebases.md`, `settings-recipes.md`, `wiki-integration.md`
 - `skills/progressive-disclosure/templates/` — `root-claude.md`, `subsystem-claude.md`, `agents-pointer.md`, `sessionstart-hook.sh`, `disclosure-plan.md`
@@ -156,6 +221,7 @@ Chronological record of all bootstrap, maintenance, and schema evolution operati
 **Classification**: Evidence + Clarification + Contradiction
 
 **Pages Updated**:
+
 - [[brand-budget-tracking|Brand Budget Tracking]]: Added Anaplan as budget source; contradiction notice vs Oracle assumption; new open questions about template format and LE cycles
 - [[approval-workflows|Approval Workflows]]: Sam Central fully documented (no longer "unknown system"); approval threshold lookup confirmed as real-time
 - [[buyer-user-management|Buyer User Management]]: Sam Central details added; cost center hierarchy documented
@@ -172,10 +238,12 @@ Chronological record of all bootstrap, maintenance, and schema evolution operati
 - [[budget-management-engine|Gap: Budget Management Engine]]: Added Anaplan as budget source; updated Option 3 to target Anaplan
 
 **Pages Created**:
+
 - [[sam-central|Sam Central Entity]]: BBC's legacy coworker database — org hierarchy, approval thresholds, distributor mappings, cost center hierarchy
 - [[anaplan|Anaplan Entity]]: BBC's financial reporting/planning system — source of truth for OPEX/brand budgets
 
 **Contradictions Found**:
+
 - **Budget Source (MAJOR)**: Wiki previously assumed Oracle ERP as budget system of record. Client confirms Anaplan is the budget SOR. "We do NOT maintain our budgets for OPEX in SAP, it lives here [Anaplan]." Affects oracle-erp entity, oracle-erp-integration, brand-budget-tracking, budget-management-engine gap, and oracle-erp-system-record question.
 
 **Key Takeaway**: This email fundamentally changes the budget integration architecture by identifying Anaplan (not Oracle) as the budget source, and provides critical detail on Sam Central's role in access control and approval workflows. 7 feeder systems now documented: Sam Central, Anaplan, WorkFront, Adobe Creative Suite, Outlook, Vendor Portals, MDM/SAP/SAP Ariba.
@@ -195,6 +263,7 @@ Chronological record of all bootstrap, maintenance, and schema evolution operati
 ### Sources Ingested
 
 **Meeting Analysis Pipeline:**
+
 - `BostonBeerCompany/meetings/01-merchtank-overview/` (Partial — early frame analysis only)
   - gap-analysis-sample-bbc-merchtank.md
   - bbc-system-architecture-map.md
@@ -221,9 +290,11 @@ Chronological record of all bootstrap, maintenance, and schema evolution operati
   - No analysis outputs yet; requires pipeline run
 
 **Gap Analysis Batches:**
+
 - `BostonBeerCompany/gap-analysis-batch-3-my-account.md` — Account structure, user management, address book
 
 **Platform Knowledge:**
+
 - `salesforce/salesforce-commerce-product-configuration-guide/` — Config guide, bootstrap kit
 - `salesforce/sf-commerce-bootstrap-kit/` — 01_bootstrap_runbook.md
 - `Lightning-web-runtime-docs/` — 10 architecture documents covering LWR, B2B Commerce APIs, custom components
@@ -232,6 +303,7 @@ Chronological record of all bootstrap, maintenance, and schema evolution operati
 ### Pages Created by Type
 
 **Features (20):**
+
 1. address-book-management
 2. approval-workflows
 3. brand-budget-tracking
@@ -255,6 +327,7 @@ Chronological record of all bootstrap, maintenance, and schema evolution operati
 Note: 18 custom features, 1 config feature (product-catalog-and-browse)
 
 **Gaps (10):**
+
 1. budget-management-engine (Critical)
 2. co-op-billing (Critical)
 3. custom-item-design-and-proofing (Critical)
@@ -267,6 +340,7 @@ Note: 18 custom features, 1 config feature (product-catalog-and-browse)
 10. virtual-warehouse-inventory-transfers (High)
 
 **Meetings (5):**
+
 1. 01-merchtank-overview (2025-12-04) — Status: Partial
 2. 02-virtual-warehouse-walkthrough (2026-02-02) — Status: Complete
 3. 03-custom-requests (2026-03-01) — Status: Complete
@@ -274,6 +348,7 @@ Note: 18 custom features, 1 config feature (product-catalog-and-browse)
 5. 05-finance-workflow (2025-12-09) — Status: Unprocessed
 
 **Questions (5):**
+
 1. budget-enforcement-behavior (P1)
 2. oracle-erp-system-record (P1)
 3. salesforce-order-management-licensing (P1)
@@ -281,18 +356,21 @@ Note: 18 custom features, 1 config feature (product-catalog-and-browse)
 5. virtual-warehouse-active-usage (P2)
 
 **Entities (4):**
+
 1. boston-beer-company (Organization)
 2. merchtank (System, Legacy)
 3. oracle-erp (System, External)
 4. tradewearables (Vendor)
 
 **Integrations (4):**
+
 1. oracle-erp-integration (Bidirectional, Batch, Planned)
 2. sso-authentication (Bidirectional, Real-time, Planned)
 3. tradewearables-api (Inbound, Batch, Planned)
 4. vendor-fulfillment (Outbound, On-demand, Planned)
 
 **Platforms (3):**
+
 1. salesforce-b2b-commerce/overview
 2. salesforce-lwc/overview
 3. merchtank/overview
@@ -325,4 +403,3 @@ Note: 18 custom features, 1 config feature (product-catalog-and-browse)
 6. **Link validation** — Verify all [[wiki-links]] resolve correctly
 
 ---
-

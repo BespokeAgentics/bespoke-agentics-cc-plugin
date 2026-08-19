@@ -24,7 +24,7 @@ moment where "we didn't write this" or "that's out of scope" or "I'll note it in
 becomes a reason to walk past it.
 
 The premise of this skill is that noting a defect is not resolving a defect. A finding that
-survives into a session summary, a TODO comment, or a "future work" bullet has been *deferred*,
+survives into a session summary, a TODO comment, or a "future work" bullet has been _deferred_,
 and deferral is how defects compound: the next session inherits a codebase whose known problems are
 invisible, builds on top of them, and the cost of the fix goes up every time. So the default
 disposition is **fix it now, prove it, document it, then resume** — and anything other than that
@@ -41,12 +41,16 @@ Three ideas govern everything below:
 - **Scope discipline is what makes "never defer" survivable.** A rule that says fix everything,
   applied to a codebase with unbounded latent problems, turns every task into a refactor. The
   boundary is blast radius: what blocks the current work or lives in the code you are touching
-  gets fixed now; what is genuinely separate gets surfaced to the user as a decision *before* you
+  gets fixed now; what is genuinely separate gets surfaced to the user as a decision _before_ you
   proceed, not buried in a summary after.
 
 ---
 
 ## Step 0 — Take the defect in
+
+The defect normally arrives as the invocation's argument: a description of what is wrong, a
+`file:line`, or a paste of the failing output. Any of those is enough to begin with — none of them
+is enough to skip the capture below.
 
 Write down, before touching anything, what is actually being claimed:
 
@@ -63,7 +67,9 @@ through the steps, before starting the next. Interleaving fixes destroys your ab
 a gate failure to a cause, and it is how a small fix quietly becomes an unreviewable diff.
 
 If the user handed you a defect in vague terms ("something's off with the date handling"), resolve
-it to a concrete symptom + location before continuing. Ask if you cannot.
+it to a concrete symptom + location before continuing. Ask if you cannot. If they handed you
+nothing at all, ask what the defect is rather than sweeping the repo for candidates — this skill
+dispositions a known defect, it does not hunt for new ones.
 
 ---
 
@@ -71,14 +77,14 @@ it to a concrete symptom + location before continuing. Ask if you cannot.
 
 The goal here is to convert a claim into a fact. What that takes depends on the class:
 
-| Class | What verification means |
-|---|---|
-| Bug | **Reproduce it.** A failing test, a script, a command with observable wrong output. If you cannot reproduce it, say so — do not fix by inspection. |
-| Missing test | Confirm the path is genuinely uncovered: search the test suite for the behavior, don't just check the file has no sibling test. Then confirm the behavior is worth pinning. |
-| Silent failure | Trace the swallow to a real path where an error is discarded and something downstream depends on it having not been. |
-| Contract violation | Show both sides: what the caller/type/schema/doc promises, and what the code does. |
-| Bad practice | Name the concrete failure mode it enables. "This is not idiomatic" is a preference; "this mutates a shared array so concurrent callers see each other's writes" is a defect. |
-| Gap | Identify what depends on the missing thing. A gap nothing depends on is a design note, not a defect. |
+| Class              | What verification means                                                                                                                                                      |
+| ------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Bug                | **Reproduce it.** A failing test, a script, a command with observable wrong output. If you cannot reproduce it, say so — do not fix by inspection.                           |
+| Missing test       | Confirm the path is genuinely uncovered: search the test suite for the behavior, don't just check the file has no sibling test. Then confirm the behavior is worth pinning.  |
+| Silent failure     | Trace the swallow to a real path where an error is discarded and something downstream depends on it having not been.                                                         |
+| Contract violation | Show both sides: what the caller/type/schema/doc promises, and what the code does.                                                                                           |
+| Bad practice       | Name the concrete failure mode it enables. "This is not idiomatic" is a preference; "this mutates a shared array so concurrent callers see each other's writes" is a defect. |
+| Gap                | Identify what depends on the missing thing. A gap nothing depends on is a design note, not a defect.                                                                         |
 
 Two failure modes to actively guard against:
 
@@ -89,7 +95,7 @@ Two failure modes to actively guard against:
   above it). If you cannot find a reason and cannot demonstrate harm, downgrade it to a question
   for the user rather than fixing it.
 - **The wrong root cause.** The first plausible explanation is not always the actual one. Once you
-  can reproduce, confirm your explanation *predicts* the reproduction — change the input your
+  can reproduce, confirm your explanation _predicts_ the reproduction — change the input your
   theory says matters and check the symptom moves with it.
 
 If verification kills the defect (it is not real, or it is intentional), say so plainly, record
@@ -114,7 +120,7 @@ fix later. Fix it as part of this work. It is cheaper now than it will ever be a
 reviewer is already reading these lines.
 
 **Escalate to the user — now, not in the summary.** The defect is genuinely separate from the
-current work *and* one of these is true: fixing it would require a decision only the user can make
+current work _and_ one of these is true: fixing it would require a decision only the user can make
 (a product behavior question, an API contract change, a dependency upgrade), the fix is large
 enough that absorbing it silently would hijack the task the user actually asked for, or fixing it
 is unsafe without information you don't have (production data shape, a migration's blast radius).
@@ -122,7 +128,7 @@ is unsafe without information you don't have (production data shape, a migration
 Escalation has a strict form, and it is the part most easily done badly. It means **stopping and
 telling the user in the conversation, before you continue building**, with: the verified symptom,
 the concrete risk of leaving it, your recommended fix, and a rough size. Then let them choose. What
-escalation is *not*: a TODO comment, a bullet in a completion summary, a "noted for follow-up," a
+escalation is _not_: a TODO comment, a bullet in a completion summary, a "noted for follow-up," a
 ticket you file and move past, or a line in a handoff document. Those are all deferral wearing
 escalation's clothes — the user never got a real choice, because you had already moved on by the
 time they read it.
@@ -144,7 +150,7 @@ often names the high-signal checks directly. Run the ones relevant to the affect
 lint, the focused test suite; the full build only if the change could plausibly affect it).
 
 Record what passes and what already fails. Pre-existing failures matter enormously here: if the
-suite is already red, you need to know that *now*, because otherwise you will attribute it to your
+suite is already red, you need to know that _now_, because otherwise you will attribute it to your
 fix and either chase a ghost or, worse, "fix" it by weakening a test.
 
 If you cannot run gates at all (no install, no network, sandboxed), your evidence standard drops —

@@ -1,5 +1,5 @@
 ---
-name: "bespokeagentics:repo-audit"
+name: "repo-audit"
 description: "Principal-engineer repository audit. Read-only, four-phase analysis (Discovery → evidence-based Audit → Improvement Strategy → milestone Task Plan) that produces a single graded report with file:line-cited findings, severity ratings, strengths, quick wins, and open questions. Calibrates rigor to project maturity, prioritizes the core 20% of code, and never modifies anything but the report it writes."
 argument-hint: "[<path>] [--depth quick|standard|deep] [--out <file>]"
 allowed-tools: Read, Grep, Glob, Bash, Agent, WebSearch, WebFetch, Write, AskUserQuestion

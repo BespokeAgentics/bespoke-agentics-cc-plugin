@@ -9,7 +9,7 @@ validated on screen). Drop a section that genuinely does not apply; never pad on
 with invention.
 
 The **Decisions** and **Verification** sections have a second life: once the
-feature is built, `/bespokeagentics:wireframe-parity` reads the Decisions as the
+feature is built, `/bespoke-agentics:wireframe-parity` reads the Decisions as the
 parity contract and re-measures the Verification numbers against the running app.
 Keep both complete and honest — they are what the as-built review is judged
 against.

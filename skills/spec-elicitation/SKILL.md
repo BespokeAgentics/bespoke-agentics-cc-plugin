@@ -19,7 +19,7 @@ Skip for: bug fixes with clear repro, trivial changes (rename / typo), specs tha
 
 ## Inputs
 
-- `$ARGUMENTS` — path to the spec file to read or create. Defaults to `spec.md` in the current directory.
+- `$ARGUMENTS` — a single optional positional argument, `[path/to/spec.md]`: the path to the spec file to read or create. Defaults to `spec.md` in the current directory. There are no flags.
 
 ## Workflow
 
@@ -33,6 +33,7 @@ Skip for: bug fixes with clear repro, trivial changes (rename / typo), specs tha
 Use `AskUserQuestion` to systematically explore every dimension. Read `references/interview-dimensions.md` for the full list — at minimum cover **Target & Scope**, **Technical Architecture**, **User Experience**, **Business Logic**, **Performance & Reliability**, **Security & Compliance**, and **Future Considerations**.
 
 Apply the techniques in `references/interview-techniques.md`:
+
 - Multi-choice questions with 2-4 concrete options.
 - Non-obvious follow-ups ("What happens when…?", "What if X?", scenario-driven).
 - Challenge assumptions; play devil's advocate.
@@ -43,6 +44,7 @@ Apply the techniques in `references/interview-techniques.md`:
 ### Phase 3 — Iterative refinement
 
 After each answer:
+
 1. Identify new follow-up questions.
 2. Challenge assumptions ("What if X?").
 3. Watch for contradictions with previous answers.

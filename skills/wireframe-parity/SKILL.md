@@ -1,5 +1,5 @@
 ---
-name: bespokeagentics:wireframe-parity
+name: wireframe-parity
 description: "Confirm the implemented UI matches the wireframe a spec settled. Use this AFTER an interactive-wireframe spec has been built, whenever someone says 'does the build match the wireframe', 'check parity with the mockup', 'did we implement the design we decided', 'compare the wireframe to what shipped', 'review the as-built UI against the spec', or 'confirm the implementation matches the wireframe'. It resolves the interactive-wireframe spec + wireframe HTML + decisions ledger, grounds every settled decision/state/label in the implementation (file:line), then drives BOTH the wireframe and the running app in a browser, injects the same measurement kit into each, and diffs band geometry / contrast / markup / focusables / rendered labels against the spec's frozen Verification numbers — per state. Spec Decisions are the parity contract; an AskUserQuestion interview separates real regression from intended evolution. Writes a READ-ONLY, color-coded parity report to ./reviews/ — never modifying the implementation. Distinct from plan-review (audits a document before build) and ux-audit (audits a UI against heuristics): this audits a BUILT UI against the wireframe that specified it. Composes with interactive-wireframe."
 ---
 
@@ -8,8 +8,8 @@ You are the Wireframe-Parity Orchestrator. An `interactive-wireframe` spec settl
 Three things make this skill valuable:
 
 - **The wireframe already froze the truth.** The emitted spec's **Verification** table is a snapshot of `__wf` measurements (band contiguity like `0→44→76→131`, contrast ratios + AA/AAA, `button button` count, off-screen focusables); **The contract** holds the structural invariants and their numbers; the **Decisions** table + `_library/decisions.md` ledger record what was settled and how; the **States** table is the overlay's axes resolved (each row is reproducible as a wireframe URL). You are not inventing an "intended" side — you are reading it.
-- **The same kit measures both sides.** The wireframe's `__wf` kit is dependency-free. This skill ships `assets/wf-probe.js`, a standalone copy, and injects it into **both** the served wireframe and the running app, so band geometry, contrast, markup and rendered labels are measured by *identical code* and diffed apples-to-apples — not eyeballed from two screenshots.
-- **Read-only, and decisions are the contract.** You review; you never touch the implementation. A wireframe is a settled design, but a build sometimes intentionally evolves past it — so deviating from an explicitly **settled Decision** is a finding, unspecified details are free, and the interview separates *regression from the decided design* from *acceptable evolution* before anything is called a failure.
+- **The same kit measures both sides.** The wireframe's `__wf` kit is dependency-free. This skill ships `assets/wf-probe.js`, a standalone copy, and injects it into **both** the served wireframe and the running app, so band geometry, contrast, markup and rendered labels are measured by _identical code_ and diffed apples-to-apples — not eyeballed from two screenshots.
+- **Read-only, and decisions are the contract.** You review; you never touch the implementation. A wireframe is a settled design, but a build sometimes intentionally evolves past it — so deviating from an explicitly **settled Decision** is a finding, unspecified details are free, and the interview separates _regression from the decided design_ from _acceptable evolution_ before anything is called a failure.
 
 You are a careful reviewer confirming as-built fidelity, not a pixel pedant. Parity is honoring the decided invariant **within tolerance** — bands contiguous if the contract says one sticky element, contrast meeting the same AA verdict, geometry within ±2px of the wireframe (font-metric noise is not a defect). A faithful build deserves a short 🟢 report.
 
@@ -45,7 +45,7 @@ DEPTH         = value of --depth, else "standard"
 
 ## Pre-flight
 
-1. Resolve `SPEC_PATH`, `SLUG`, `WIREFRAME`. Read the spec **in full** yourself, in the main session, so its Decisions / Contract / States / Verification carry through every phase. If a slug resolves no `vN.html`, or a spec path has no discoverable wireframe, say so and stop (this skill reviews *against* a wireframe — with none there is nothing to compare).
+1. Resolve `SPEC_PATH`, `SLUG`, `WIREFRAME`. Read the spec **in full** yourself, in the main session, so its Decisions / Contract / States / Verification carry through every phase. If a slug resolves no `vN.html`, or a spec path has no discoverable wireframe, say so and stop (this skill reviews _against_ a wireframe — with none there is nothing to compare).
 2. Confirm `{PROJECT_DIR}` is the repo the feature was built in (`package.json`/`pyproject.toml`/`src/`/`app/`/`.git/`). If not, warn that grounding will be limited.
 3. Resolve `APP_URL`: use `--app`; else ask for a running URL, offering `--no-browser` (structural-only) as the fallback. Never boot the app yourself — the user provides the URL.
 4. Create `{WORK_DIR}`, `{ANALYSIS_DIR}`, `{OUT_DIR}` if missing.
@@ -57,11 +57,11 @@ Print a pre-flight summary block: spec, slug, wireframe file, app URL (or "struc
 
 Before each phase, if its expected output already exists (and `--force` is not set), skip it.
 
-| Phase | Skip condition                                               | Skip message                                        |
-| ----- | ----------------------------------------------------------- | --------------------------------------------------- |
-| 0     | `{ANALYSIS_DIR}/intended-model.md` exists                   | `Phase 0: Skipping — intended model already parsed` |
-| 1     | `{ANALYSIS_DIR}/grounding-map.md` exists                    | `Phase 1: Skipping — grounding map found`           |
-| 2     | `{ANALYSIS_DIR}/measured-parity.md` exists (or `--no-browser`) | `Phase 2: Skipping — measurements found`         |
+| Phase | Skip condition                                                 | Skip message                                        |
+| ----- | -------------------------------------------------------------- | --------------------------------------------------- |
+| 0     | `{ANALYSIS_DIR}/intended-model.md` exists                      | `Phase 0: Skipping — intended model already parsed` |
+| 1     | `{ANALYSIS_DIR}/grounding-map.md` exists                       | `Phase 1: Skipping — grounding map found`           |
+| 2     | `{ANALYSIS_DIR}/measured-parity.md` exists (or `--no-browser`) | `Phase 2: Skipping — measurements found`            |
 
 Phase 3 (interview) and Phase 4 (report) are never auto-skipped. If `{OUT_DIR}/{SLUG}-parity.md` exists and `--force` is not set, ask before overwriting.
 
@@ -128,8 +128,8 @@ Use `-` for skipped and `x` for failed (with a brief reason).
 ## Important conventions
 
 - Substitute all `{variables}` with computed values before passing to agents. Fix `SLUG` once in Phase 0 and reuse it in every filename.
-- **Strictly read-only on the implementation.** This skill writes a report and intermediate analysis files; it never edits app code, the spec, or the wireframe. If the user wants divergences reconciled, that is a separate, explicit follow-up — offer it, don't assume it.
-- **A finding is only as good as its evidence.** Every divergence cites the **intended side** (spec § / decision id / the wireframe's measured number) *and* the **as-built side** (`file:line` and/or the app's measured number). No evidence → not a finding.
+- **Strictly read-only on the implementation.** This skill writes a report and intermediate analysis files; it never edits app code, the spec, or the wireframe. If the user wants divergences reconciled, that is a separate, explicit follow-up — offer it, don't assume it. Concretely, close by **offering** to open the P0 regressions as tasks — or, where the interview found intended evolutions, to refresh the stale `_library/decisions.md` ledger + spec. Nothing is modified unless the user says so.
+- **A finding is only as good as its evidence.** Every divergence cites the **intended side** (spec § / decision id / the wireframe's measured number) _and_ the **as-built side** (`file:line` and/or the app's measured number). No evidence → not a finding.
 - **Parity is invariant-within-tolerance, not pixel-identity.** Default geometry tolerance ±2px; contrast must meet the same AA/AAA verdict (not the identical ratio); contiguity must hold if the contract requires it. State the tolerance in the report.
 - **Keep the three classes distinct:** `regression` (build breaks a settled decision — a real parity gap) · `intended-evolution` (build deliberately improved past the wireframe — acceptable, recorded) · `unspecified` (the spec never fixed this — out of scope for parity). The author responds to each differently.
 - Use the standard status colors in the divergence register: 🟢 OOTB · 🔵 Config · 🟡 Custom Dev · 🔴 Gap · ⚪ TBD · 🟣 3rd Party.

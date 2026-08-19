@@ -21,7 +21,7 @@
     },
     {
       "id": "issue-report-thin",
-      "prompt": "/bespokeagentics:plan-review skills/plan-review/evals/fixtures/sample-issue.md --type issue",
+      "prompt": "/bespoke-agentics:plan-review skills/plan-review/evals/fixtures/sample-issue.md --type issue",
       "files": ["skills/plan-review/evals/fixtures/sample-issue.md"],
       "expect": [
         "resolves type=issue and tunes lenses toward a bug report",
@@ -33,7 +33,7 @@
     },
     {
       "id": "deep-mode-adversarial",
-      "prompt": "/bespokeagentics:plan-review skills/plan-review/evals/fixtures/sample-plan.md --depth deep",
+      "prompt": "/bespoke-agentics:plan-review skills/plan-review/evals/fixtures/sample-plan.md --depth deep",
       "files": ["skills/plan-review/evals/fixtures/sample-plan.md"],
       "expect": [
         "runs Phase 2.5: spawns skeptic agents to adversarially refute each blocker/major finding",
@@ -44,7 +44,7 @@
     },
     {
       "id": "no-ground-flag",
-      "prompt": "/bespokeagentics:plan-review skills/plan-review/evals/fixtures/sample-plan.md --no-ground",
+      "prompt": "/bespoke-agentics:plan-review skills/plan-review/evals/fixtures/sample-plan.md --no-ground",
       "files": ["skills/plan-review/evals/fixtures/sample-plan.md"],
       "expect": [
         "skips Phase 1 grounding entirely (no Explore agents launched against the repo)",
@@ -65,7 +65,7 @@
     },
     {
       "id": "solid-plan-stays-lean",
-      "prompt": "/bespokeagentics:plan-review ./plans/some-tight-plan.md --depth quick",
+      "prompt": "/bespoke-agentics:plan-review ./plans/some-tight-plan.md --depth quick",
       "setup": "the target plan is genuinely solid (clear scope, testable criteria, rollback present)",
       "expect": [
         "returns a 🟢 Ready (or near-ready) verdict instead of manufacturing blockers",

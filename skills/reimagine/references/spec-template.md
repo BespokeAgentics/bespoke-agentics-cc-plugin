@@ -9,7 +9,7 @@ inventory** — the implementer's worklist for moving the real component to the
 winning design.
 
 The winner's **Verification table uses the parent's exact format**, so
-`/bespokeagentics:wireframe-parity` can consume this spec unchanged once the
+`/bespoke-agentics:wireframe-parity` can consume this spec unchanged once the
 redesign ships.
 
 ```markdown
@@ -112,10 +112,10 @@ spot-check result on the winner.>
 
 ## Handoff
 
-- **Fine-grained settlement:** `/bespokeagentics:interactive-wireframe
+- **Fine-grained settlement:** `/bespoke-agentics:interactive-wireframe
   '<surface>' --slug <slug>` — the winner becomes the surface under discussion;
   this spec's Decisions carry in via the ledger. Offer, don't assume.
-- **Build:** `/bespokeagentics:orchestrate` or workstream-orchestrate, with
+- **Build:** `/bespoke-agentics:orchestrate` or workstream-orchestrate, with
   this spec (the Δ inventory is the work breakdown).
 
 ## References

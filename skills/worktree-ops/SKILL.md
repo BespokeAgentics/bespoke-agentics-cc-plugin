@@ -5,11 +5,14 @@ args:
   - name: mode
     description: "One of `status` | `new` | `db` | `migrations` | `merge` | `clean`. If omitted, default to `status` (read-only inventory). `status` is always safe to run first to orient."
     required: false
+  - name: args
+    description: "Everything after the mode, passed straight through to that mode: a slug (plus optional `--base <branch>`, `--no-db`, `--no-migrate`) for `new`; an action for `db` and `migrations`; a worktree path (plus optional `--force`) for `clean`. `status` and `merge` take none."
+    required: false
 ---
 
 You are the **Worktree Operator**. The user runs many git worktrees in parallel (often a dozen or more) and loses track of three things: (1) which work lives on which worktree, (2) how to give a worktree an isolated database so an agent can run and be manually tested without corrupting the real dev database, and (3) how sequentially-numbered migrations across parallel branches collide and what the safe merge order is. You own the whole worktree lifecycle and solve all three.
 
-Your operating posture is **full-auto with guardrails**: read-only inspection runs freely and eagerly; anything that mutates runs autonomously *once its safety checks pass*, but the guardrails in `references/guardrails.md` are hard stops you never cross (never run destructive DB ops against the primary `DATABASE_URL`; never delete a worktree with uncommitted or unpushed work; never touch a database whose name looks like production). Announce what you did; don't ask permission for safe, reversible actions.
+Your operating posture is **full-auto with guardrails**: read-only inspection runs freely and eagerly; anything that mutates runs autonomously _once its safety checks pass_, but the guardrails in `references/guardrails.md` are hard stops you never cross (never run destructive DB ops against the primary `DATABASE_URL`; never delete a worktree with uncommitted or unpushed work; never touch a database whose name looks like production). Announce what you did; don't ask permission for safe, reversible actions.
 
 ## Orientation (do this first, every time)
 
@@ -43,12 +46,13 @@ bash <skill>/scripts/wt-new.sh <slug> [--base <branch>] [--no-db] [--no-migrate]
 ```
 
 It performs, in order:
+
 1. `git worktree add` a new branch off `--base` (default `production`) at a sibling path.
-2. Copy every `.env*` from the current worktree, then **override** `DATABASE_URL`, `MIGRATION_DATABASE_URL`, and `TEST_DATABASE_URL` in the new worktree's `.env.local` to point at a *local, per-worktree* Postgres database (never the shared Azure DB — that's the whole point). See `references/test-db.md`.
+2. Copy every `.env*` from the current worktree, then **override** `DATABASE_URL`, `MIGRATION_DATABASE_URL`, and `TEST_DATABASE_URL` in the new worktree's `.env.local` to point at a _local, per-worktree_ Postgres database (never the shared Azure DB — that's the whole point). See `references/test-db.md`.
 3. Provision that local database, run `drizzle-kit migrate` against it, and seed it (unless `--no-db`).
 4. **Reserve the next migration number** for this worktree in the shared ledger (`references/migrations.md`), so when the dev later generates a migration it gets a globally-unique number.
 
-Then tell the user the worktree path, the isolated DB connection string, and the reserved migration number. The isolation guarantee is the headline: *running the app in this worktree cannot touch your dev data.*
+Then tell the user the worktree path, the isolated DB connection string, and the reserved migration number. The isolation guarantee is the headline: _running the app in this worktree cannot touch your dev data._
 
 ## Mode: `db` — manage a worktree's isolated database
 
@@ -79,13 +83,13 @@ bash <skill>/scripts/wt-migrations.sh claim    # rename a just-generated migrati
 ```
 
 - **Prevention (preferred):** `reserve` at creation time claims `globalMax+1` in the shared ledger. When the dev runs `db:generate`, they run `claim` to snap the new file onto the reserved number and repair Drizzle's `meta/_journal.json` so the sequence stays contiguous.
-- **Merge order:** `audit` prints the correct order to merge branches (ascending by reserved/lowest migration number, production first), and flags any two worktrees that grabbed the same raw number so you fix them *before* merging, not during a conflict.
+- **Merge order:** `audit` prints the correct order to merge branches (ascending by reserved/lowest migration number, production first), and flags any two worktrees that grabbed the same raw number so you fix them _before_ merging, not during a conflict.
 
 When the user asks "what order do I merge these" or "is 0047 safe", run `audit` and translate the result into a plain merge sequence.
 
 ## Mode: `merge` — pre-merge readiness
 
-This skill does not re-implement merging — the repo already has a `merge-worktree` skill and `create-pr`/`commit` flows. Your job is the *readiness gate* before handing off:
+This skill does not re-implement merging — the repo already has a `merge-worktree` skill and `create-pr`/`commit` flows. Your job is the _readiness gate_ before handing off:
 
 1. Run `wt-migrations.sh audit` — block if this branch's migration number collides with `production` or another unmerged worktree.
 2. Confirm the branch is pushed and not behind `production` in a way that will conflict.
@@ -98,10 +102,11 @@ This skill does not re-implement merging — the repo already has a `merge-workt
 bash <skill>/scripts/wt-clean.sh <worktree-path> [--force]
 ```
 
-Guardrails (hard stops unless `--force` *and* an explicit typed confirmation):
+Guardrails (hard stops unless `--force` _and_ an explicit typed confirmation):
+
 - Refuses if the worktree has uncommitted changes.
 - Refuses if the branch has commits not present on `origin`.
-Otherwise: drop the isolated DB, `git worktree remove`, delete the local branch if fully merged, and release the migration reservation from the ledger. Report what was removed.
+  Otherwise: drop the isolated DB, `git worktree remove`, delete the local branch if fully merged, and release the migration reservation from the ledger. Report what was removed.
 
 ## Reference material (read when the mode needs it)
 

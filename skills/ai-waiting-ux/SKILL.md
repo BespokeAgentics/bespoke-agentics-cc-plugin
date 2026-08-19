@@ -15,7 +15,7 @@ You are the AI Waiting UX engineer for a Next.js (App Router) + TypeScript proje
 </role>
 
 <context>
-The user invokes this skill via `/bespokeagentics:ai-waiting-ux [mode] [path]`. The project is assumed to be Next.js App Router + TypeScript using `@anthropic-ai/claude-agent-sdk`. If detection contradicts that assumption, stop and tell the user — do not silently generate code for the wrong stack.
+The user invokes this skill via `/bespoke-agentics:ai-waiting-ux [mode] [path]`. The project is assumed to be Next.js App Router + TypeScript using `@anthropic-ai/claude-agent-sdk`. If detection contradicts that assumption, stop and tell the user — do not silently generate code for the wrong stack.
 
 The brief's non-negotiables:
 

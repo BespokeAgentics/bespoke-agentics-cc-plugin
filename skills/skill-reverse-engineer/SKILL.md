@@ -15,7 +15,7 @@ description: >
   user says "harden this skill", "make this skill more deterministic", "reverse engineer this
   skill", "this skill behaves differently every run", "extract the scripts from this skill",
   "reduce this skill's token usage", "make this skill less AI-reliant", "audit my skill for
-  determinism", or invokes /bespokeagentics:skill-reverse-engineer. Distinct from skill-creator
+  determinism", or invokes /bespoke-agentics:skill-reverse-engineer. Distinct from skill-creator
   (creates and eval-iterates skills) and best-practices auditors (structure/YAML compliance):
   this one restructures WHERE THE WORK HAPPENS — moving work out of the model's per-run
   improvisation into artifacts that execute identically every time. It also grounds the audit in
@@ -60,8 +60,10 @@ exactly the situation skills exist to handle.
 </role>
 
 <context>
-Invoked via `/bespokeagentics:skill-reverse-engineer '<target>' [--mode audit|apply|new-version]
-[--out <dir>]`, or implicitly when someone wants a skill hardened.
+Invoked via `/bespoke-agentics:skill-reverse-engineer '<target>' [--mode audit|apply|new-version]
+[--out <dir>]`, or implicitly when someone wants a skill hardened. Parse whatever the user typed
+against that form: the first token is `target`, `--mode` and `--out` are optional flags, and
+anything omitted takes the default stated in the `args` frontmatter above.
 
 Read `references/rules.md` before auditing — it is the full catalog, with per-rule detection
 cues, rationale, and refactor recipes. Read `references/refactor-recipes.md` before any edit —
@@ -69,15 +71,15 @@ it is the extraction quality bar. `references/report-format.md` holds the exact 
 
 Rule families:
 
-| Family | Theme | Question it asks |
-|--------|-------|------------------|
-| `DS*` | Determinism | Which prose procedures should be bundled scripts? |
-| `TP*` | Templates | Which regenerated outputs should be frozen assets? |
-| `CT*` | Contracts | Which phase/subagent handoffs need schemas? |
-| `VF*` | Verification | Which eyeball checks should be runnable assertions? |
-| `AM*` | Ambiguity | Where will two runs diverge on interpretation? |
-| `RB*` | Robustness | What breaks when the environment isn't ideal? |
-| `KM*` | Materialized knowledge | Which per-run derivations should be generated fact files the skill consults? |
+| Family | Theme                  | Question it asks                                                             |
+| ------ | ---------------------- | ---------------------------------------------------------------------------- |
+| `DS*`  | Determinism            | Which prose procedures should be bundled scripts?                            |
+| `TP*`  | Templates              | Which regenerated outputs should be frozen assets?                           |
+| `CT*`  | Contracts              | Which phase/subagent handoffs need schemas?                                  |
+| `VF*`  | Verification           | Which eyeball checks should be runnable assertions?                          |
+| `AM*`  | Ambiguity              | Where will two runs diverge on interpretation?                               |
+| `RB*`  | Robustness             | What breaks when the environment isn't ideal?                                |
+| `KM*`  | Materialized knowledge | Which per-run derivations should be generated fact files the skill consults? |
 
 For everything KM — the qualification test, `host-context.json` contract, `_provenance` format,
 placement policy, honesty labels — read `references/materialization.md` before Phase 1's
@@ -130,7 +132,7 @@ python3 scripts/host_probe.py . --json
 ```
 
 The probe lists candidates only (manifests, lockfiles, schema sources, wiki vaults, CI,
-data-store evidence); *you* classify the **host state** with a one-line reason:
+data-store evidence); _you_ classify the **host state** with a one-line reason:
 
 - `host-grounded` — the cwd contains the data/domain the target skill operates on (e.g. auditing
   a wiki skill from the repo that holds the vault)
@@ -210,21 +212,21 @@ Use AskUserQuestion to gate scope before touching anything:
 
 1. **Mode**, if not given on the command line: audit only / apply in place / new version.
 2. **Appetite** — extract scripts only (DS*)? Also templates and contracts (TP*/CT*)? Also
-   verification and robustness (VF*/RB*)? Full catalog?
+   verification and robustness (VF*/RB\*)? Full catalog?
 3. **Confirm findings** — each CRITICAL/HIGH finding: real and in-scope? (Some improvisation is
    deliberate; the author knows.)
 4. **Judgment overrides** — present the essential-judgment register; the user may reclassify
    ("no, that step should be deterministic too" — or the reverse).
 5. **Materialization** (only when ≥1 KM finding is accepted) — three questions:
-   - *Which facts?* All listed / schema + enum facts only (KM2/KM3/KM5) / none — re-derivation
+   - _Which facts?_ All listed / schema + enum facts only (KM2/KM3/KM5) / none — re-derivation
      is deliberate (recorded as acknowledged) / pick per fact.
-   - *Placement* (host-specific artifacts only)? Host domain config dir, named from the probe
+   - _Placement_ (host-specific artifacts only)? Host domain config dir, named from the probe
      (recommended) / `.claude/skill-facts/<skill-name>/` in the host / inside the skill — only
      sensible if the skill serves just this project. The generator ships in the skill either way.
-   - *Refresh policy?* Drift check on every consult (generator `--check`, source hashes —
+   - _Refresh policy?_ Drift check on every consult (generator `--check`, source hashes —
      recommended) / TTL, default 30 days / manual only — artifact always labeled with its
      generation date.
-   In a non-interactive run, the stated defaults apply and are recorded as assumptions.
+     In a non-interactive run, the stated defaults apply and are recorded as assumptions.
 
 No file is created or edited before this gate. Deselected findings are recorded in the report as
 `acknowledged — out of scope`.
@@ -244,7 +246,7 @@ Follow `references/refactor-recipes.md` for the quality bar. Mode determines the
 Extraction order (each stage leaves the skill coherent and usable):
 
 1. **DS\*** — extract mechanical procedures into `scripts/`; rewrite the SKILL.md step to invoke
-   the script and *keep the why* (the rationale prose stays; the how moves).
+   the script and _keep the why_ (the rationale prose stays; the how moves).
 2. **KM\*** — write each accepted generator (Recipe 7 in `references/refactor-recipes.md`),
    generate the artifact, place it per the placement policy in `references/materialization.md`
    (host-specific artifacts go host-side; in new-version mode with a read-only host, into the
@@ -310,6 +312,7 @@ about the target skill.
 </wiki_integration>
 
 <quality_bar>
+
 - Zero findings without a `file:line`.
 - Zero files created or edited before the Phase 4 gate.
 - Every CRITICAL finding phrased as the run-to-run consequence it produces.
@@ -321,4 +324,4 @@ about the target skill.
   catalog.
 - No KM finding proposes a derived artifact over a compact machine-readable source.
 - An already-hardened target gets the short-form report, not manufactured findings.
-</quality_bar>
+  </quality_bar>

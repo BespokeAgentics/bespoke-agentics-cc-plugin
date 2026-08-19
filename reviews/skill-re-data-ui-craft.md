@@ -197,7 +197,7 @@ The reconstructed execution of the default `audit-and-implement` run.
   would have settled, and different runs will draw the ambiguity line differently.
 - **Evidence**: "Read the `mode` arg (or infer from the command). If ambiguous, ask via AskUserQuestion."
 - **Refactor**: a grammar block near the top of SKILL.md, in one place only:
-  `/bespokeagentics:data-ui-craft [mode] [path]` — `mode ∈ {audit, implement, audit-and-implement}`,
+  `/bespoke-agentics:data-ui-craft [mode] [path]` — `mode ∈ {audit, implement, audit-and-implement}`,
   default `audit-and-implement`; a first argument that is not one of those three literals is `path`;
   `path` defaults to the repo root; a `path` naming a file scopes to that file, a directory scopes
   to its tree.

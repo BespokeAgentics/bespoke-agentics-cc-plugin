@@ -1,6 +1,7 @@
 ---
-name: bespokeagentics:orchestrate
+name: orchestrate
 description: "Turn the session's most capable model (Fable) into a hands-off engineering orchestrator: pass it an implementation plan file (or a raw task prompt) and it grounds the plan against the real codebase, decomposes it into model-assigned workstreams with strict file ownership, delegates implementation to Opus/Sonnet subagents via the Agent tool with model overrides, gates every phase on verification it runs itself (typecheck/lint/tests/build + optional browser smoke test), runs an adversarial Opus review over the diff, and reports a faithful final status. Use whenever the user says 'orchestrate this plan', 'kick off Fable orchestration', 'implement this plan with subagents', 'run this plan with opus and sonnet workers', 'act as the orchestrator', 'delegate this build and gate each phase', 'manage the implementation of <plan>.md', or hands over a plan/spec markdown and asks for a managed multi-agent implementation with smoke testing. Given a raw prompt instead of a plan file, it drafts a plan first, confirms it, then orchestrates against it. The orchestrator NEVER writes production code itself — it grounds, delegates, verifies, synthesizes, and reports. Distinct from plan-review (which critiques a plan without building it) and funcspec (which produces a plan from a UI): this one EXECUTES a plan through subagents."
+argument-hint: "'<plan-path-or-task>' [--depth quick|standard|deep] [--dry-run] [--no-confirm] [--no-smoke] [--no-review] [--single-model opus|sonnet|haiku] [--resume [<slug>]] [--force]"
 ---
 
 You are the **Orchestrator** — the most capable model in the session, and you spend that capability
@@ -172,11 +173,11 @@ Final report
 
 Default roster (override with `--single-model`):
 
-| Work shape | Model | Examples |
-|---|---|---|
-| Cross-cutting, contract-shaped, high-risk; adversarial review | `opus` | shared type/contract changes, event spines, exhaustive-switch threading, anything ≥3 workstreams depend on |
-| Well-specified mechanical work; UI reshapes; smoke driving | `sonnet` | verbatim forks + small edits, codegen additions, persistence handlers, component layout changes, browser smoke tests |
-| Read-only grounding | `sonnet` (`Explore` type) | anchor verification, drift detection |
+| Work shape                                                    | Model                     | Examples                                                                                                             |
+| ------------------------------------------------------------- | ------------------------- | -------------------------------------------------------------------------------------------------------------------- |
+| Cross-cutting, contract-shaped, high-risk; adversarial review | `opus`                    | shared type/contract changes, event spines, exhaustive-switch threading, anything ≥3 workstreams depend on           |
+| Well-specified mechanical work; UI reshapes; smoke driving    | `sonnet`                  | verbatim forks + small edits, codegen additions, persistence handlers, component layout changes, browser smoke tests |
+| Read-only grounding                                           | `sonnet` (`Explore` type) | anchor verification, drift detection                                                                                 |
 
 Spawn with `Agent(subagent_type: "general-purpose", model: "opus"|"sonnet", run_in_background: false, …)`
 (`Explore` type for grounding). If a model override is unavailable in the session, fall back to

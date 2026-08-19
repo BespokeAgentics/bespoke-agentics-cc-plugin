@@ -173,7 +173,7 @@ The scaffolder already wrote `.storybook/main.ts` + `preview.ts` from verified t
 - Type/build check: per-package `bunx tsc --noEmit` (consult `references/typescript-gotchas.md` — the recurring strict-mode fixes cluster by pattern) and `bun run build-storybook` (report real output — if it fails, fix or surface it; don't claim success it didn't earn).
 - Tell the user how to run it: `bun --filter @<scope>/storybook storybook` (or `cd apps/storybook && bun storybook`).
 - Summarize: components generated, pages rebuilt, where things live, and any judgment calls (promoted page-locals, role-name choices, components that needed manual attention).
-- Offer the next step: `/bespokeagentics:funcspec-evaluate <workspace>` — the `funcspec` skill evaluates the rebuilt pages page-by-page, infers the functionality the UI implies, validates it with the user, and produces a full implementation plan (spec, plan, backlog, gap register).
+- Offer the next step: `/bespoke-agentics:funcspec-evaluate <workspace>` — the `funcspec` skill evaluates the rebuilt pages page-by-page, infers the functionality the UI implies, validates it with the user, and produces a full implementation plan (spec, plan, backlog, gap register).
 
 ## Reference map
 

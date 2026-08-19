@@ -9,15 +9,15 @@ description: >-
   functional layer. Use when the user says "what does this UI need to do", "evaluate
   the pages", "turn this storybook into an implementation plan", "functional spec from
   the prototype", "what backend does this design imply", "plan the build from these
-  screens", or invokes /bespokeagentics:funcspec-evaluate or
-  /bespokeagentics:funcspec-plan. Works on any Storybook workspace; uses a
+  screens", or invokes /bespoke-agentics:funcspec-evaluate or
+  /bespoke-agentics:funcspec-plan. Works on any Storybook workspace; uses a
   design-zip-to-library analysis.json as a fast path when present. Runs in ultracode
   mode: page evaluation and deliverable drafting fan out across parallel subagents.
 ---
 
 **Invocation.** The user points you at a Storybook workspace (often the output of
 `design-zip-to-library`) and optionally passes flags, e.g.
-`/bespokeagentics:funcspec-evaluate ./foundry-workspace --visual off`. Parse the
+`/bespoke-agentics:funcspec-evaluate ./foundry-workspace --visual off`. Parse the
 workspace path and `--flag value` tokens. If no path is given, look for a workspace in
 CWD (a `apps/storybook` + `packages/ui` layout, or any `.storybook/` directory); if
 none, ask.

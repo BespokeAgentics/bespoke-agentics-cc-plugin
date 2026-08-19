@@ -16,8 +16,8 @@ Three properties do the work:
 
 1. **Brand-faithful grounding.** Every variant is built from the repo's real
    tokens, typography, enums and labels, cited to paths. Reimagined ≠ invented:
-   a variant the design system cannot express is a pitch to *change the
-   system*, and must say so out loud.
+   a variant the design system cannot express is a pitch to _change the
+   system_, and must say so out loud.
 2. **The Current baseline is a transcription, not a memory.** The existing
    component is recreated from its real source into the gallery, so every
    "better" claim has an honest denominator.
@@ -32,7 +32,7 @@ the implementer's worklist for moving the real component to the winning design.
 ## When to use
 
 A surface that exists and disappoints: dated, cluttered, outgrown its layout,
-or simply never designed. Use it when the question is *"what could this be?"* —
+or simply never designed. Use it when the question is _"what could this be?"_ —
 before anyone has committed to a direction.
 
 **Skip it** when a direction is already chosen (that is `interactive-wireframe`
@@ -58,6 +58,33 @@ Calibrate to the surface: a single component might be three variants and two
 rounds; a whole page might drop a tier in the directions round and spend the
 budget on two Restructures instead. The tier defaults are a starting spread,
 not a quota.
+
+## Arguments
+
+```
+'<surface>' [--slug <name>] [--tiers restyle,restructure,rethink] [--variants N]
+            [--rounds N] [--baseline-url <url>] [--port N] [--out <dir>] [--spec <path>]
+            [--fresh] [--ttl <days>] [--no-verify] [--no-serve]
+```
+
+- `<surface>` (required) — the existing component or page to reimagine: a
+  component name, a route, a file path, or a description ("the orders table",
+  "our settings page"). Ambiguous targets are clarified in Phase 0 before
+  grounding.
+- `--slug <name>` (default: derived from the surface) — names
+  `wireframes/<slug>/` and the spec.
+- `--tiers <list>` (default `restyle,restructure,rethink`) — which ambition
+  tiers get pitched and built.
+- `--variants N` (default: one per active tier) — total reimagined panes;
+  allocation across tiers is settled in the directions round.
+- `--rounds N` (default: as many as the surface needs) — cap the interview.
+- `--baseline-url <url>` — a running instance of the app for the Phase 1
+  baseline cross-check. Never boots the app. Omitted → offered once; declined →
+  the Current pane's fidelity chip says `code-grounded, not pixel-checked`.
+- `--port N` / `--out <dir>` / `--spec <path>` / `--fresh` / `--ttl <days>` /
+  `--no-verify` / `--no-serve` — identical semantics to
+  `/bespoke-agentics:interactive-wireframe` (same serve script, same reuse
+  library, same out dir default `./wireframes`, **8787 never auto-probed**).
 
 ## Phase 0 — Scope the target
 
@@ -210,15 +237,15 @@ Committed by default, same gitignore lines as the parent.
 
 ## Reference files
 
-| File | Read when |
-|---|---|
-| `references/baseline.md` | Phase 1 — recreating Current honestly; fidelity chip; wf-probe cross-check |
-| `references/directions.md` | Phase 2 — tiers + honesty proxies, brief format, the directions round |
-| `references/gallery.md` | Phase 3 — REPLACE regions, `.rv-<id>` scoping, `__rv` API, measure-in-single-view, sync obligation |
-| `references/interview.md` | Phase 5 — reaction/critique/hybridize/winner, hybrid-rebuild-as-v2, per-pane comment routing |
-| `references/spec-template.md` | Phase 7 — the output shape, Δ inventory, where it goes |
-| `assets/reimagine-gallery.html` | Phase 3 — copy this; four REPLACE regions |
-| parent `references/grounding.md` | Phase 1 — per-ecosystem extraction (read in place) |
-| parent `references/reuse-library.md` | Phases 1/3/7 — TTL, fragments, ledger, harvest (read in place) |
-| parent `references/browser-verification.md` | Phase 6 — hidden-tab checklist (read in place) |
-| parent `scripts/serve-wireframe.sh` | Phase 4 — reused in place, never forked |
+| File                                        | Read when                                                                                          |
+| ------------------------------------------- | -------------------------------------------------------------------------------------------------- |
+| `references/baseline.md`                    | Phase 1 — recreating Current honestly; fidelity chip; wf-probe cross-check                         |
+| `references/directions.md`                  | Phase 2 — tiers + honesty proxies, brief format, the directions round                              |
+| `references/gallery.md`                     | Phase 3 — REPLACE regions, `.rv-<id>` scoping, `__rv` API, measure-in-single-view, sync obligation |
+| `references/interview.md`                   | Phase 5 — reaction/critique/hybridize/winner, hybrid-rebuild-as-v2, per-pane comment routing       |
+| `references/spec-template.md`               | Phase 7 — the output shape, Δ inventory, where it goes                                             |
+| `assets/reimagine-gallery.html`             | Phase 3 — copy this; four REPLACE regions                                                          |
+| parent `references/grounding.md`            | Phase 1 — per-ecosystem extraction (read in place)                                                 |
+| parent `references/reuse-library.md`        | Phases 1/3/7 — TTL, fragments, ledger, harvest (read in place)                                     |
+| parent `references/browser-verification.md` | Phase 6 — hidden-tab checklist (read in place)                                                     |
+| parent `scripts/serve-wireframe.sh`         | Phase 4 — reused in place, never forked                                                            |

@@ -23,12 +23,12 @@
         "produces schema-valid page profiles in docs/funcspec/profiles/",
         "produces synthesis.json with feature inventory and ambiguity register",
         "does NOT generate the plan deliverables without the Stage-2 interview",
-        "ends by pointing to /bespokeagentics:funcspec-plan"
+        "ends by pointing to /bespoke-agentics:funcspec-plan"
       ]
     },
     {
       "id": "fast-path-analysis-json",
-      "prompt": "/bespokeagentics:funcspec-evaluate ./foundry-workspace",
+      "prompt": "/bespoke-agentics:funcspec-evaluate ./foundry-workspace",
       "setup": "workspace contains an analysis.json produced by design-zip-to-library",
       "expect": [
         "detects analysis.json and uses screens + component inventory as the page list",
@@ -38,7 +38,7 @@
     },
     {
       "id": "generic-storybook-no-manifest",
-      "prompt": "/bespokeagentics:funcspec-evaluate ./some-other-storybook",
+      "prompt": "/bespoke-agentics:funcspec-evaluate ./some-other-storybook",
       "setup": "an arbitrary Storybook repo with no analysis.json",
       "expect": [
         "falls back to story-glob scanning",
@@ -48,7 +48,7 @@
     },
     {
       "id": "visual-degrades-gracefully",
-      "prompt": "/bespokeagentics:funcspec-evaluate ./ws --visual on",
+      "prompt": "/bespoke-agentics:funcspec-evaluate ./ws --visual on",
       "setup": "no browser tool available or storybook fails to boot",
       "expect": [
         "skips visual verification with a one-line note instead of failing",
@@ -67,7 +67,7 @@
     },
     {
       "id": "blocking-ambiguity-gates-plan",
-      "prompt": "/bespokeagentics:funcspec-plan",
+      "prompt": "/bespoke-agentics:funcspec-plan",
       "setup": "synthesis contains one blocking ambiguity, user defers it in Stage-2",
       "expect": [
         "ambiguity lands 🔴 in gap-register.md",
@@ -77,7 +77,7 @@
     },
     {
       "id": "traceability-verification",
-      "prompt": "/bespokeagentics:funcspec-plan",
+      "prompt": "/bespoke-agentics:funcspec-plan",
       "expect": [
         "every story in backlog.md has a Traces: line with page/affordance or operation ids",
         "traceability.md orphan-check appendix is generated",
@@ -86,7 +86,7 @@
     },
     {
       "id": "push-is-offered-never-automatic",
-      "prompt": "/bespokeagentics:funcspec-plan",
+      "prompt": "/bespoke-agentics:funcspec-plan",
       "setup": "Atlassian MCP connected",
       "expect": [
         "offers to push epics/stories to Jira and the plan to Confluence",
@@ -96,7 +96,7 @@
     },
     {
       "id": "status-readonly",
-      "prompt": "/bespokeagentics:funcspec-status ./ws",
+      "prompt": "/bespoke-agentics:funcspec-status ./ws",
       "expect": [
         "reads inventory/profiles/synthesis and reports counts, ambiguity breakdown, deliverable checklist",
         "suggests the correct next command",
