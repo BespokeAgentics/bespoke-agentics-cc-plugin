@@ -1,6 +1,6 @@
 {
   "name": "bespoke-agentics-marketplace",
-  "version": "2.1.0",
+  "version": "2.3.0",
   "description": "Bespoke Agentics plugin marketplace",
   "owner": {
     "name": "Bespoke Agentics"
@@ -8,9 +8,15 @@
   "plugins": [
     {
       "name": "bespoke-agentics",
-      "version": "2.1.0",
+      "version": "2.3.0",
       "description": "AI transparency auditing, agent architecture generation, progressive-disclosure context layering for large codebases, UX evaluation, code-grounded interactive wireframing, Pi harness customization, video-to-deliverables pipelines, workflow analysis, Biome AI guardrails with brownfield type-debt ratchets, and the Agent-Native Engineering suite (fast CI, label-triggered agents, chore crons, agent evidence, hermetic deploys, simulation data) for Claude Code",
       "source": "./"
+    },
+    {
+      "name": "impeccable-microdots",
+      "version": "4.1.2",
+      "description": "Design fluency for MicroDots (Effect v4 + Foldkit). A fork of Impeccable by Paul Bakaus (Apache-2.0), adapted for hyperscript views, a test-enforced semantic token vocabulary, and a variant preview harness that runs the dot's real program. Invoked as /impeccable-microdots:impeccable. For any non-MicroDots project use upstream Impeccable.",
+      "source": "github:BespokeAgentics/impeccable-microdots"
     }
   ]
 }

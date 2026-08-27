@@ -1,6 +1,6 @@
 {
   "name": "bespoke-agentics",
-  "version": "2.2.0",
+  "version": "2.3.0",
   "description": "AI transparency auditing, agent architecture generation, progressive-disclosure context layering for large codebases, UX evaluation, code-grounded interactive wireframing, Pi harness customization, video-to-deliverables pipelines, workflow analysis, Biome AI guardrails with brownfield type-debt ratchets, and the Agent-Native Engineering suite (fast CI, label-triggered agents, chore crons, agent evidence, hermetic deploys, simulation data) for Claude Code",
   "author": {
     "name": "Bespoke Agentics"
@@ -187,6 +187,17 @@
     "demo-theater",
     "mock-data-entities",
     "composition-seams",
-    "microdots-port-prototype"
+    "microdots-port-prototype",
+    "impeccable",
+    "impeccable-microdots",
+    "design-refinement",
+    "visual-polish",
+    "design-tokens-enforcement",
+    "tailwind-v4",
+    "theme-contrast",
+    "foldkit-views",
+    "hyperscript-variants",
+    "variant-preview-harness",
+    "microdots-design"
   ]
 }
