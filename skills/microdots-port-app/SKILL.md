@@ -16,7 +16,7 @@ description: >
   standalone runnable workspace built on the published @microdots npm packages with a mini-host
   always included. A seeded spec drives a spec-elicitation interview; execution is gated, wave-by-
   wave green, browser-verified. Deploy is never run; the source app is never modified; nothing is
-  committed. Distinct from micros-port-feature (extracts ONE feature into the older micros
+  committed. Distinct from microdots-port-feature (extracts ONE feature into the older micros
   workspace): this ports a WHOLE app into the MicroDots framework, anywhere.
 argument-hint: "<app-path> [--target <path>] [--app <url>] [--mode full|scaffold|spec] [--dossier-only] [--no-browser] [--slug <name>] [--out <dir>]"
 ---

@@ -1,0 +1,1115 @@
+/* ============================================================
+   BespokeAgentics components. Paste AFTER tokens.css.
+   Rest has no shadow. Emphasis is a border shift, never a lift.
+   ============================================================ */
+
+/* ---------------- BANDS ----------------
+   Alternate --surface-page / --surface-default, each closed by a
+   1px --border-subtle rule. Never two of the same in a row. */
+.band {
+  position: relative;
+  border-bottom: 1px solid var(--border-subtle);
+  overflow: hidden;
+}
+.band--alt {
+  background: var(--surface-default);
+}
+.band--wash::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: var(--hero-gradient);
+  pointer-events: none;
+}
+.band__inner {
+  position: relative;
+  max-width: var(--max-default);
+  margin: 0 auto;
+  padding: 104px var(--sp-8);
+}
+.band--hero .band__inner {
+  padding: clamp(76px, 11vh, 128px) var(--sp-8) clamp(88px, 13vh, 144px);
+}
+/* 14px top + 58px capsule = 72. The capsule's geometry was chosen to
+   preserve this exact offset — do not "recompute" it to clear the pill. */
+.band {
+  scroll-margin-top: 72px;
+}
+
+/* Off-canvas concentric hairline arcs — the only large-scale decoration.
+   Put the <svg> as the FIRST child of the <section>, before .band__inner. */
+.arc {
+  position: absolute;
+  pointer-events: none;
+  color: var(--arc);
+}
+.arc--a {
+  top: -250px;
+  right: -220px;
+  width: 680px;
+  height: 680px;
+  opacity: 0.16;
+}
+.arc--c {
+  bottom: -160px;
+  left: -200px;
+  width: 560px;
+  height: 560px;
+  opacity: 0.14;
+  transform: scaleX(-1);
+}
+
+/* ---------------- TYPE ROLES ---------------- */
+/* One eyebrow per section, never stacked. --accent for a section,
+   --text-muted for a panel header. */
+.eyebrow {
+  display: block;
+  font-family: var(--font-mono);
+  font-weight: var(--fw-regular);
+  font-size: 11px;
+  letter-spacing: var(--ls-ultra);
+  text-transform: uppercase;
+  color: var(--accent);
+  margin-bottom: var(--sp-4);
+}
+.eyebrow--muted {
+  color: var(--text-muted);
+  font-size: 10.5px;
+  margin-bottom: 0;
+}
+
+h1.hero {
+  font-weight: 800;
+  font-size: clamp(30px, 5vw, 52px);
+  line-height: 1.08;
+  letter-spacing: -0.03em;
+  max-width: 20ch;
+}
+h2.section {
+  font-weight: 800;
+  font-size: clamp(26px, 3.6vw, 40px);
+  line-height: 1.14;
+  letter-spacing: -0.02em;
+  max-width: 22ch;
+}
+
+/* Editorial accent — Caveat 700, underlined, 1.24x the heading.
+   ONE word per section, at most four hues per page. */
+.ed {
+  font-family: var(--font-editorial);
+  font-weight: 700;
+  font-style: normal;
+  text-decoration: underline;
+  text-underline-offset: 0.02em;
+  text-decoration-thickness: 0.045em;
+  font-size: 1.24em;
+  line-height: 1;
+  letter-spacing: -0.01em;
+  padding-inline: 0.02em;
+}
+.ed--hero {
+  color: var(--ed-hero);
+}
+.ed--how {
+  color: var(--ed-how);
+}
+.ed--wire {
+  color: var(--ed-wire);
+}
+.ed--ent {
+  color: var(--ed-ent);
+}
+.ed--rel {
+  color: var(--ed-rel);
+}
+.ed--cta {
+  color: var(--ed-cta);
+}
+
+.deck {
+  font-weight: var(--fw-light);
+  font-size: clamp(15px, 1.6vw, 17px);
+  line-height: var(--lh-relaxed);
+  color: var(--text-secondary);
+  max-width: 56ch;
+  margin-top: var(--sp-6);
+}
+.lede {
+  font-weight: var(--fw-light);
+  font-size: 16px;
+  line-height: var(--lh-relaxed);
+  color: var(--text-secondary);
+  max-width: 62ch;
+  margin-top: var(--sp-5);
+}
+.lede strong,
+.deck strong {
+  font-weight: var(--fw-medium);
+  color: var(--text-primary);
+}
+.sec-head {
+  margin-bottom: var(--sp-10);
+}
+
+.stamp {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--sp-2) var(--sp-6);
+  margin-top: var(--sp-8);
+  padding-top: var(--sp-5);
+  border-top: 1px solid var(--border-subtle);
+  font-family: var(--font-mono);
+  font-size: var(--fs-mono-sm);
+  color: var(--text-muted);
+}
+.stamp span {
+  white-space: nowrap;
+}
+.stamp b {
+  font-weight: var(--fw-medium);
+  color: var(--text-primary);
+}
+
+/* ---------------- THE ONE RESPONSIVE PRIMITIVE ----------------
+   min() clamps the track floor to the container. No media queries. */
+.grid {
+  display: grid;
+  gap: var(--sp-4);
+}
+.grid > * {
+  min-width: 0;
+}
+.g-170 {
+  grid-template-columns: repeat(auto-fit, minmax(min(170px, 100%), 1fr));
+}
+.g-280 {
+  grid-template-columns: repeat(auto-fit, minmax(min(280px, 100%), 1fr));
+}
+.g-320 {
+  grid-template-columns: repeat(auto-fit, minmax(min(320px, 100%), 1fr));
+}
+.g-340 {
+  grid-template-columns: repeat(auto-fit, minmax(min(340px, 100%), 1fr));
+}
+.g-400 {
+  grid-template-columns: repeat(auto-fit, minmax(min(400px, 100%), 1fr));
+}
+
+/* ---------------- PANEL ----------------
+   1px border + surface body + 10-14px radius + overflow hidden.
+   Header strip on --surface-raised, mono label left, mono status right.
+   Child radius stays >=2px below the parent's. */
+.panel {
+  background: var(--surface-default);
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+  min-width: 0;
+  transition:
+    border-color var(--duration-medium) var(--ease-standard),
+    box-shadow var(--duration-medium) var(--ease-standard);
+}
+.band--alt .panel {
+  background: var(--surface-raised);
+}
+.panel:hover {
+  border-color: var(--border-accent);
+  box-shadow: var(--shadow-glow);
+}
+.panel__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--sp-3);
+  min-height: 34px;
+  padding: var(--sp-2) var(--sp-4);
+  background: var(--surface-raised);
+  border-bottom: 1px solid var(--border-subtle);
+}
+.band--alt .panel__head {
+  background: var(--surface-elevated);
+}
+.panel__label {
+  font-family: var(--font-mono);
+  font-weight: var(--fw-medium);
+  font-size: 10px;
+  letter-spacing: var(--ls-wider);
+  text-transform: uppercase;
+  color: var(--text-muted);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.panel__status {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: var(--ls-wide);
+  text-transform: uppercase;
+  color: var(--text-muted);
+  white-space: nowrap;
+}
+.panel__body {
+  padding: var(--sp-4) var(--sp-5) var(--sp-5);
+}
+.panel__body h4 {
+  font-weight: var(--fw-medium);
+  font-size: var(--fs-body-l);
+  line-height: var(--lh-heading);
+  letter-spacing: -0.01em;
+  margin-bottom: var(--sp-2);
+}
+.panel__body p {
+  font-size: var(--fs-body-m);
+  line-height: var(--lh-body);
+  color: var(--text-secondary);
+}
+.panel__body p + p {
+  margin-top: var(--sp-3);
+}
+.panel__body strong {
+  font-weight: var(--fw-medium);
+  color: var(--text-primary);
+}
+.panel--accent {
+  border-color: var(--border-accent);
+  background: var(--int-ghost);
+}
+
+/* Status dot — 4-9px. Never a filled block. */
+.dot {
+  width: 7px;
+  height: 7px;
+  border-radius: var(--radius-full);
+  background: currentColor;
+  flex-shrink: 0;
+}
+.dot--ok {
+  color: var(--status-success-fg);
+}
+.dot--info {
+  color: var(--status-info-fg);
+}
+.dot--warn {
+  color: var(--status-warning-fg);
+}
+.dot--err {
+  color: var(--status-error-fg);
+}
+
+/* ---------------- KPI ----------------
+   The numeral stays --text-primary. Colour is spent on a 7px dot and a
+   mono trend line — one accent, rationed. */
+.kpi {
+  padding: var(--sp-5);
+}
+.kpi__value {
+  font-weight: 800;
+  font-size: 2.7rem;
+  line-height: 1;
+  letter-spacing: -0.035em;
+  color: var(--text-heading);
+  font-variant-numeric: tabular-nums;
+}
+.kpi__value small {
+  font-size: 1.1rem;
+  font-weight: var(--fw-medium);
+  color: var(--text-muted);
+  letter-spacing: -0.01em;
+}
+.kpi__label {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  font-family: var(--font-mono);
+  font-weight: var(--fw-medium);
+  font-size: 10px;
+  letter-spacing: var(--ls-wider);
+  text-transform: uppercase;
+  color: var(--text-muted);
+  margin-top: var(--sp-3);
+}
+.kpi__trend {
+  font-family: var(--font-mono);
+  font-size: 10.5px;
+  line-height: 1.5;
+  color: var(--text-muted);
+  margin-top: 6px;
+}
+
+/* ---------------- STATUS COLUMN ----------------
+   A 5-10% row wash with a 15-30% border. Never a filled block. */
+.status {
+  border-radius: var(--radius-lg);
+  border: 1px solid;
+  overflow: hidden;
+  min-width: 0;
+}
+.status__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--sp-3);
+  padding: var(--sp-3) var(--sp-4);
+  border-bottom: 1px solid;
+  font-family: var(--font-mono);
+  font-size: 10.5px;
+  letter-spacing: var(--ls-wider);
+  text-transform: uppercase;
+}
+.status__head span {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.status__count {
+  font-variant-numeric: tabular-nums;
+  opacity: 0.8;
+}
+.status--ok {
+  background: var(--status-success-bg);
+  border-color: var(--status-success-border);
+  color: var(--status-success-fg);
+}
+.status--ok .status__head {
+  border-bottom-color: var(--status-success-border);
+}
+.status--wip {
+  background: var(--status-info-bg);
+  border-color: var(--status-info-border);
+  color: var(--status-info-fg);
+}
+.status--wip .status__head {
+  border-bottom-color: var(--status-info-border);
+}
+.status--deg {
+  background: var(--status-warning-bg);
+  border-color: var(--status-warning-border);
+  color: var(--status-warning-fg);
+}
+.status--deg .status__head {
+  border-bottom-color: var(--status-warning-border);
+}
+.status--blk {
+  background: var(--status-error-bg);
+  border-color: var(--status-error-border);
+  color: var(--status-error-fg);
+}
+.status--blk .status__head {
+  border-bottom-color: var(--status-error-border);
+}
+.status ul {
+  list-style: none;
+  padding: var(--sp-4);
+}
+/* Markers are absolute, never display:flex on the <li>. */
+.status li {
+  position: relative;
+  padding-left: 16px;
+  margin-bottom: var(--sp-3);
+  font-size: var(--fs-body-m);
+  line-height: 1.6;
+  color: var(--text-secondary);
+}
+.status li:last-child {
+  margin-bottom: 0;
+}
+.status li::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 9px;
+  width: 5px;
+  height: 1px;
+  background: currentColor;
+  opacity: 0.55;
+}
+.status li strong {
+  font-weight: var(--fw-medium);
+  color: var(--text-primary);
+}
+
+/* ---------------- TABLE — hairlines, not fills. No zebra. ---------------- */
+.table-scroll {
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+.data-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: var(--fs-body-m);
+  line-height: 1.6;
+}
+.data-table th {
+  position: sticky;
+  top: 0;
+  z-index: 2;
+  background: var(--surface-raised);
+  font-family: var(--font-mono);
+  font-weight: var(--fw-medium);
+  font-size: 10px;
+  letter-spacing: var(--ls-wider);
+  text-transform: uppercase;
+  color: var(--text-muted);
+  text-align: left;
+  padding: var(--sp-3) var(--sp-4);
+  border-bottom: 1px solid var(--border-default);
+  white-space: nowrap;
+}
+.band--alt .data-table th {
+  background: var(--surface-elevated);
+}
+.data-table td {
+  padding: var(--sp-4);
+  border-bottom: 1px solid var(--border-subtle);
+  vertical-align: top;
+  color: var(--text-secondary);
+  font-weight: var(--fw-light);
+}
+.data-table tbody tr:last-child td {
+  border-bottom: none;
+}
+.data-table td strong {
+  font-weight: var(--fw-medium);
+  color: var(--text-primary);
+}
+.data-table .id {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--accent);
+  white-space: nowrap;
+}
+/* Long mono strings truncate; they never wrap mid-token. */
+.data-table .ref {
+  display: block;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  color: var(--text-muted);
+  margin-top: 5px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.data-table .wide {
+  min-width: 200px;
+}
+
+/* ---------------- STEP LIST — 1px rule behind numbered dots ---------------- */
+.steps {
+  position: relative;
+  padding-left: 44px;
+  list-style: none;
+}
+.steps::before {
+  content: "";
+  position: absolute;
+  left: 14px;
+  top: 14px;
+  bottom: 14px;
+  width: 1px;
+  background: var(--border-default);
+}
+.step {
+  position: relative;
+  padding-bottom: var(--sp-8);
+}
+.step:last-child {
+  padding-bottom: 0;
+}
+.step::before {
+  content: "";
+  position: absolute;
+  left: -44px;
+  top: 6px;
+  width: 29px;
+  height: 29px;
+  border-radius: var(--radius-full);
+  background: var(--surface-page);
+  border: 1px solid var(--border-default);
+}
+.band--alt .step::before {
+  background: var(--surface-default);
+}
+.step::after {
+  content: attr(data-n);
+  position: absolute;
+  left: -44px;
+  top: 6px;
+  width: 29px;
+  height: 29px;
+  display: grid;
+  place-items: center;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  color: var(--text-muted);
+}
+.step--accent::before {
+  border-color: var(--border-accent);
+  background: var(--int-subtle);
+}
+.step--accent::after {
+  color: var(--accent);
+}
+.step__date {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: var(--ls-wider);
+  text-transform: uppercase;
+  color: var(--text-muted);
+  margin-bottom: 6px;
+}
+.step__title {
+  font-weight: var(--fw-medium);
+  font-size: var(--fs-body-l);
+  line-height: var(--lh-heading);
+  letter-spacing: -0.01em;
+  color: var(--text-heading);
+  margin-bottom: var(--sp-2);
+  max-width: 44ch;
+}
+.step__body {
+  font-size: var(--fs-body-m);
+  line-height: var(--lh-body);
+  color: var(--text-secondary);
+  max-width: 74ch;
+}
+.step__body strong {
+  font-weight: var(--fw-medium);
+  color: var(--text-primary);
+}
+.step__meta {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  color: var(--text-muted);
+  margin-top: var(--sp-2);
+  overflow-wrap: anywhere;
+}
+
+/* ---------------- DEBT — a row wash with a 2px status rail ---------------- */
+.debt {
+  border: 1px solid var(--border-default);
+  border-left-width: 2px;
+  border-radius: var(--radius-lg);
+  padding: var(--sp-4) var(--sp-5);
+  background: var(--surface-default);
+  margin-bottom: var(--sp-3);
+  transition: border-color var(--duration-medium) var(--ease-standard);
+}
+.band--alt .debt {
+  background: var(--surface-raised);
+}
+.debt--high {
+  background: var(--status-error-bg);
+  border-color: var(--status-error-border);
+  border-left-color: var(--status-error-fg);
+}
+.debt--med {
+  background: var(--status-warning-bg);
+  border-color: var(--status-warning-border);
+  border-left-color: var(--status-warning-fg);
+}
+.debt--low {
+  background: var(--status-info-bg);
+  border-color: var(--status-info-border);
+  border-left-color: var(--status-info-fg);
+}
+.debt__head {
+  display: flex;
+  align-items: baseline;
+  gap: var(--sp-3);
+  flex-wrap: wrap;
+  margin-bottom: var(--sp-2);
+}
+.debt__id {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--text-muted);
+}
+.debt__sev {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-family: var(--font-mono);
+  font-size: 9.5px;
+  letter-spacing: var(--ls-wider);
+  text-transform: uppercase;
+}
+.debt--high .debt__sev {
+  color: var(--status-error-fg);
+}
+.debt--med .debt__sev {
+  color: var(--status-warning-fg);
+}
+.debt--low .debt__sev {
+  color: var(--status-info-fg);
+}
+.debt__title {
+  font-weight: var(--fw-medium);
+  font-size: var(--fs-body-l);
+  line-height: var(--lh-heading);
+  letter-spacing: -0.01em;
+  color: var(--text-heading);
+}
+.debt__body {
+  font-size: var(--fs-body-m);
+  line-height: var(--lh-body);
+  color: var(--text-secondary);
+  max-width: 82ch;
+}
+.debt__body strong {
+  font-weight: var(--fw-medium);
+  color: var(--text-primary);
+}
+.debt__fix {
+  margin-top: var(--sp-3);
+  padding-top: var(--sp-3);
+  border-top: 1px solid var(--border-subtle);
+  font-size: var(--fs-body-m);
+  line-height: var(--lh-body);
+  color: var(--text-secondary);
+}
+.debt__fix b {
+  display: block;
+  font-family: var(--font-mono);
+  font-weight: var(--fw-medium);
+  font-size: 9.5px;
+  letter-spacing: var(--ls-wider);
+  text-transform: uppercase;
+  color: var(--text-muted);
+  margin-bottom: 4px;
+}
+
+/* ---------------- NUMBERED PANEL LIST ---------------- */
+.mm {
+  list-style: none;
+  counter-reset: mm;
+}
+.mm li {
+  counter-increment: mm;
+  position: relative;
+  padding: var(--sp-4) var(--sp-5) var(--sp-4) 52px;
+  background: var(--surface-default);
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-lg);
+  font-size: var(--fs-body-m);
+  line-height: var(--lh-body);
+  color: var(--text-secondary);
+  transition: border-color var(--duration-medium) var(--ease-standard);
+}
+.band--alt .mm li {
+  background: var(--surface-raised);
+}
+.mm li:hover {
+  border-color: var(--border-accent);
+}
+.mm li::before {
+  content: counter(mm, decimal-leading-zero);
+  position: absolute;
+  left: var(--sp-5);
+  top: 19px;
+  font-family: var(--font-mono);
+  font-size: 10.5px;
+  color: var(--text-muted);
+}
+.mm li b {
+  display: block;
+  font-weight: var(--fw-medium);
+  font-size: var(--fs-body-l);
+  line-height: var(--lh-heading);
+  letter-spacing: -0.01em;
+  color: var(--text-heading);
+  margin-bottom: 5px;
+}
+.mm li.is-trap::before {
+  color: var(--status-error-fg);
+}
+.mm li.is-trap {
+  border-left: 2px solid var(--status-error-border);
+}
+.mm li.is-coupling::before {
+  color: var(--status-warning-fg);
+}
+.mm li.is-coupling {
+  border-left: 2px solid var(--status-warning-border);
+}
+
+/* ---------------- CALLOUT + COLLAPSIBLE ---------------- */
+.callout {
+  border: 1px solid var(--status-info-border);
+  background: var(--status-info-bg);
+  border-radius: var(--radius-lg);
+  padding: var(--sp-4) var(--sp-5);
+  font-size: var(--fs-body-m);
+  line-height: var(--lh-body);
+  color: var(--text-secondary);
+  max-width: 88ch;
+}
+.callout strong {
+  font-weight: var(--fw-medium);
+  color: var(--text-primary);
+}
+.callout__title {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  font-family: var(--font-mono);
+  font-weight: var(--fw-medium);
+  font-size: 10px;
+  letter-spacing: var(--ls-wider);
+  text-transform: uppercase;
+  color: var(--status-info-fg);
+  margin-bottom: 6px;
+}
+/* Dashed border = "not real yet". Keep the convention. */
+.gated {
+  border-style: dashed;
+  border-color: var(--border-accent);
+  background: var(--int-ghost);
+}
+
+details.collapsible {
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+  background: var(--surface-default);
+}
+.band--alt details.collapsible {
+  background: var(--surface-raised);
+}
+details.collapsible summary {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-3);
+  padding: var(--sp-3) var(--sp-4);
+  background: var(--surface-raised);
+  border-bottom: 1px solid transparent;
+  font-family: var(--font-mono);
+  font-weight: var(--fw-medium);
+  font-size: 10.5px;
+  letter-spacing: var(--ls-wide);
+  text-transform: uppercase;
+  color: var(--text-muted);
+  cursor: pointer;
+  list-style: none;
+}
+.band--alt details.collapsible summary {
+  background: var(--surface-elevated);
+}
+details.collapsible summary::-webkit-details-marker {
+  display: none;
+}
+details.collapsible summary::before {
+  content: "";
+  width: 0;
+  height: 0;
+  border-left: 5px solid currentColor;
+  border-top: 4px solid transparent;
+  border-bottom: 4px solid transparent;
+  transition: transform var(--duration-fast) var(--ease-standard);
+}
+details.collapsible[open] summary {
+  border-bottom-color: var(--border-subtle);
+}
+details.collapsible[open] summary::before {
+  transform: rotate(90deg);
+}
+details.collapsible .cbody {
+  padding: var(--sp-4) var(--sp-5);
+  font-size: var(--fs-body-m);
+  line-height: var(--lh-body);
+  color: var(--text-secondary);
+}
+details.collapsible .cbody ul {
+  list-style: none;
+}
+details.collapsible .cbody li {
+  position: relative;
+  padding-left: 16px;
+  margin-bottom: var(--sp-2);
+}
+details.collapsible .cbody li::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 9px;
+  width: 5px;
+  height: 1px;
+  background: var(--border-strong);
+}
+details.collapsible .cbody strong {
+  font-weight: var(--fw-medium);
+  color: var(--text-primary);
+}
+
+/* ---------------- BUTTONS ----------------
+   ALWAYS set color AND font-family on a <button> — browsers default to
+   `buttontext` and `inherit` does not apply. Several clickable rows
+   shipped black-on-navy before this was caught. */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 14px var(--sp-8);
+  border-radius: var(--radius-sm);
+  border: 1px solid transparent;
+  font-family: var(--font-body);
+  font-size: 15px;
+  font-weight: var(--fw-medium);
+  letter-spacing: 0.01em;
+  line-height: 1;
+  white-space: nowrap;
+  cursor: pointer;
+  transition:
+    box-shadow var(--duration-fast) var(--ease-standard),
+    background var(--duration-fast) var(--ease-standard),
+    border-color var(--duration-fast) var(--ease-standard);
+}
+/* Hover deepens the shadow. It never moves the element. */
+.btn--primary {
+  background: var(--gradient-brand);
+  color: #fff;
+  box-shadow: var(--shadow-cta);
+}
+.btn--primary:hover {
+  box-shadow: 0 6px 26px rgba(var(--brand-500-rgb), 0.34);
+}
+.btn--ghost {
+  background: transparent;
+  color: var(--text-primary);
+  border-color: var(--border-default);
+}
+.btn--ghost:hover {
+  border-color: var(--border-accent);
+  background: var(--int-subtle);
+}
+.btn--sm {
+  padding: 8px var(--sp-5);
+  font-size: 13px;
+}
+
+/* Borderless status chip: a dot and a mono word. */
+.tag {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--sp-2);
+  font-family: var(--font-mono);
+  font-size: 9.5px;
+  letter-spacing: var(--ls-wider);
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+.tag--accent {
+  color: var(--accent);
+}
+
+/* ---------------- MERMAID ---------------- */
+.diagram-shell {
+  position: relative;
+}
+.mermaid-wrap {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--surface-default);
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-lg);
+  padding: var(--sp-8) var(--sp-6);
+  overflow: hidden;
+  min-height: 460px;
+  cursor: grab;
+  transition: border-color var(--duration-medium) var(--ease-standard);
+}
+.band--alt .mermaid-wrap {
+  background: var(--surface-raised);
+}
+.mermaid-wrap:hover {
+  border-color: var(--border-accent);
+}
+.mermaid-wrap.is-panning {
+  cursor: grabbing;
+  user-select: none;
+}
+.mermaid-viewport {
+  position: relative;
+  overflow: hidden;
+  width: 100%;
+  height: 100%;
+  min-height: 380px;
+}
+.mermaid-canvas {
+  position: absolute;
+  top: 0;
+  left: 0;
+}
+.zoom-controls {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  z-index: 10;
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  padding: 2px;
+  background: var(--surface-overlay);
+  -webkit-backdrop-filter: var(--blur-backdrop);
+  backdrop-filter: var(--blur-backdrop);
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-md);
+}
+.zoom-controls button {
+  width: 28px;
+  height: 28px;
+  display: grid;
+  place-items: center;
+  background: transparent;
+  color: var(--text-muted);
+  font-family: var(--font-mono);
+  font-size: 12px;
+  border: none;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  transition:
+    color var(--duration-fast) var(--ease-standard),
+    background var(--duration-fast) var(--ease-standard);
+}
+.zoom-controls button:hover {
+  color: var(--text-primary);
+  background: var(--int-hover);
+}
+.zoom-label {
+  font-family: var(--font-mono);
+  font-size: 9.5px;
+  letter-spacing: var(--ls-wide);
+  text-transform: uppercase;
+  color: var(--text-muted);
+  padding: 0 8px;
+  white-space: nowrap;
+}
+.diagram-hint {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: var(--ls-wide);
+  text-transform: uppercase;
+  color: var(--text-muted);
+  margin-bottom: var(--sp-3);
+}
+/* Never define a page-level `.node` — Mermaid uses it internally. */
+.mermaid .nodeLabel,
+.mermaid .nodeLabel * {
+  font-family: var(--font-body) !important;
+  font-weight: 400 !important;
+}
+.mermaid .edgeLabel,
+.mermaid .edgeLabel * {
+  font-family: var(--font-mono) !important;
+  font-size: 11px !important;
+}
+.mermaid .cluster-label,
+.mermaid .cluster-label * {
+  font-family: var(--font-mono) !important;
+  font-size: 11px !important;
+  letter-spacing: 0.1em !important;
+}
+.mermaid .node rect,
+.mermaid .node polygon,
+.mermaid .node path,
+.mermaid .cluster rect {
+  stroke-width: 1px !important;
+}
+
+/* Both rules below are REQUIRED. Without them every node label silently
+   truncates and the diagram still "renders", so nothing looks broken.
+
+   1. tokens.css sets `p { text-wrap: pretty }`, and mermaid's HTML labels are
+      a `<p>` inside a <foreignObject>. `text-wrap` is a shorthand that also
+      sets `text-wrap-mode: wrap`, overriding the `white-space: nowrap` mermaid
+      puts on `.nodeLabel` — so labels broke at their first space or hyphen and
+      the remainder fell outside a box sized for one line. "Locked catalog
+      snapshot" painted as "Locked", "catalog-gap" as "catalog-". An explicit
+      <br/> still breaks; only the automatic break is disabled. */
+.mermaid .nodeLabel,
+.mermaid .nodeLabel p,
+.mermaid .edgeLabel,
+.mermaid .edgeLabel p {
+  text-wrap: nowrap;
+}
+/* 2. A <foreignObject> clips to its own width, and mermaid sets that width
+      from a measurement a few pixels narrower than DM Sans actually paints —
+      shaving the last glyph off the widest line ("3 targets" as "3 target").
+      The node box carries enough padding to absorb the overflow. */
+.mermaid foreignObject {
+  overflow: visible;
+}
+
+.legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--sp-3) var(--sp-6);
+  margin-top: var(--sp-4);
+}
+.legend-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: var(--ls-wide);
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+.legend-swatch {
+  width: 10px;
+  height: 10px;
+  border-radius: 3px;
+  border: 1px solid;
+  flex-shrink: 0;
+}
+
+/* ---------------- FOOTER ---------------- */
+.colophon {
+  max-width: var(--max-default);
+  margin: 0 auto;
+  padding: var(--sp-10) var(--sp-8) var(--sp-16);
+  font-family: var(--font-mono);
+  font-size: 10.5px;
+  line-height: 1.9;
+  color: var(--text-muted);
+}
+.colophon strong {
+  font-weight: var(--fw-medium);
+  color: var(--text-secondary);
+}
+
+/* ---------------- MOTION ----------------
+   One-shot reveals, 0.4s, no stagger, no re-trigger.
+   Above the fold carries no [data-reveal]. */
+[data-reveal] {
+  opacity: 0;
+  transform: translateY(10px);
+}
+[data-reveal].seen {
+  opacity: 1;
+  transform: none;
+  transition:
+    opacity var(--duration-slow) var(--ease-standard),
+    transform var(--duration-slow) var(--ease-standard);
+}
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+  [data-reveal] {
+    opacity: 1 !important;
+    transform: none !important;
+  }
+  *,
+  *::before,
+  *::after {
+    transition-duration: 0.01ms !important;
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+  }
+}

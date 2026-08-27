@@ -1,0 +1,329 @@
+/* ============================================================
+   BespokeAgentics tokens — from packages/microdots-theme/src/tokens.css.
+
+   Light is :root. Dark is [data-theme='dark'] and MUST stay below it —
+   both selectors are specificity (0,1,0), so SOURCE ORDER is the entire
+   switching mechanism. Move the dark block above the light block and the
+   toggle silently stops working in one direction.
+
+   Never give a colour its only definition inside a media query or a
+   [data-theme] block.
+   ============================================================ */
+:root {
+  --brand-200: #bfdbfe;
+  --brand-300: #93c5fd;
+  --brand-400: #60a5fa;
+  --brand-500: #3b82f6;
+  --brand-600: #2563eb;
+  --brand-700: #1d4ed8;
+  --brand-400-rgb: 96, 165, 250;
+  --brand-500-rgb: 59, 130, 246;
+  --brand-600-rgb: 37, 99, 235;
+
+  --gradient-brand: linear-gradient(135deg, var(--brand-600), var(--brand-700));
+
+  --green: #4ade80;
+  --green-deep: #16a34a;
+  --amber: #fbbf24;
+  --amber-deep: #d97706;
+  --red: #f87171;
+  --red-deep: #dc2626;
+
+  --font-display:
+    "DM Sans", -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
+  --font-body:
+    "DM Sans", -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
+  --font-mono: "DM Mono", "SF Mono", Menlo, Consolas, ui-monospace, monospace;
+  --font-editorial: "Caveat", ui-rounded, cursive;
+
+  --fw-light: 300;
+  --fw-regular: 400;
+  --fw-medium: 500;
+  --fw-semibold: 600;
+  --fw-bold: 700;
+
+  --fs-caption: 0.72rem;
+  --fs-body-s: 0.82rem;
+  --fs-body-m: 0.88rem;
+  --fs-body-l: 1.1rem;
+  --fs-display-m: 1.55rem;
+  --fs-mono: 0.85rem;
+  --fs-mono-sm: 0.72rem;
+
+  --lh-tight: 1.05;
+  --lh-display: 1.15;
+  --lh-heading: 1.2;
+  --lh-body: 1.65;
+  --lh-relaxed: 1.7;
+  --lh-code: 1.7;
+
+  --ls-tight: 0.02em;
+  --ls-wide: 0.08em;
+  --ls-wider: 0.1em;
+  --ls-widest: 0.12em;
+  --ls-ultra: 0.14em;
+
+  --sp-1: 4px;
+  --sp-2: 8px;
+  --sp-3: 12px;
+  --sp-4: 16px;
+  --sp-5: 20px;
+  --sp-6: 24px;
+  --sp-8: 32px;
+  --sp-10: 40px;
+  --sp-12: 48px;
+  --sp-16: 64px;
+  --sp-20: 80px;
+  --sp-24: 96px;
+
+  --radius-sm: 6px;
+  --radius-md: 10px;
+  --radius-lg: 14px;
+  --radius-xl: 16px;
+  --radius-2xl: 20px;
+  --radius-full: 9999px;
+
+  --max-narrow: 800px;
+  --max-default: 1200px;
+  --max-wide: 1400px;
+
+  --duration-fast: 0.2s;
+  --duration-medium: 0.3s;
+  --duration-slow: 0.4s;
+  --ease-standard: cubic-bezier(0.4, 0, 0.2, 1);
+  --blur-backdrop: blur(20px);
+
+  --nav-h: 58px;
+}
+
+/* ---------------- LIGHT — the default ---------------- */
+:root,
+[data-theme="light"] {
+  color-scheme: light;
+
+  --surface-page: #f8fafc;
+  --surface-default: #fdfeff;
+  --surface-raised: #f1f5f9;
+  --surface-elevated: #e2e8f0;
+  --surface-overlay: rgba(248, 250, 252, 0.9);
+
+  --border-default: #e2e8f0;
+  --border-subtle: #f1f5f9;
+  --border-accent: rgba(var(--brand-600-rgb), 0.15);
+  --border-strong: #cbd5e1;
+
+  --text-primary: #0f172a;
+  --text-secondary: #3d4a5e;
+  --text-muted: #515f74;
+  --text-link: var(--brand-600);
+  --text-on-brand: #ffffff;
+  --text-wordmark: #1e293b;
+  --text-heading: #0f172a;
+  --text-accent: var(--brand-700);
+  --text-success: #007330;
+  --text-warning: #995100;
+  --text-error: #c60012;
+
+  --accent: var(--brand-600);
+  --accent-default: var(--brand-600);
+  --accent-strong: var(--brand-700);
+  --accent-subtle: var(--brand-500);
+  --accent-label: var(--brand-600);
+
+  --int-ghost: rgba(var(--brand-600-rgb), 0.03);
+  --int-subtle: rgba(var(--brand-600-rgb), 0.05);
+  --int-hover: rgba(var(--brand-600-rgb), 0.08);
+  --int-active: rgba(var(--brand-600-rgb), 0.12);
+  --int-glow: rgba(var(--brand-600-rgb), 0.06);
+
+  --status-success-fg: var(--green-deep);
+  --status-success-bg: rgba(22, 163, 74, 0.07);
+  --status-success-border: rgba(22, 163, 74, 0.2);
+  --status-warning-fg: var(--amber-deep);
+  --status-warning-bg: rgba(217, 119, 6, 0.07);
+  --status-warning-border: rgba(217, 119, 6, 0.2);
+  --status-error-fg: var(--red-deep);
+  --status-error-bg: rgba(220, 38, 38, 0.07);
+  --status-error-border: rgba(220, 38, 38, 0.2);
+  --status-info-fg: var(--brand-600);
+  --status-info-bg: rgba(var(--brand-600-rgb), 0.06);
+  --status-info-border: rgba(var(--brand-600-rgb), 0.2);
+
+  --shadow-glow: 0 0 40px rgba(var(--brand-600-rgb), 0.06);
+  --shadow-nav: 0 4px 20px rgba(15, 23, 42, 0.08);
+  --shadow-cta: 0 4px 20px rgba(var(--brand-600-rgb), 0.18);
+
+  --hero-gradient: radial-gradient(
+    ellipse 80% 60% at 50% 0%,
+    rgba(191, 219, 254, 0.4) 0%,
+    transparent 70%
+  );
+  --arc: rgba(37, 99, 235, 1);
+
+  /* Editorial accent — literals by design. Never tokens, never product UI. */
+  --ed-hero: #008456;
+  --ed-how: #0368ff;
+  --ed-wire: #007f91;
+  --ed-ent: #9a3cff;
+  --ed-rel: #e80027;
+  --ed-cta: #966c00;
+}
+
+/* ---------------- DARK — opt-in. Must stay below light. ---------------- */
+[data-theme="dark"] {
+  color-scheme: dark;
+
+  --surface-page: #050509;
+  --surface-default: #0a0e1a;
+  --surface-raised: #0f1424;
+  --surface-elevated: #151d35;
+  --surface-overlay: rgba(5, 5, 9, 0.85);
+
+  --border-default: #1a2038;
+  --border-subtle: #111830;
+  --border-accent: rgba(var(--brand-500-rgb), 0.15);
+  --border-strong: #2a3558;
+
+  --text-primary: #c8d4e8;
+  --text-secondary: #9bacd4;
+  --text-muted: #8194bc;
+  --text-link: var(--brand-400);
+  --text-on-brand: #ffffff;
+  --text-wordmark: #93afd0;
+  --text-heading: #d0daf0;
+  --text-accent: var(--brand-400);
+  --text-success: var(--green);
+  --text-warning: var(--amber);
+  --text-error: var(--red);
+
+  --accent: var(--brand-400);
+  --accent-default: var(--brand-400);
+  --accent-strong: var(--brand-500);
+  --accent-subtle: var(--brand-300);
+  --accent-label: var(--brand-400);
+
+  --int-ghost: rgba(var(--brand-500-rgb), 0.04);
+  --int-subtle: rgba(var(--brand-500-rgb), 0.06);
+  --int-hover: rgba(var(--brand-500-rgb), 0.1);
+  --int-active: rgba(var(--brand-500-rgb), 0.15);
+  --int-glow: rgba(var(--brand-500-rgb), 0.08);
+
+  --status-success-fg: var(--green);
+  --status-success-bg: rgba(74, 222, 128, 0.08);
+  --status-success-border: rgba(74, 222, 128, 0.22);
+  --status-warning-fg: var(--amber);
+  --status-warning-bg: rgba(251, 191, 36, 0.08);
+  --status-warning-border: rgba(251, 191, 36, 0.22);
+  --status-error-fg: var(--red);
+  --status-error-bg: rgba(248, 113, 113, 0.08);
+  --status-error-border: rgba(248, 113, 113, 0.22);
+  --status-info-fg: var(--brand-400);
+  --status-info-bg: rgba(var(--brand-400-rgb), 0.08);
+  --status-info-border: rgba(var(--brand-400-rgb), 0.22);
+
+  --shadow-glow: 0 0 40px rgba(var(--brand-500-rgb), 0.08);
+  --shadow-nav: 0 4px 20px rgba(0, 0, 0, 0.35);
+  --shadow-cta: 0 4px 20px rgba(var(--brand-500-rgb), 0.25);
+
+  --hero-gradient: radial-gradient(
+    ellipse 80% 60% at 50% 0%,
+    rgba(30, 58, 138, 0.25) 0%,
+    transparent 70%
+  );
+  --arc: rgba(96, 165, 250, 1);
+
+  --ed-hero: #00f5a0;
+  --ed-how: #3d8bff;
+  --ed-wire: #00e0ff;
+  --ed-ent: #b26bff;
+  --ed-rel: #ff3b5c;
+  --ed-cta: #ffb800;
+}
+
+/* ============================================================
+   ELEMENT DEFAULTS — body is LIGHT (300). Never bold body prose.
+   Sentence case everywhere; uppercase is reserved for mono labels.
+   ============================================================ */
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+html {
+  scroll-behavior: smooth;
+  -webkit-text-size-adjust: 100%;
+}
+body {
+  margin: 0;
+  background: var(--surface-page);
+  color: var(--text-primary);
+  font-family: var(--font-body);
+  font-size: 16px;
+  font-weight: var(--fw-light);
+  line-height: var(--lh-body);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
+  overflow-wrap: break-word;
+  transition:
+    background var(--duration-medium) var(--ease-standard),
+    color var(--duration-medium) var(--ease-standard);
+}
+h1,
+h2,
+h3,
+h4 {
+  margin: 0;
+  font-family: var(--font-display);
+  color: var(--text-heading);
+  text-wrap: balance;
+}
+p {
+  margin: 0;
+  text-wrap: pretty;
+}
+ul,
+ol {
+  margin: 0;
+  padding: 0;
+}
+a {
+  color: var(--text-link);
+  text-decoration: none;
+  transition: color var(--duration-fast) var(--ease-standard);
+}
+code,
+pre,
+kbd {
+  font-family: var(--font-mono);
+  font-weight: var(--fw-regular);
+  font-size: var(--fs-mono-sm);
+  line-height: var(--lh-code);
+  color: var(--text-primary);
+}
+pre {
+  margin: 0;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+svg {
+  display: block;
+}
+:where(a, button, summary, [tabindex]):focus-visible {
+  outline: 2px solid var(--accent-default);
+  outline-offset: 3px;
+  border-radius: var(--radius-sm);
+}
+
+/* Mono carries data. Prose is sans. This split must not blur. */
+.m {
+  font-family: var(--font-mono);
+  font-size: 0.92em;
+  color: var(--text-primary);
+}
+.m--dim {
+  color: var(--text-muted);
+}
+.m--accent {
+  color: var(--text-accent);
+}

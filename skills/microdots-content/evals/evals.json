@@ -1,0 +1,47 @@
+{
+  "skill_name": "microdots-content",
+  "requires": "These evals have no fixtures. They must be run from inside a MicroDots workspace with real git history and a wiki; expectations that name specific commits, dates, MicroDots or ports are anchored to the source MicroDots repo and must be re-anchored before use elsewhere.",
+  "evals": [
+    {
+      "id": 1,
+      "prompt": "Create a new blog post about what work was done yesterday in this repo.",
+      "expected_output": "A self-contained branded HTML recap post in the publish root's posts/ directory plus a scaffolded/updated index.html. Narrative grouped by theme, claims traced to commit hashes and wiki pages, resolved date window stated, brand shell with working theme toggle.",
+      "files": [],
+      "expectations": [
+        "A dated post file matching posts/YYYY-MM-DD-*.html exists under the outputs website root",
+        "index.html exists in the website root and contains a working relative link to the post file",
+        "The post inlines its styles: one <style> block defines both the :root (light) and [data-theme='dark'] palettes",
+        "The post cites at least 3 short commit hashes that are real commits from the resolved window (verified against git log --since=2026-08-22 --until=2026-08-23)",
+        "The resolved date window (2026-08-22) is stated in the page text",
+        "The page contains no emoji characters"
+      ]
+    },
+    {
+      "id": 2,
+      "prompt": "Write the changelog for the last week of work.",
+      "expected_output": "A terse changelog page grouped by area (microdots/<name>, host, platform, runtime, wiki), one line per change with hash in mono, newest first, noise commits omitted with a count note, no diagrams, published with an index card.",
+      "files": [],
+      "expectations": [
+        "A changelog HTML file exists in posts/ and index.html links to it",
+        "Entries are grouped under area headings (MicroDot names, host, platform, runtime, or wiki) rather than one flat list",
+        "Every commit hash shown on the page matches a real commit in the week's git log",
+        "The page states how many commits the window held versus how many entries are listed",
+        "The page contains no Mermaid diagram"
+      ]
+    },
+    {
+      "id": 3,
+      "prompt": "Do a feature deep-dive on the livetrace MicroDot, and give me a couple of social posts to go with it.",
+      "expected_output": "A deep-dive page (problem, how it works from contract.ts outward with a Mermaid diagram, decisions from the plan/wiki pages, honest gaps) plus a .social.md with up to 3 standalone variants whose claims all appear in the parent piece.",
+      "files": [],
+      "expectations": [
+        "A deep-dive HTML file exists in posts/ and index.html links to it",
+        "The page describes livetrace's public surface using real names from microdots/livetrace/src/contract.ts (RPC names or schema fields), not paraphrase alone",
+        "The page states livetrace's identity correctly: port 3115 and tags livetrace-panel and livetrace-admin (verifiable against AGENTS.md)",
+        "The page contains a Mermaid diagram with no hardcoded color styling in its definition",
+        "A .social.md file exists with 1-3 variants, each standalone variant or thread post at most 280 characters",
+        "Every factual claim in the social file also appears in the deep-dive page"
+      ]
+    }
+  ]
+}

@@ -482,6 +482,39 @@ skill does the same job, with less of it improvised. Distinct from `skill-creato
 eval-iterates skills) and structure auditors (YAML/best-practice compliance): this one
 restructures **where the work happens**.
 
+### When to Use Each MicroDots Command
+
+| Situation                                                                                        | Command                                              |
+| ------------------------------------------------------------------------------------------------ | ---------------------------------------------------- |
+| Port a whole existing app onto the MicroDots framework                                           | `/bespoke-agentics:microdots-port-app '<app-path>'`  |
+| Extract ONE feature out of an app into a standalone micro-app                                    | `/bespoke-agentics:microdots-port-feature '<what>'`  |
+| Create a new MicroDot — compiler workspace, or repo extension with full host wiring              | `/bespoke-agentics:microdots-new-micro '<name> [brief]'` |
+| Confirm a MicroDots change is actually done (static checks are not sufficient)                   | `/bespoke-agentics:microdots-verify`                 |
+| A MicroDot is blank, stale, or "could not reach the service"                                     | `/bespoke-agentics:microdots-debug-blank`            |
+| Publish a MicroDots workspace                                                                    | `/bespoke-agentics:microdots-deploy`                 |
+| Turn repo history / a shipped plan / a feature into a published post, changelog, or deep-dive    | `/bespoke-agentics:microdots-content '<ask>'`        |
+| Build any explainer, recap, or report page in the BespokeAgentics / MicroDots brand              | `/bespoke-agentics:microdots-brand-recap`            |
+
+These eight cover the MicroDots framework (Effect v4 + Foldkit custom elements)
+end to end: **build** (`port-app`, `port-feature`, `new-micro`), **prove**
+(`verify`, `debug-blank`), **ship** (`deploy`), and **tell** (`content`,
+`brand-recap`). All of them **resolve the workspace before acting** — dot
+directory (`microdots/` vs `micros/`), runtime/element package specifier, script
+names, ports and host URL are read from the project, never assumed, so they work
+in any MicroDots workspace rather than only the framework's own repo.
+
+Two things bind across the set. **`Runtime.embed` forks the runtime**, so a
+startup defect produces a blank MicroDot with a clean console — typecheck, lint,
+tests and build all pass while nothing renders. That is why `microdots-verify`
+treats the browser step as the point rather than a formality, and why
+`microdots-debug-blank` exists as a separate staged protocol (confirm it is
+really blank → isolate bundle/registration/runtime → extract the defect from
+`cause.reasons[0].defect` → the three CORS lies → topology gaps that render as a
+blank page rather than an error). And **the host seam is exactly four edits** —
+registry entry, markup section, topology route, slot-manifest entry — so
+`microdots-new-micro` completes the wiring the generator only prints, including
+the deploy-discovery registration the generator never mentions.
+
 ### When to Use Each Agent-Native Engineering Command
 
 | Situation                                                                                                                             | Command                                                                       |
@@ -585,6 +618,14 @@ When assessing features or making decisions, use the standard color system:
     │  ├─ skill-reverse-engineer/     # Target skill → determinism audit (DS/TP/CT/VF/AM/RB/KM + host grounding) → gated refactor or hardened new version
     │  ├─ orchestrate/                # Plan/task → gated multi-agent implementation (Fable orchestrates, Opus/Sonnet implement)
     │  ├─ workstream-orchestrate/     # Plan → kickoff contract → sequential per-WS code→validate→commit (Workflow) + hard-gate proofs
+    │  ├─ microdots-port-app/         # Whole app → MicroDots framework port (composition proposal, gated waves)
+    │  ├─ microdots-port-feature/     # ONE feature out of an app → standalone micro-app in a micros workspace
+    │  ├─ microdots-new-micro/        # New MicroDot: catalog-locked compiler workspace OR repo-extension + full host wiring
+    │  ├─ microdots-verify/           # MicroDots change → static checks + build + boot + BROWSER proof (the only real proof)
+    │  ├─ microdots-debug-blank/      # Blank/stale/unreachable MicroDot → staged diagnosis of the swallowed startup defect
+    │  ├─ microdots-deploy/           # Route a MicroDots deploy: operator deploy screen, or emergency wrangler (never holds creds)
+    │  ├─ microdots-content/          # Repo git history + wiki → branded, source-traced posts/changelogs/deep-dives/social
+    │  ├─ microdots-brand-recap/      # BespokeAgentics/MicroDots brand shell + tokens + design rules for any explainer page
     │  ├─ agent-loop-audit/           # AI API/SDK integration → event-loop defect audit + gated fixes (silent hangs, stop_reason, deadlocks)
     │  ├─ fast-ci/                    # CI → native-tool swaps (TS7, oxc, uv) + fast/slow lane split
     │  ├─ issue-to-agent/             # Triage labels → auto-dispatched repro/PoC coding agents

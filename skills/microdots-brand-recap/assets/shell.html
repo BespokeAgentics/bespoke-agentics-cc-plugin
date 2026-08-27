@@ -1,0 +1,1174 @@
+<!doctype html>
+<!--
+  BespokeAgentics page shell. Copy this file, then:
+    1. paste assets/tokens.css into <style>, FIRST
+    2. paste assets/components.css after it
+    3. replace TITLE / SLASH / the nav links / the bands
+  Everything scripted here is finished — do not re-derive it.
+-->
+<html lang="en" data-theme="dark">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>TITLE</title>
+
+    <!-- Set the theme BEFORE first paint. Without this the page flashes the
+         wrong theme on every load. -->
+    <script>
+      (function () {
+        try {
+          var saved = localStorage.getItem("md-theme");
+          document.documentElement.dataset.theme =
+            saved ||
+            (matchMedia("(prefers-color-scheme: light)").matches
+              ? "light"
+              : "dark");
+        } catch (e) {
+          /* private mode — keep the served default */
+        }
+      })();
+    </script>
+
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      rel="stylesheet"
+      href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700;800&family=DM+Mono:wght@300;400;500&family=Caveat:wght@700&display=swap"
+    />
+
+    <style>
+      /* ===== PASTE assets/tokens.css HERE (light first, dark below) ===== */
+      /* ===== PASTE assets/components.css HERE ===== */
+
+      /* ---------------- NAV ----------------
+         A floating 58px capsule at top:14px, not a full-bleed bar.
+         Backdrop blur over an 85%-opaque surface; the shadow appears
+         only past 4px of scroll. */
+      .skip {
+        position: absolute;
+        left: -9999px;
+        top: 0;
+        z-index: 999;
+        background: var(--surface-default);
+        color: var(--text-primary);
+        padding: var(--sp-3) var(--sp-4);
+        border: 1px solid var(--border-default);
+        border-radius: var(--radius-md);
+      }
+      .skip:focus {
+        left: var(--sp-4);
+        top: var(--sp-4);
+      }
+      .nav {
+        position: sticky;
+        top: 14px;
+        z-index: 100;
+        margin-top: 14px;
+        display: flex;
+        justify-content: center;
+        padding: 0 clamp(var(--sp-3), 3vw, var(--sp-8));
+      }
+      .nav__inner {
+        width: min(var(--max-default), 100%);
+        height: var(--nav-h);
+        display: flex;
+        align-items: center;
+        gap: clamp(var(--sp-2), 2vw, var(--sp-4));
+        padding: 0 10px 0 18px;
+        border-radius: var(--radius-full);
+        background: var(--surface-overlay);
+        border: 1px solid var(--border-default);
+        -webkit-backdrop-filter: var(--blur-backdrop);
+        backdrop-filter: var(--blur-backdrop);
+        transition: box-shadow var(--duration-fast) var(--ease-standard);
+      }
+      .nav[data-scrolled="true"] .nav__inner {
+        box-shadow: var(--shadow-nav);
+      }
+
+      /* The mark IS the wordmark: "Dots" in accent, then a five-dot band
+         tapering to a point. The one place all six editorial hues appear
+         at once. It never animates. */
+      .wordmark {
+        display: flex;
+        align-items: center;
+        gap: var(--sp-2);
+        margin-right: auto;
+        flex: 0 1 auto;
+        min-width: 86px;
+        font-family: var(--font-body);
+        font-weight: var(--fw-medium);
+        font-size: 15.5px;
+        letter-spacing: 0.02em;
+        line-height: 1;
+        color: var(--text-heading);
+        text-decoration: none;
+      }
+      .wordmark > span:first-child {
+        flex: none;
+      }
+      .wordmark b {
+        font-weight: var(--fw-medium);
+        color: var(--accent);
+      }
+      .wordmark__band {
+        display: inline-flex;
+        align-items: center;
+        gap: 3px;
+        flex: 0 1 auto;
+        min-width: 0;
+        overflow: hidden;
+      }
+      .wordmark__band i {
+        display: block;
+        flex: none;
+        border-radius: var(--radius-full);
+      }
+      .wordmark__band i:nth-child(1) {
+        width: 14.5px;
+        height: 14.5px;
+        background: var(--ed-hero);
+      }
+      .wordmark__band i:nth-child(2) {
+        width: 6px;
+        height: 6px;
+        background: var(--ed-wire);
+      }
+      .wordmark__band i:nth-child(3) {
+        width: 4.5px;
+        height: 4.5px;
+        background: var(--ed-ent);
+      }
+      .wordmark__band i:nth-child(4) {
+        width: 3px;
+        height: 3px;
+        background: var(--ed-rel);
+      }
+      .wordmark__band i:nth-child(5) {
+        width: 2px;
+        height: 2px;
+        background: var(--ed-cta);
+      }
+      .wordmark__slash {
+        flex: none;
+        font-family: var(--font-mono);
+        font-size: 10.5px;
+        color: var(--text-muted);
+        letter-spacing: var(--ls-wider);
+        text-transform: uppercase;
+      }
+
+      .nav__links {
+        display: flex;
+        gap: var(--sp-1);
+        min-width: 0;
+        overflow-x: auto;
+        scrollbar-width: none;
+      }
+      .nav__links::-webkit-scrollbar {
+        display: none;
+      }
+      .nav__link {
+        flex: none;
+        display: flex;
+        align-items: center;
+        height: 34px;
+        padding: 0 var(--sp-3);
+        border-radius: var(--radius-full);
+        font-size: 13.5px;
+        font-weight: var(--fw-regular);
+        color: var(--text-secondary);
+        text-decoration: none;
+        white-space: nowrap;
+        transition:
+          background var(--duration-fast) var(--ease-standard),
+          color var(--duration-fast) var(--ease-standard);
+      }
+      .nav__link:hover {
+        background: var(--int-hover);
+        color: var(--text-primary);
+      }
+      .nav__link[aria-current="true"] {
+        background: var(--int-active);
+        color: var(--accent);
+      }
+
+      .icon-btn {
+        flex: none;
+        width: 34px;
+        height: 34px;
+        display: grid;
+        place-items: center;
+        background: transparent;
+        border: 1px solid var(--border-default);
+        border-radius: var(--radius-full);
+        color: var(--text-secondary);
+        font-family: var(--font-body);
+        cursor: pointer;
+        transition:
+          border-color var(--duration-fast) var(--ease-standard),
+          color var(--duration-fast) var(--ease-standard);
+      }
+      .icon-btn:hover {
+        border-color: var(--border-accent);
+        color: var(--accent);
+      }
+      /* The icon shows the theme you would switch TO. */
+      .icon-btn .i-moon {
+        display: none;
+      }
+      [data-theme="light"] .icon-btn .i-sun {
+        display: none;
+      }
+      [data-theme="light"] .icon-btn .i-moon {
+        display: block;
+      }
+
+      /* Touch targets grow without a media query. */
+      .icon-btn,
+      .btn--sm {
+        position: relative;
+      }
+      .icon-btn::after,
+      .btn--sm::after {
+        content: "";
+        position: absolute;
+        inset: -7px;
+      }
+
+      /* Above 880px the panel is display:contents, so the links and the
+         theme button are direct flex children of the capsule — one DOM,
+         two layouts, no duplicated markup. */
+      .nav__panel,
+      .nav__sheet {
+        display: contents;
+      }
+      .nav__toggle {
+        display: none;
+      }
+      .nav__toggle .i-close {
+        display: none;
+      }
+      .nav__toggle[aria-expanded="true"] .i-menu {
+        display: none;
+      }
+      .nav__toggle[aria-expanded="true"] .i-close {
+        display: block;
+      }
+      .nav__mlabel {
+        display: none;
+      }
+
+      /* THE ONLY WIDTH MEDIA QUERY ON THE PAGE. */
+      @media (max-width: 880px) {
+        .nav__inner {
+          position: relative;
+        }
+        .nav__toggle {
+          display: grid;
+        }
+        .nav__panel {
+          position: absolute;
+          top: calc(100% + var(--sp-2));
+          left: 0;
+          right: 0;
+          display: grid;
+          grid-template-rows: 0fr;
+          visibility: hidden;
+          overflow: hidden;
+          transition:
+            grid-template-rows var(--duration-medium) var(--ease-standard),
+            visibility 0s var(--duration-medium);
+        }
+        .nav[data-menu="open"] .nav__panel {
+          grid-template-rows: 1fr;
+          visibility: visible;
+          transition:
+            grid-template-rows var(--duration-medium) var(--ease-standard),
+            visibility 0s;
+        }
+        /* Opaque, not blurred — a blurred sheet over a blurred capsule muddies. */
+        .nav__sheet {
+          display: flex;
+          flex-direction: column;
+          align-items: stretch;
+          gap: var(--sp-1);
+          min-height: 0;
+          padding: var(--sp-2);
+          border-radius: var(--radius-lg);
+          background: var(--surface-raised);
+          border: 1px solid var(--border-default);
+          box-shadow: var(--shadow-nav);
+        }
+        .nav__links {
+          flex-direction: column;
+          align-items: stretch;
+          gap: var(--sp-1);
+          overflow: visible;
+        }
+        .nav__link {
+          height: 44px;
+          padding: 0 var(--sp-4);
+          font-size: 15px;
+        }
+        .nav__sheet > .icon-btn {
+          width: auto;
+          height: 44px;
+          display: flex;
+          align-items: center;
+          justify-content: flex-start;
+          gap: var(--sp-3);
+          padding: 0 var(--sp-4);
+          margin-top: var(--sp-1);
+          border-color: transparent;
+          border-top-color: var(--border-default);
+          border-radius: 0 0 var(--radius-md) var(--radius-md);
+        }
+        .nav__mlabel {
+          display: block;
+          font-size: 15px;
+        }
+      }
+    </style>
+  </head>
+
+  <body>
+    <a class="skip" href="#s1">Skip to content</a>
+
+    <header class="nav" id="nav" data-scrolled="false" data-menu="closed">
+      <div class="nav__inner">
+        <a class="wordmark" href="#top" aria-label="MicroDots, top">
+          <span>Micro<b>Dots</b></span>
+          <span class="wordmark__band" aria-hidden="true"
+            ><i></i><i></i><i></i><i></i><i></i
+          ></span>
+          <span class="wordmark__slash">/ SLASH</span>
+        </a>
+
+        <button
+          class="icon-btn nav__toggle"
+          id="navtoggle"
+          type="button"
+          aria-expanded="false"
+          aria-controls="navpanel"
+          aria-label="Menu"
+        >
+          <svg
+            class="i-menu"
+            width="17"
+            height="17"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="1.5"
+            stroke-linecap="round"
+            aria-hidden="true"
+          >
+            <path d="M4 7h16M4 12h16M4 17h16" />
+          </svg>
+          <svg
+            class="i-close"
+            width="17"
+            height="17"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="1.5"
+            stroke-linecap="round"
+            aria-hidden="true"
+          >
+            <path d="M6 6l12 12M18 6L6 18" />
+          </svg>
+        </button>
+
+        <div class="nav__panel" id="navpanel">
+          <div class="nav__sheet">
+            <nav class="nav__links" id="navlinks" aria-label="Sections">
+              <a class="nav__link" href="#s1">Section one</a>
+              <a class="nav__link" href="#s2">Section two</a>
+            </nav>
+            <button
+              class="icon-btn"
+              id="theme"
+              type="button"
+              aria-label="Switch theme"
+            >
+              <svg
+                class="i-sun"
+                width="17"
+                height="17"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="1.5"
+                stroke-linecap="round"
+                aria-hidden="true"
+              >
+                <circle cx="12" cy="12" r="4" />
+                <path
+                  d="M12 2v2M12 20v2M2 12h2M20 12h2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M19.1 4.9l-1.4 1.4M6.3 17.7l-1.4 1.4"
+                />
+              </svg>
+              <svg
+                class="i-moon"
+                width="17"
+                height="17"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="1.5"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                aria-hidden="true"
+              >
+                <path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z" />
+              </svg>
+              <span class="nav__mlabel">Theme</span>
+            </button>
+          </div>
+        </div>
+      </div>
+    </header>
+
+    <main id="top">
+      <!-- HERO. Carries NO [data-reveal] — above the fold never animates in. -->
+      <section class="band band--hero band--wash">
+        <svg
+          class="arc arc--a"
+          viewBox="0 0 600 600"
+          fill="none"
+          aria-hidden="true"
+        >
+          <circle
+            cx="580"
+            cy="580"
+            r="120"
+            stroke="currentColor"
+            stroke-width="0.8"
+            opacity="0.12"
+          />
+          <circle
+            cx="580"
+            cy="580"
+            r="220"
+            stroke="currentColor"
+            stroke-width="0.6"
+            opacity="0.07"
+          />
+          <circle
+            cx="580"
+            cy="580"
+            r="340"
+            stroke="currentColor"
+            stroke-width="0.5"
+            opacity="0.04"
+          />
+          <circle
+            cx="580"
+            cy="580"
+            r="480"
+            stroke="currentColor"
+            stroke-width="0.4"
+            opacity="0.02"
+          />
+        </svg>
+        <div class="band__inner">
+          <div class="eyebrow">Eyebrow &middot; scope &middot; date</div>
+          <h1 class="hero">
+            Headline with one <span class="ed ed--hero">word</span> in Caveat
+          </h1>
+          <p class="deck">The deck. One paragraph, capped at 56ch.</p>
+          <div class="stamp">
+            <span><b>name</b> v0.0.0</span>
+            <span>N commits &middot; <b>N days</b></span>
+          </div>
+        </div>
+      </section>
+
+      <!-- Bands alternate: band / band--alt / band / band--alt … -->
+      <section class="band band--alt" id="s1">
+        <div class="band__inner">
+          <div class="sec-head" data-reveal>
+            <div class="eyebrow">01 &mdash; label</div>
+            <h2 class="section">Section heading</h2>
+            <p class="lede">Section lede, capped at 62ch.</p>
+          </div>
+
+          <div class="grid g-400" data-reveal>
+            <article class="panel">
+              <div class="panel__head">
+                <span class="panel__label">Mono label</span>
+                <span class="panel__status"
+                  ><span class="dot dot--ok"></span>status</span
+                >
+              </div>
+              <div class="panel__body">
+                <h4>Card title</h4>
+                <p>
+                  Body copy. Prose is DM Sans 300; every machine-produced value
+                  is <code>DM Mono</code>.
+                </p>
+              </div>
+            </article>
+          </div>
+        </div>
+      </section>
+
+      <!-- Mermaid band. Delete the whole <section> if the page has no diagram. -->
+      <section class="band" id="s2">
+        <div class="band__inner">
+          <div class="sec-head" data-reveal>
+            <div class="eyebrow">02 &mdash; architecture</div>
+            <h2 class="section">The system as it stands</h2>
+          </div>
+          <div class="diagram-shell" data-reveal>
+            <p class="diagram-hint">
+              Ctrl / Cmd + wheel zooms &middot; drag pans &middot; double-click
+              fits
+            </p>
+            <div class="mermaid-wrap">
+              <div class="zoom-controls">
+                <button
+                  type="button"
+                  data-action="zoom-in"
+                  aria-label="Zoom in"
+                >
+                  +
+                </button>
+                <button
+                  type="button"
+                  data-action="zoom-out"
+                  aria-label="Zoom out"
+                >
+                  &minus;
+                </button>
+                <button
+                  type="button"
+                  data-action="zoom-fit"
+                  aria-label="Fit diagram"
+                >
+                  &#8634;
+                </button>
+                <button
+                  type="button"
+                  data-action="zoom-one"
+                  aria-label="Reset to 100%"
+                >
+                  1:1
+                </button>
+                <button
+                  type="button"
+                  data-action="zoom-expand"
+                  aria-label="Open full size"
+                >
+                  &#x26F6;
+                </button>
+                <span class="zoom-label" id="zoomLabel">loading</span>
+              </div>
+              <div class="mermaid-viewport">
+                <div class="mermaid mermaid-canvas"></div>
+              </div>
+            </div>
+            <!-- Prefer `flowchart TD`. Line breaks in labels are <br/>, never \n. -->
+            <script type="text/plain" class="diagram-source">
+              flowchart TD
+                A["Node A<br/>what it does"] --> B["Node B"]
+            </script>
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <footer class="colophon">
+      Generated DATE &middot; window: WINDOW &middot; HEAD <strong>SHA</strong
+      ><br />
+      Verified live: <strong>command</strong> &rarr; exit 0<br />
+      Styled with <strong>@bespokeagentics/microdots-theme</strong> &mdash; DM
+      Sans + DM Mono, one accent, hairlines not fills
+    </footer>
+
+    <!-- ================= MERMAID: zoom, pan, and theme-aware re-render ================= -->
+    <script type="module">
+      import mermaid from "https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.esm.min.mjs";
+      import elkLayouts from "https://cdn.jsdelivr.net/npm/@mermaid-js/layout-elk/dist/mermaid-layout-elk.esm.min.mjs";
+
+      const CFG = {
+        fitPadding: 26,
+        minHeight: 460,
+        maxHeightPx: 1000,
+        maxHeightVh: 0.86,
+        maxInitialZoom: 1.7,
+        minZoom: 0.08,
+        maxZoom: 6.5,
+        zoomStep: 0.14,
+        readabilityFloor: 0.6,
+      };
+      const clamp = (n, lo, hi) => Math.max(lo, Math.min(hi, n));
+      let activeDrag = null;
+      addEventListener("mousemove", (e) => activeDrag?.onMove(e));
+      addEventListener("mouseup", () => {
+        activeDrag?.onEnd();
+        activeDrag = null;
+      });
+
+      mermaid.registerLayoutLoaders(elkLayouts);
+
+      /* Read the LIVE token values so the diagram is themed by the same
+         tokens as the page. Re-read on every render — that is what makes
+         the toggle work on the diagram too. */
+      function tokens() {
+        const cs = getComputedStyle(document.documentElement);
+        const t = (n) => cs.getPropertyValue(n).trim();
+        return {
+          page: t("--surface-page"),
+          surface: t("--surface-default"),
+          raised: t("--surface-raised"),
+          border: t("--border-default"),
+          text: t("--text-primary"),
+          heading: t("--text-heading"),
+          muted: t("--text-muted"),
+          accent: t("--accent-default"),
+          okFg: t("--status-success-fg"),
+          warnFg: t("--status-warning-fg"),
+          infoBg: t("--status-info-bg"),
+          okBg: t("--status-success-bg"),
+          warnBg: t("--status-warning-bg"),
+        };
+      }
+
+      function initMermaid() {
+        const c = tokens();
+        mermaid.initialize({
+          startOnLoad: false,
+          theme: "base",
+          look: "classic",
+          layout: "elk",
+          /* htmlLabels must stay true — SVG-text labels break at every space
+             under ELK. wrappingWidth is raised so authors control line breaks
+             with <br/> rather than mermaid guessing, and padding is generous
+             so a label measured a few pixels short still sits inside its box.
+             See the two `.mermaid` label rules in components.css. */
+          flowchart: { htmlLabels: true, wrappingWidth: 500, padding: 26 },
+          themeVariables: {
+            fontFamily: "'DM Sans', system-ui, sans-serif",
+            fontSize: "17px",
+            background: c.page,
+            primaryColor: c.infoBg,
+            primaryBorderColor: c.accent,
+            primaryTextColor: c.text,
+            secondaryColor: c.okBg,
+            secondaryBorderColor: c.okFg,
+            secondaryTextColor: c.text,
+            tertiaryColor: c.warnBg,
+            tertiaryBorderColor: c.warnFg,
+            tertiaryTextColor: c.text,
+            lineColor: c.muted,
+            textColor: c.text,
+            clusterBkg: "transparent",
+            clusterBorder: c.border,
+            edgeLabelBackground: c.surface,
+            nodeBorder: c.accent,
+            mainBkg: c.raised,
+            titleColor: c.heading,
+          },
+        });
+      }
+
+      function initDiagram(shell) {
+        const wrap = shell.querySelector(".mermaid-wrap");
+        const viewport = shell.querySelector(".mermaid-viewport");
+        const canvas = shell.querySelector(".mermaid-canvas");
+        const source = shell.querySelector(".diagram-source");
+        const label = shell.querySelector(".zoom-label");
+        if (!wrap || !viewport || !canvas || !source || !label) return;
+
+        let zoom = 1,
+          fitMode = "fit",
+          panX = 0,
+          panY = 0,
+          svgW = 0,
+          svgH = 0,
+          seq = 0;
+        let sx = 0,
+          sy = 0,
+          spx = 0,
+          spy = 0,
+          touchDist = 0,
+          touchCx = 0,
+          touchCy = 0;
+
+        function constrainPan() {
+          const vpW = viewport.clientWidth,
+            vpH = viewport.clientHeight;
+          const rW = svgW * zoom,
+            rH = svgH * zoom,
+            pad = CFG.fitPadding;
+          panX =
+            rW + pad * 2 <= vpW
+              ? (vpW - rW) / 2
+              : clamp(panX, vpW - rW - pad, pad);
+          panY =
+            rH + pad * 2 <= vpH
+              ? (vpH - rH) / 2
+              : clamp(panY, vpH - rH - pad, pad);
+        }
+        function applyTransform() {
+          const svg = canvas.querySelector("svg");
+          if (!svg || !svgW) return;
+          constrainPan();
+          svg.style.width = svgW * zoom + "px";
+          svg.style.height = svgH * zoom + "px";
+          canvas.style.transform = "translate(" + panX + "px, " + panY + "px)";
+          label.textContent = Math.round(zoom * 100) + "% " + fitMode;
+        }
+        function canPan() {
+          return (
+            svgW * zoom + CFG.fitPadding * 2 > viewport.clientWidth ||
+            svgH * zoom + CFG.fitPadding * 2 > viewport.clientHeight
+          );
+        }
+        function computeSmartFit() {
+          const vpW = viewport.clientWidth,
+            vpH = viewport.clientHeight;
+          const aW = Math.max(80, vpW - CFG.fitPadding * 2),
+            aH = Math.max(80, vpH - CFG.fitPadding * 2);
+          const contain = Math.min(aW / svgW, aH / svgH);
+          let z = contain,
+            mode = "fit";
+          if (contain < CFG.readabilityFloor) {
+            const chartR = svgH / svgW,
+              vpR = vpH / Math.max(vpW, 1);
+            if (chartR >= vpR) {
+              z = aW / svgW;
+              mode = "width";
+            } else {
+              z = aH / svgH;
+              mode = "height";
+            }
+          }
+          return { zoom: clamp(z, CFG.minZoom, CFG.maxInitialZoom), mode };
+        }
+        function fitDiagram() {
+          if (!svgW) return;
+          const f = computeSmartFit();
+          zoom = f.zoom;
+          fitMode = f.mode;
+          panX = (viewport.clientWidth - svgW * zoom) / 2;
+          panY = (viewport.clientHeight - svgH * zoom) / 2;
+          applyTransform();
+        }
+        function setOneToOne() {
+          zoom = clamp(1, CFG.minZoom, CFG.maxZoom);
+          fitMode = "1:1";
+          panX = (viewport.clientWidth - svgW * zoom) / 2;
+          panY = (viewport.clientHeight - svgH * zoom) / 2;
+          applyTransform();
+        }
+        function zoomAround(factor, cx, cy) {
+          const next = clamp(zoom * factor, CFG.minZoom, CFG.maxZoom);
+          const ratio = next / zoom;
+          panX = cx - ratio * (cx - panX);
+          panY = cy - ratio * (cy - panY);
+          zoom = next;
+          fitMode = "custom";
+          applyTransform();
+        }
+        function readSvgNaturalSize(svg) {
+          let w = 0,
+            h = 0;
+          if (svg.viewBox?.baseVal?.width > 0) {
+            w = svg.viewBox.baseVal.width;
+            h = svg.viewBox.baseVal.height;
+          }
+          if (!w) {
+            w = parseFloat(svg.getAttribute("width")) || 0;
+            h = parseFloat(svg.getAttribute("height")) || 0;
+          }
+          if (!w) {
+            const b = svg.getBBox();
+            w = b.width;
+            h = b.height;
+          }
+          if (!w) {
+            const r = svg.getBoundingClientRect();
+            w = r.width || 1000;
+            h = r.height || 700;
+          }
+          if (!svg.getAttribute("viewBox"))
+            svg.setAttribute("viewBox", "0 0 " + w + " " + h);
+          return { w, h };
+        }
+        function setAdaptiveHeight() {
+          if (!svgW) return;
+          const usableW = Math.max(280, wrap.getBoundingClientRect().width - 2);
+          const idealH = (svgH / svgW) * usableW + CFG.fitPadding * 2;
+          const maxVp = Math.floor(innerHeight * CFG.maxHeightVh);
+          const hardMax = Math.min(
+            CFG.maxHeightPx,
+            Math.max(CFG.minHeight + 40, maxVp),
+          );
+          wrap.style.height =
+            Math.round(clamp(idealH, CFG.minHeight, hardMax)) + "px";
+        }
+        function openInNewTab() {
+          const svg = canvas.querySelector("svg");
+          if (!svg) return;
+          const bg = getComputedStyle(document.documentElement)
+            .getPropertyValue("--surface-page")
+            .trim();
+          const clone = svg.cloneNode(true);
+          clone.style.width = "";
+          clone.style.height = "";
+          const html =
+            '<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8">' +
+            '<meta name="viewport" content="width=device-width, initial-scale=1.0">' +
+            "<title>Diagram</title><style>" +
+            "body{margin:0;min-height:100vh;display:flex;align-items:center;justify-content:center;" +
+            "background:" +
+            bg +
+            ";padding:40px;box-sizing:border-box}" +
+            "svg{max-width:100%;max-height:92vh;height:auto}" +
+            "</style></head><body>" +
+            clone.outerHTML +
+            "</body></html>";
+          open(
+            URL.createObjectURL(new Blob([html], { type: "text/html" })),
+            "_blank",
+          );
+        }
+        async function render(preserve) {
+          try {
+            const code = source.textContent.trim();
+            if (!code) {
+              label.textContent = "empty";
+              return;
+            }
+            /* Mermaid measures label widths with whatever font is resolved
+               at render time. If DM Sans has not loaded it measures a
+               fallback, sizes every node to that, then paints the wider real
+               face inside a box that is now too small. Wait for the face. */
+            if (document.fonts?.ready) {
+              try {
+                await document.fonts.load('400 17px "DM Sans"');
+              } catch (e) {
+                /* face unavailable — render anyway */
+              }
+              await document.fonts.ready;
+            }
+            initMermaid();
+            const pz = zoom,
+              px = panX,
+              py = panY,
+              pm = fitMode;
+            const { svg } = await mermaid.render("md-diagram-" + ++seq, code);
+            canvas.innerHTML = svg;
+            const node = canvas.querySelector("svg");
+            if (!node) {
+              label.textContent = "error";
+              return;
+            }
+            const size = readSvgNaturalSize(node);
+            svgW = size.w;
+            svgH = size.h;
+            node.removeAttribute("width");
+            node.removeAttribute("height");
+            node.style.maxWidth = "none";
+            node.style.display = "block";
+            setAdaptiveHeight();
+            if (preserve && pz) {
+              zoom = pz;
+              panX = px;
+              panY = py;
+              fitMode = pm;
+              applyTransform();
+            } else {
+              fitDiagram();
+            }
+          } catch (err) {
+            console.error("Mermaid render failed:", err);
+            label.textContent = "error";
+          }
+        }
+
+        const actions = {
+          "zoom-in": () =>
+            zoomAround(
+              1 + CFG.zoomStep,
+              viewport.clientWidth / 2,
+              viewport.clientHeight / 2,
+            ),
+          "zoom-out": () =>
+            zoomAround(
+              1 / (1 + CFG.zoomStep),
+              viewport.clientWidth / 2,
+              viewport.clientHeight / 2,
+            ),
+          "zoom-fit": fitDiagram,
+          "zoom-one": setOneToOne,
+          "zoom-expand": openInNewTab,
+        };
+        Object.entries(actions).forEach(([a, h]) => {
+          wrap
+            .querySelector('[data-action="' + a + '"]')
+            ?.addEventListener("click", h);
+        });
+
+        viewport.addEventListener("dblclick", fitDiagram);
+        viewport.addEventListener(
+          "wheel",
+          (e) => {
+            if (e.ctrlKey || e.metaKey) {
+              e.preventDefault();
+              const r = viewport.getBoundingClientRect();
+              zoomAround(
+                e.deltaY < 0 ? 1 + CFG.zoomStep : 1 / (1 + CFG.zoomStep),
+                e.clientX - r.left,
+                e.clientY - r.top,
+              );
+              return;
+            }
+            if (canPan()) {
+              e.preventDefault();
+              panX -= e.deltaX;
+              panY -= e.deltaY;
+              applyTransform();
+            }
+          },
+          { passive: false },
+        );
+
+        viewport.addEventListener("mousedown", (e) => {
+          if (e.target.closest(".zoom-controls") || !canPan()) return;
+          wrap.classList.add("is-panning");
+          sx = e.clientX;
+          sy = e.clientY;
+          spx = panX;
+          spy = panY;
+          e.preventDefault();
+          activeDrag = {
+            onMove: (ev) => {
+              panX = spx + (ev.clientX - sx);
+              panY = spy + (ev.clientY - sy);
+              applyTransform();
+            },
+            onEnd: () => wrap.classList.remove("is-panning"),
+          };
+        });
+
+        viewport.addEventListener(
+          "touchstart",
+          (e) => {
+            if (e.touches.length === 1) {
+              sx = e.touches[0].clientX;
+              sy = e.touches[0].clientY;
+              spx = panX;
+              spy = panY;
+            } else if (e.touches.length === 2) {
+              const dx = e.touches[0].clientX - e.touches[1].clientX;
+              const dy = e.touches[0].clientY - e.touches[1].clientY;
+              touchDist = Math.sqrt(dx * dx + dy * dy);
+              const r = viewport.getBoundingClientRect();
+              touchCx =
+                (e.touches[0].clientX + e.touches[1].clientX) / 2 - r.left;
+              touchCy =
+                (e.touches[0].clientY + e.touches[1].clientY) / 2 - r.top;
+            }
+          },
+          { passive: true },
+        );
+
+        viewport.addEventListener(
+          "touchmove",
+          (e) => {
+            if (e.touches.length === 1 && canPan()) {
+              if (touchDist > 0) {
+                sx = e.touches[0].clientX;
+                sy = e.touches[0].clientY;
+                spx = panX;
+                spy = panY;
+                touchDist = 0;
+              }
+              e.preventDefault();
+              panX = spx + (e.touches[0].clientX - sx);
+              panY = spy + (e.touches[0].clientY - sy);
+              applyTransform();
+            } else if (e.touches.length === 2 && touchDist > 0) {
+              e.preventDefault();
+              const dx = e.touches[0].clientX - e.touches[1].clientX;
+              const dy = e.touches[0].clientY - e.touches[1].clientY;
+              const d = Math.sqrt(dx * dx + dy * dy);
+              zoomAround(d / touchDist, touchCx, touchCy);
+              touchDist = d;
+            }
+          },
+          { passive: false },
+        );
+
+        new ResizeObserver(() => {
+          if (svgW) {
+            setAdaptiveHeight();
+            fitDiagram();
+          }
+        }).observe(wrap);
+
+        /* Theme is a prop, not a media query — so the diagram re-renders
+           when data-theme flips, keeping the reader's zoom and pan. */
+        new MutationObserver(() => render(true)).observe(
+          document.documentElement,
+          {
+            attributes: true,
+            attributeFilter: ["data-theme"],
+          },
+        );
+
+        render(false);
+      }
+
+      document.querySelectorAll(".diagram-shell").forEach(initDiagram);
+    </script>
+
+    <!-- ================= THEME, NAV, SCROLL-SPY, REVEALS ================= -->
+    <script>
+      (function () {
+        /* ---------- Theme. data-theme on <html> is the whole mechanism. ---------- */
+        var root = document.documentElement;
+        var KEY = "md-theme";
+        var btn = document.getElementById("theme");
+        function apply(t, persist) {
+          root.dataset.theme = t;
+          if (persist) {
+            try {
+              localStorage.setItem(KEY, t);
+            } catch (e) {}
+          }
+          if (btn) {
+            btn.setAttribute(
+              "aria-label",
+              t === "dark" ? "Switch to light theme" : "Switch to dark theme",
+            );
+            btn.setAttribute("aria-pressed", String(t === "light"));
+          }
+        }
+        if (btn) {
+          apply(root.dataset.theme || "dark", false);
+          btn.addEventListener("click", function () {
+            apply(root.dataset.theme === "dark" ? "light" : "dark", true);
+          });
+        }
+        /* OS preference is followed only while the reader has not chosen. */
+        matchMedia("(prefers-color-scheme: dark)").addEventListener(
+          "change",
+          function (e) {
+            var stored = null;
+            try {
+              stored = localStorage.getItem(KEY);
+            } catch (err) {}
+            if (!stored) apply(e.matches ? "dark" : "light", false);
+          },
+        );
+
+        /* ---------- Nav shadow only after scroll ---------- */
+        var nav = document.getElementById("nav");
+        function onScroll() {
+          nav.dataset.scrolled = String(window.scrollY > 4);
+        }
+        addEventListener("scroll", onScroll, { passive: true });
+        onScroll();
+
+        /* ---------- Nav disclosure below 880px ---------- */
+        var toggle = document.getElementById("navtoggle");
+        var panel = document.getElementById("navpanel");
+        function setMenu(open) {
+          nav.dataset.menu = open ? "open" : "closed";
+          toggle.setAttribute("aria-expanded", String(open));
+        }
+        toggle.addEventListener("click", function () {
+          setMenu(nav.dataset.menu !== "open");
+        });
+        addEventListener("keydown", function (e) {
+          if (e.key === "Escape" && nav.dataset.menu === "open") {
+            setMenu(false);
+            toggle.focus();
+          }
+        });
+        addEventListener("pointerdown", function (e) {
+          if (nav.dataset.menu === "open" && !nav.contains(e.target))
+            setMenu(false);
+        });
+        panel.addEventListener("click", function (e) {
+          if (e.target.closest(".nav__link")) setMenu(false);
+        });
+        /* Both listeners on purpose — an iframe resize misses the mq change. */
+        var wide = matchMedia("(min-width: 881px)");
+        function closeIfWide() {
+          if (wide.matches) setMenu(false);
+        }
+        wide.addEventListener("change", closeIfWide);
+        addEventListener("resize", closeIfWide, { passive: true });
+
+        /* ---------- Scroll spy ---------- */
+        var links = Array.prototype.slice.call(
+          document.querySelectorAll("#navlinks a"),
+        );
+        var sections = links
+          .map(function (a) {
+            return { a: a, el: document.querySelector(a.getAttribute("href")) };
+          })
+          .filter(function (s) {
+            return s.el;
+          });
+
+        if ("IntersectionObserver" in window) {
+          var io = new IntersectionObserver(
+            function (entries) {
+              entries.forEach(function (entry) {
+                if (!entry.isIntersecting) return;
+                var hit = sections.filter(function (s) {
+                  return s.el === entry.target;
+                })[0];
+                if (!hit) return;
+                links.forEach(function (a) {
+                  a.removeAttribute("aria-current");
+                });
+                hit.a.setAttribute("aria-current", "true");
+                hit.a.scrollIntoView({
+                  behavior: "smooth",
+                  block: "nearest",
+                  inline: "center",
+                });
+              });
+            },
+            { rootMargin: "-12% 0px -76% 0px" },
+          );
+          sections.forEach(function (s) {
+            io.observe(s.el);
+          });
+        }
+
+        /* ---------- Reveals. One-shot, no re-trigger, no stagger. ---------- */
+        var blocks = Array.prototype.slice.call(
+          document.querySelectorAll("[data-reveal]"),
+        );
+        if (!("IntersectionObserver" in window)) {
+          blocks.forEach(function (b) {
+            b.classList.add("seen");
+          });
+        } else {
+          var ro = new IntersectionObserver(
+            function (entries) {
+              entries.forEach(function (entry) {
+                if (!entry.isIntersecting) return;
+                entry.target.classList.add("seen");
+                ro.unobserve(entry.target);
+              });
+            },
+            { rootMargin: "0px 0px -70px 0px" },
+          );
+          blocks.forEach(function (b) {
+            ro.observe(b);
+          });
+        }
+      })();
+    </script>
+  </body>
+</html>
