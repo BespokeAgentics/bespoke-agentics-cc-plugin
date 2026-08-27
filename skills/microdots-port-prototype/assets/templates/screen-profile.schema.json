@@ -1,0 +1,155 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Prototype screen profile",
+  "description": "One profile per app module analyzed in Phase 4. Every claim carries a citation into _src.",
+  "type": "object",
+  "required": ["screen_id", "source_path", "role", "summary", "affordances", "operations",
+               "entities", "states", "navigation", "theater", "ambiguities"],
+  "additionalProperties": false,
+  "properties": {
+    "screen_id": { "type": "string", "description": "lower-kebab, unique in the run" },
+    "source_path": { "type": "string", "description": "e.g. _src/app/09-module-09.js" },
+    "role": { "enum": ["screen", "chrome", "data-store", "ui-kit"] },
+    "label": { "type": "string" },
+    "summary": { "type": "string", "description": "What this surface is for, one or two sentences" },
+    "visual_verified": { "type": "boolean", "default": false },
+    "affordances": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["id", "kind", "label", "behavior", "citation", "confidence"],
+        "additionalProperties": false,
+        "properties": {
+          "id": { "type": "string" },
+          "kind": { "enum": ["button", "link", "form", "field", "table", "list", "filter",
+                             "search", "tab", "toggle", "menu", "modal", "metric", "chart", "other"] },
+          "label": { "type": "string", "description": "The on-screen text, verbatim" },
+          "behavior": { "type": "string", "description": "Stated as a requirement, not a description" },
+          "operation_ref": { "type": ["string", "null"] },
+          "destructive": { "type": "boolean", "default": false },
+          "role_gated": { "type": ["string", "null"] },
+          "citation": { "type": "string", "description": "path:line" },
+          "confidence": { "enum": ["high", "medium", "low"] }
+        }
+      }
+    },
+    "operations": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["id", "name", "crud", "entity", "citation", "confidence"],
+        "additionalProperties": false,
+        "properties": {
+          "id": { "type": "string" },
+          "name": { "type": "string" },
+          "crud": { "enum": ["create", "read", "update", "delete", "query", "action"] },
+          "entity": { "type": "string" },
+          "inputs": { "type": "array", "items": { "type": "string" } },
+          "returns": { "type": ["string", "null"] },
+          "realtime": { "type": "boolean", "default": false },
+          "poll_interval_hint": { "type": ["string", "null"] },
+          "observed_as_real": { "type": "boolean", "description": "false when only mimed" },
+          "citation": { "type": "string" },
+          "confidence": { "enum": ["high", "medium", "low"] }
+        }
+      }
+    },
+    "entities": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["name", "fields", "source", "citation"],
+        "additionalProperties": false,
+        "properties": {
+          "name": { "type": "string", "description": "PascalCase singular" },
+          "fields": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "required": ["name", "type"],
+              "additionalProperties": false,
+              "properties": {
+                "name": { "type": "string" },
+                "type": { "type": "string" },
+                "optional": { "type": "boolean", "default": false },
+                "enum_values": { "type": "array", "items": { "type": "string" } },
+                "display_format": { "type": ["string", "null"] },
+                "relation": { "type": ["string", "null"], "description": "ref:<Entity>" }
+              }
+            }
+          },
+          "projection_of": { "type": ["string", "null"] },
+          "source": { "enum": ["mock-data", "rendered-only", "both"] },
+          "citation": { "type": "string" }
+        }
+      }
+    },
+    "states": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["state", "present_in_design"],
+        "additionalProperties": false,
+        "properties": {
+          "state": { "enum": ["loading", "empty", "error", "success", "disabled",
+                              "readonly", "unauthorized"] },
+          "present_in_design": { "type": "boolean" },
+          "citation": { "type": ["string", "null"] },
+          "note": { "type": ["string", "null"] }
+        }
+      }
+    },
+    "navigation": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["target", "trigger", "creates_route"],
+        "additionalProperties": false,
+        "properties": {
+          "target": { "type": "string" },
+          "trigger": { "type": "string" },
+          "creates_route": { "type": "boolean", "description": "false for tabs/modals without deep-link cues" },
+          "citation": { "type": ["string", "null"] }
+        }
+      }
+    },
+    "reads_globals": { "type": "array", "items": { "type": "string" } },
+    "writes_globals": { "type": "array", "items": { "type": "string" } },
+    "theater": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["id", "signal", "citation", "implies_operation", "disposition"],
+        "additionalProperties": false,
+        "properties": {
+          "id": { "type": "string" },
+          "signal": { "enum": ["fake-latency", "faked-job", "local-only-mutation",
+                               "hardcoded-result", "no-op-handler", "randomized-value"] },
+          "evidence": { "type": "string", "description": "Short verbatim excerpt" },
+          "citation": { "type": "string" },
+          "affordance_ref": { "type": ["string", "null"] },
+          "implies_operation": { "type": "string" },
+          "disposition": { "enum": ["implement", "mock", "drop", null],
+                           "description": "null until Stage-2 Round B decides" }
+        }
+      }
+    },
+    "ambiguities": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["id", "question", "readings", "blocking"],
+        "additionalProperties": false,
+        "properties": {
+          "id": { "type": "string" },
+          "question": { "type": "string", "description": "Asked verbatim in Stage-2" },
+          "readings": { "type": "array", "items": { "type": "string" }, "minItems": 2 },
+          "blocking": { "type": "boolean" },
+          "citation": { "type": ["string", "null"] },
+          "status": { "enum": ["open", "resolved", "deferred"], "default": "open" },
+          "resolution": { "type": ["string", "null"] }
+        }
+      }
+    }
+  }
+}
