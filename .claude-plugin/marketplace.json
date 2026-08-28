@@ -17,8 +17,8 @@
       "version": "4.1.2",
       "description": "Design fluency for MicroDots (Effect v4 + Foldkit). A fork of Impeccable by Paul Bakaus (Apache-2.0), adapted for hyperscript views, a test-enforced semantic token vocabulary, and a variant preview harness that runs the dot's real program. Invoked as /impeccable-microdots:impeccable. For any non-MicroDots project use upstream Impeccable.",
       "source": {
-        "source": "github",
-        "repo": "BespokeAgentics/impeccable-microdots"
+        "source": "git",
+        "url": "https://github.com/BespokeAgentics/impeccable-microdots.git"
       }
     }
   ]
