@@ -1,0 +1,32 @@
+name: marketplace
+
+# A bad marketplace entry is invisible until someone clicks Install: it does not
+# break a build, a test, or a lint. Three malformed source forms shipped to main
+# before anything noticed, so this runs on every change to the manifest.
+on:
+  push:
+    paths:
+      - '.claude-plugin/**'
+      - 'scripts/validate-marketplace.py'
+      - 'scripts/test-validate-marketplace.py'
+      - '.github/workflows/marketplace.yml'
+  pull_request:
+    paths:
+      - '.claude-plugin/**'
+      - 'scripts/validate-marketplace.py'
+      - 'scripts/test-validate-marketplace.py'
+  workflow_dispatch:
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      # The runner holds no SSH key and no credential helper, which is the
+      # point: an entry that only installs on a developer machine fails here.
+      - name: Validate every plugin entry installs clean
+        run: python3 scripts/validate-marketplace.py
+
+      - name: Prove the validator still rejects known-bad entries
+        run: python3 scripts/test-validate-marketplace.py
