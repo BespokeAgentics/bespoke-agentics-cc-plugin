@@ -442,6 +442,40 @@ because green achieved by silencing the alarm is worse than red. Never commits. 
 `repo-audit` and `dead-code-sweep`, which _hunt_ for problems across a scope: this one dispositions
 a **single known defect** and does not go looking for more.
 
+### When to Use the Misunderstanding Command
+
+| Situation                                                                                                                     | Command                                                          |
+| ----------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------- |
+| A plan step, wiki claim, doc, or earlier turn led the agent to infer something wrong, and work is being built on that reading | `/bespoke-agentics:misunderstanding ['<what was misunderstood>']` |
+
+The Misunderstanding command exists because **restating is not correcting**. By the time a wrong
+reading is noticed it has usually already produced decisions and code, and the claim that caused it
+is still sitting in the source ready to mislead the next session identically. Like `defect-intake`
+it is **user-invoked only** — deciding something was misunderstood is the operator's call, and the
+skill never self-triggers on the smell of confusion. It treats a misunderstanding as a **chain, not
+a fact**: something was said, it was read a particular way, and something was built — so it
+reconstructs an **inference ledger** pairing every belief with the **verbatim source text** that
+produced it and labeling each `stated` (the source said it, you read it wrong — the source is fine)
+/ `inferred` (the source implied it and you extended it — the source is ambiguous) /
+`assumed-from-silence` (the source never addressed it — the source has a hole), because those are
+three different defects with three different fixes. Scope is the **blast radius**: the flagged
+belief, its **siblings** drawn from the same source (a page stale enough to mislead once makes every
+other reading of it suspect), and its **dependents** — explicitly not a session-wide assumption
+audit. The interview then does the thing that makes it cheap: the user already said you were wrong,
+so the skill's job is to make that **answerable** — every `AskUserQuestion` **quotes its source**,
+leads with your current belief as the one-click confirmation, and offers the plausible alternative
+readings a competent person could have taken from the same words (≤4 per call, ≤3 rounds, ordered by
+blast radius, never open-ended; an `assumed-from-silence` row asks for the missing rule instead).
+Contradictions between the correction and what the artifact actually says are **surfaced, never
+reconciled** — the artifact may be stale, or the user may be misremembering their own document. It
+then **corrects the source** (repo plans/specs edited; wiki pages updated and logged with raw
+sources never modified — the correction is noted and linked back; external content reported
+verbatim, never edited), **inventories the work built on the error** and offers keep / revise /
+revert per item — never auto-reverting, because plenty of work survives its bad premise — records
+proportionally via `defect-intake`'s documentation routing, feeds a knowledge store when one exists
+(silently skipped when not), and resumes with a corrected restatement in its own words. A verified
+non-misunderstanding is a successful run. **Never commits.**
+
 ### When to Use the Skill-Reverse-Engineer Command
 
 | Situation                                                                                                                         | Command                                                                                                            |
@@ -618,6 +652,7 @@ When assessing features or making decisions, use the standard color system:
     │  ├─ xstate-refactor/            # Feature state logic + UI → XState v5 machine/statechart/actors
     │  ├─ dead-code-sweep/            # Post-session dead-code cleanup: diff-seeded, gated waves, tiered confirmation, regression-proofed
     │  ├─ defect-intake/              # Known defect → verify, classify by blast radius, failing-test-first fix, document, resume (user-invoked)
+    │  ├─ misunderstanding/           # Wrong inference → source-quoted inference ledger → targeted interview → source correction + work disposition (user-invoked)
     │  ├─ skill-reverse-engineer/     # Target skill → determinism audit (DS/TP/CT/VF/AM/RB/KM + host grounding) → gated refactor or hardened new version
     │  ├─ orchestrate/                # Plan/task → gated multi-agent implementation (Fable orchestrates, Opus/Sonnet implement)
     │  ├─ workstream-orchestrate/     # Plan → kickoff contract → sequential per-WS code→validate→commit (Workflow) + hard-gate proofs
@@ -735,6 +770,8 @@ When assessing features or making decisions, use the standard color system:
 33. **Turn a Claude Design prototype into a MicroDots build plan**: Run `/bespoke-agentics:microdots-port-prototype '<artifact.html>'` — the front half of a MicroDots port for products that only exist as a design. A Claude Design export is not a screenshot: its `__bundler/manifest` carries the **original hand-written source**, so the run opens with a deterministic extractor (`scripts/extract_design_bundle.py`) that recovers a real source tree — app modules in true load order, vendor libraries separated, design-token stylesheets, fonts — turning an opaque 1.8 MB HTML file into evidence with real `file:line` anchors. It then classifies every module (screen · data-store · chrome · ui-kit · scaffold), maps the `window.*` read/write graph, and runs the analysis a prototype (unlike a real app) requires: **inference, not tracing**. A Stage-1 interview frames purpose, roles, backend reality, auth, non-goals — plus the two questions only a prototype raises: which screens are the product versus demo filler, and how faithful the visual design must stay. Parallel `prototype-screen-analyst` agents then read each module into a schema-valid screen profile, separating what genuinely works from **demo theater** — `setTimeout(…, 720)` standing in for a query, handlers that only mutate local arrays, hardcoded AI answers, no-op controls — because every faked interaction names a service that does not exist yet. Mock data is read as the **entity model's best evidence** (typed conservatively, enums captured, relations inferred), never as seed data. Synthesis merges entities, routes, features and shared services, then crosses the `window.*` graph with the feature domains to derive **candidate MicroDot cut lines** with their crossings — evidence for composition, never the composition decision. A Stage-2 interview validates everything: features confirmed or cut, each theater finding dispositioned **implement / mock / drop**, blocking ambiguities resolved (never silently deferred), priorities set. It then writes the dossier in exactly the artifact names `microdots-port-app` already reads (`trace.md`, `ui-inventory.md`, `synthesis.json`, `seams.md`) plus a `dossier-manifest.json` declaring which phases are pre-satisfied, and **hands off** — port-app runs composition (user-gated), port maps, the Effect-optimization register, spec elicitation, and, on `--mode scaffold|full`, the build. Default `--mode plan` stops at the validated plan; `--serve` adds a real browser walk, without it every UX claim is labeled "not visually verified". Non-Claude-Design input is **redirected, not half-handled** (real app → `microdots-port-app`, Storybook → `funcspec`). Writes no production code.
 
 34. **Refine how a MicroDot looks**: Run `/bespoke-agentics:microdots-design` — a router, not a second copy of design guidance. It resolves the workspace, confirms this is a MicroDots repo, and hands off to the **`impeccable-microdots`** plugin (a fork of [Impeccable](https://github.com/pbakaus/impeccable) by Paul Bakaus, Apache-2.0, adapted for this framework and listed in `.claude-plugin/marketplace.json`). Three things make the fork necessary rather than cosmetic: the class vocabulary is **enforced by a test that fails the build** (`palette-usage.test.ts` rejects every Tailwind palette literal, which otherwise compiles and renders and simply stops responding to `[data-theme]`); four Tailwind defaults are remapped and two invert (`rounded-lg` is 14px, `tracking-tight` is *positive* button tracking, `text-xs`/`text-sm` do not exist and fail nothing while breaking the type scale); and Foldkit views are **hyperscript**, so a variant cannot be spliced HTML. Live variants are therefore real view functions run inside the dot's own program in a generated harness, because the shells load built bundles and `defineMicroDot` refuses to redefine a registered tag, so a rebuilt bundle is silently discarded in a live page. Accept writes source once and then runs format → `bun run check` → a dot build → a render gate, restoring the file if any fails; `Runtime.embed` swallows startup defects, so a green build can still be a blank panel with a clean console. Sits beside `reimagine` (explores which design), `interactive-wireframe` (settles the design) and `wireframe-parity` (checks the build): those write no production code, this one does.
+
+35. **Correct a wrong inference before it compounds**: Run `/bespoke-agentics:misunderstanding ['<what was misunderstood>']` — for the moment a plan step, a wiki claim, a doc, or an earlier turn led to a reading that was wrong and work is already sitting on top of it. Restating in prose fixes the conversation and nothing else: the misleading claim stays in the source, and the contaminated work stays in the tree. Like `defect-intake` it is **user-invoked only** and never self-triggers. It reconstructs an **inference ledger** — every belief paired with the **verbatim source text** that produced it, labeled `stated` / `inferred` / `assumed-from-silence`, which are three different defects with three different fixes — scopes to the flagged belief's **blast radius** (siblings from the same source, dependents; not a session-wide audit), then interviews in specifics: every `AskUserQuestion` **quotes its source**, leads with the current belief as a one-click confirmation, and offers the alternative readings a competent person could have taken from the same words (≤4 per call, ≤3 rounds, ordered by blast radius). Contradictions between the correction and what the artifact actually says are **surfaced, never reconciled**. It then corrects the source (repo docs edited; wiki updated and logged with **raw sources never modified**; external content reported verbatim, never edited), inventories the work built on the error and offers **keep / revise / revert per item** — never auto-reverting — records proportionally via `defect-intake`'s documentation routing, feeds a knowledge store when one exists, and resumes with a corrected restatement in its own words. A verified non-misunderstanding is a successful run. **Never commits.**
 
 ## Quality Standards
 
