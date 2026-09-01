@@ -1,4 +1,8 @@
-# Bespoke Agentics — Wiki Plugin Instructions
+# Bespoke Agentics — Plugin Instructions
+
+## Response Style
+
+Responses to the user should be brief and specific to the request. Do not provide too much explanation. The user can request additional information if needed.
 
 ## Operating Manual (read first)
 
@@ -444,8 +448,8 @@ a **single known defect** and does not go looking for more.
 
 ### When to Use the Misunderstanding Command
 
-| Situation                                                                                                                     | Command                                                          |
-| ----------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------- |
+| Situation                                                                                                                     | Command                                                           |
+| ----------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------- |
 | A plan step, wiki claim, doc, or earlier turn led the agent to infer something wrong, and work is being built on that reading | `/bespoke-agentics:misunderstanding ['<what was misunderstood>']` |
 
 The Misunderstanding command exists because **restating is not correcting**. By the time a wrong
@@ -518,18 +522,18 @@ restructures **where the work happens**.
 
 ### When to Use Each MicroDots Command
 
-| Situation                                                                                        | Command                                              |
-| ------------------------------------------------------------------------------------------------ | ---------------------------------------------------- |
-| Turn a Claude Design prototype into a MicroDots build plan                                       | `/bespoke-agentics:microdots-port-prototype '<artifact.html>'` |
-| Port a whole existing app onto the MicroDots framework                                           | `/bespoke-agentics:microdots-port-app '<app-path>'`  |
-| Extract ONE feature out of an app into a standalone micro-app                                    | `/bespoke-agentics:microdots-port-feature '<what>'`  |
-| Create a new MicroDot — compiler workspace, or repo extension with full host wiring              | `/bespoke-agentics:microdots-new-micro '<name> [brief]'` |
-| Confirm a MicroDots change is actually done (static checks are not sufficient)                   | `/bespoke-agentics:microdots-verify`                 |
-| A MicroDot is blank, stale, or "could not reach the service"                                     | `/bespoke-agentics:microdots-debug-blank`            |
-| Publish a MicroDots workspace                                                                    | `/bespoke-agentics:microdots-deploy`                 |
-| Turn repo history / a shipped plan / a feature into a published post, changelog, or deep-dive    | `/bespoke-agentics:microdots-content '<ask>'`        |
-| Build any explainer, recap, or report page in the BespokeAgentics / MicroDots brand              | `/bespoke-agentics:microdots-brand-recap`            |
-| Refine how a MicroDot actually looks (polish, audit, critique, live variants)                    | `/bespoke-agentics:microdots-design`                 |
+| Situation                                                                                     | Command                                                        |
+| --------------------------------------------------------------------------------------------- | -------------------------------------------------------------- |
+| Turn a Claude Design prototype into a MicroDots build plan                                    | `/bespoke-agentics:microdots-port-prototype '<artifact.html>'` |
+| Port a whole existing app onto the MicroDots framework                                        | `/bespoke-agentics:microdots-port-app '<app-path>'`            |
+| Extract ONE feature out of an app into a standalone micro-app                                 | `/bespoke-agentics:microdots-port-feature '<what>'`            |
+| Create a new MicroDot — compiler workspace, or repo extension with full host wiring           | `/bespoke-agentics:microdots-new-micro '<name> [brief]'`       |
+| Confirm a MicroDots change is actually done (static checks are not sufficient)                | `/bespoke-agentics:microdots-verify`                           |
+| A MicroDot is blank, stale, or "could not reach the service"                                  | `/bespoke-agentics:microdots-debug-blank`                      |
+| Publish a MicroDots workspace                                                                 | `/bespoke-agentics:microdots-deploy`                           |
+| Turn repo history / a shipped plan / a feature into a published post, changelog, or deep-dive | `/bespoke-agentics:microdots-content '<ask>'`                  |
+| Build any explainer, recap, or report page in the BespokeAgentics / MicroDots brand           | `/bespoke-agentics:microdots-brand-recap`                      |
+| Refine how a MicroDot actually looks (polish, audit, critique, live variants)                 | `/bespoke-agentics:microdots-design`                           |
 
 These ten cover the MicroDots framework (Effect v4 + Foldkit custom elements)
 end to end: **plan** (`port-prototype`), **build** (`port-app`, `port-feature`,
@@ -551,6 +555,32 @@ blank page rather than an error). And **the host seam is exactly four edits** �
 registry entry, markup section, topology route, slot-manifest entry — so
 `microdots-new-micro` completes the wiring the generator only prints, including
 the deploy-discovery registration the generator never mentions.
+
+### When to Use the AI-Native SDLC Command
+
+| Situation                                                                                                                                     | Command                                                                                          |
+| ---------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------ |
+| Transform the process around agentic coding — score a repo's SDLC maturity, install the playbook's controls, or drive work through the artifact chain | `/bespoke-agentics:ai-native-sdlc [mode: assess\|adopt\|run] [plays or '<work item>'] [--home <dir>] [--out <file>] [--no-confirm]` |
+
+The AI-Native SDLC command implements Anthropic's AI-Native SDLC playbook: when code is no longer
+the bottleneck, the human-speed stages around the build phase are — so the process is rebuilt as a
+loop of **committed artifacts** (`intent.md` → `spec.md` → `plan.md` → diff+tests → reviewed PR →
+incident record), each stage ending by writing one and the next beginning by reading it, with
+**humans owning every gate**. `assess` is read-only: it probes the repo for evidence of each of the
+16 plays (tuned `CLAUDE.md`, policy skills, guardrail + approval-gate hooks, `REVIEW.md`, agent
+evals, `bands.yaml` monitoring tiers, the artifact chain itself) and writes a 🟢/🟡/🔴 scorecard —
+with an honest ⚪ for what a repo can't show — plus a dependency-ordered adoption path. `adopt`
+scaffolds the chosen plays as **real, working files** adapted to the repo's own commands and named
+gate owners (never generic copies), each hook verified against both its allow and block fixtures
+before it counts, settings merged additively, nothing committed. `run` drives one work item through
+the chain gate by gate — brainstormed intent, skill-constrained spec with flagged concerns, a plan
+an uninvolved engineer could implement alone, failing-test-first builds with the plan kept in sync,
+and a review-ready close — where a rejected intent is a successful (cheap) outcome. Composes with
+the rest of the plugin: `spec-elicitation` can power the spec gate, `plan-review` the plan gate,
+`orchestrate`/`workstream-orchestrate` the build. Distinct from `/agentnative:suite`, which makes
+the repo a good place for agents to **work** (fast CI, hermetic deploys, evidence) — this one
+transforms the **process**: who approves what, which artifact fires which stage, where human
+judgment concentrates. Wiki-ingested when a vault exists.
 
 ### When to Use Each Agent-Native Engineering Command
 
@@ -667,6 +697,7 @@ When assessing features or making decisions, use the standard color system:
     │  ├─ microdots-brand-recap/      # BespokeAgentics/MicroDots brand shell + tokens + design rules for any explainer page
     │  ├─ microdots-design/           # Router to the impeccable-microdots plugin: visual refinement of real MicroDot views
     │  ├─ agent-loop-audit/           # AI API/SDK integration → event-loop defect audit + gated fixes (silent hangs, stop_reason, deadlocks)
+    │  ├─ ai-native-sdlc/             # AI-Native SDLC playbook: assess 16-play maturity, scaffold controls, drive the intent→spec→plan artifact chain
     │  ├─ fast-ci/                    # CI → native-tool swaps (TS7, oxc, uv) + fast/slow lane split
     │  ├─ issue-to-agent/             # Triage labels → auto-dispatched repro/PoC coding agents
     │  ├─ chore-crons/                # Scheduled agents for the chores devs skip (regression backfill, SDK gaps, drift)
@@ -769,9 +800,11 @@ When assessing features or making decisions, use the standard color system:
 
 33. **Turn a Claude Design prototype into a MicroDots build plan**: Run `/bespoke-agentics:microdots-port-prototype '<artifact.html>'` — the front half of a MicroDots port for products that only exist as a design. A Claude Design export is not a screenshot: its `__bundler/manifest` carries the **original hand-written source**, so the run opens with a deterministic extractor (`scripts/extract_design_bundle.py`) that recovers a real source tree — app modules in true load order, vendor libraries separated, design-token stylesheets, fonts — turning an opaque 1.8 MB HTML file into evidence with real `file:line` anchors. It then classifies every module (screen · data-store · chrome · ui-kit · scaffold), maps the `window.*` read/write graph, and runs the analysis a prototype (unlike a real app) requires: **inference, not tracing**. A Stage-1 interview frames purpose, roles, backend reality, auth, non-goals — plus the two questions only a prototype raises: which screens are the product versus demo filler, and how faithful the visual design must stay. Parallel `prototype-screen-analyst` agents then read each module into a schema-valid screen profile, separating what genuinely works from **demo theater** — `setTimeout(…, 720)` standing in for a query, handlers that only mutate local arrays, hardcoded AI answers, no-op controls — because every faked interaction names a service that does not exist yet. Mock data is read as the **entity model's best evidence** (typed conservatively, enums captured, relations inferred), never as seed data. Synthesis merges entities, routes, features and shared services, then crosses the `window.*` graph with the feature domains to derive **candidate MicroDot cut lines** with their crossings — evidence for composition, never the composition decision. A Stage-2 interview validates everything: features confirmed or cut, each theater finding dispositioned **implement / mock / drop**, blocking ambiguities resolved (never silently deferred), priorities set. It then writes the dossier in exactly the artifact names `microdots-port-app` already reads (`trace.md`, `ui-inventory.md`, `synthesis.json`, `seams.md`) plus a `dossier-manifest.json` declaring which phases are pre-satisfied, and **hands off** — port-app runs composition (user-gated), port maps, the Effect-optimization register, spec elicitation, and, on `--mode scaffold|full`, the build. Default `--mode plan` stops at the validated plan; `--serve` adds a real browser walk, without it every UX claim is labeled "not visually verified". Non-Claude-Design input is **redirected, not half-handled** (real app → `microdots-port-app`, Storybook → `funcspec`). Writes no production code.
 
-34. **Refine how a MicroDot looks**: Run `/bespoke-agentics:microdots-design` — a router, not a second copy of design guidance. It resolves the workspace, confirms this is a MicroDots repo, and hands off to the **`impeccable-microdots`** plugin (a fork of [Impeccable](https://github.com/pbakaus/impeccable) by Paul Bakaus, Apache-2.0, adapted for this framework and listed in `.claude-plugin/marketplace.json`). Three things make the fork necessary rather than cosmetic: the class vocabulary is **enforced by a test that fails the build** (`palette-usage.test.ts` rejects every Tailwind palette literal, which otherwise compiles and renders and simply stops responding to `[data-theme]`); four Tailwind defaults are remapped and two invert (`rounded-lg` is 14px, `tracking-tight` is *positive* button tracking, `text-xs`/`text-sm` do not exist and fail nothing while breaking the type scale); and Foldkit views are **hyperscript**, so a variant cannot be spliced HTML. Live variants are therefore real view functions run inside the dot's own program in a generated harness, because the shells load built bundles and `defineMicroDot` refuses to redefine a registered tag, so a rebuilt bundle is silently discarded in a live page. Accept writes source once and then runs format → `bun run check` → a dot build → a render gate, restoring the file if any fails; `Runtime.embed` swallows startup defects, so a green build can still be a blank panel with a clean console. Sits beside `reimagine` (explores which design), `interactive-wireframe` (settles the design) and `wireframe-parity` (checks the build): those write no production code, this one does.
+34. **Refine how a MicroDot looks**: Run `/bespoke-agentics:microdots-design` — a router, not a second copy of design guidance. It resolves the workspace, confirms this is a MicroDots repo, and hands off to the **`impeccable-microdots`** plugin (a fork of [Impeccable](https://github.com/pbakaus/impeccable) by Paul Bakaus, Apache-2.0, adapted for this framework and listed in `.claude-plugin/marketplace.json`). Three things make the fork necessary rather than cosmetic: the class vocabulary is **enforced by a test that fails the build** (`palette-usage.test.ts` rejects every Tailwind palette literal, which otherwise compiles and renders and simply stops responding to `[data-theme]`); four Tailwind defaults are remapped and two invert (`rounded-lg` is 14px, `tracking-tight` is _positive_ button tracking, `text-xs`/`text-sm` do not exist and fail nothing while breaking the type scale); and Foldkit views are **hyperscript**, so a variant cannot be spliced HTML. Live variants are therefore real view functions run inside the dot's own program in a generated harness, because the shells load built bundles and `defineMicroDot` refuses to redefine a registered tag, so a rebuilt bundle is silently discarded in a live page. Accept writes source once and then runs format → `bun run check` → a dot build → a render gate, restoring the file if any fails; `Runtime.embed` swallows startup defects, so a green build can still be a blank panel with a clean console. Sits beside `reimagine` (explores which design), `interactive-wireframe` (settles the design) and `wireframe-parity` (checks the build): those write no production code, this one does.
 
 35. **Correct a wrong inference before it compounds**: Run `/bespoke-agentics:misunderstanding ['<what was misunderstood>']` — for the moment a plan step, a wiki claim, a doc, or an earlier turn led to a reading that was wrong and work is already sitting on top of it. Restating in prose fixes the conversation and nothing else: the misleading claim stays in the source, and the contaminated work stays in the tree. Like `defect-intake` it is **user-invoked only** and never self-triggers. It reconstructs an **inference ledger** — every belief paired with the **verbatim source text** that produced it, labeled `stated` / `inferred` / `assumed-from-silence`, which are three different defects with three different fixes — scopes to the flagged belief's **blast radius** (siblings from the same source, dependents; not a session-wide audit), then interviews in specifics: every `AskUserQuestion` **quotes its source**, leads with the current belief as a one-click confirmation, and offers the alternative readings a competent person could have taken from the same words (≤4 per call, ≤3 rounds, ordered by blast radius). Contradictions between the correction and what the artifact actually says are **surfaced, never reconciled**. It then corrects the source (repo docs edited; wiki updated and logged with **raw sources never modified**; external content reported verbatim, never edited), inventories the work built on the error and offers **keep / revise / revert per item** — never auto-reverting — records proportionally via `defect-intake`'s documentation routing, feeds a knowledge store when one exists, and resumes with a corrected restatement in its own words. A verified non-misunderstanding is a successful run. **Never commits.**
+
+36. **Make the whole development process AI-native**: Run `/bespoke-agentics:ai-native-sdlc` — it implements Anthropic's AI-Native SDLC playbook around the committed-artifact chain (`intent.md` → `spec.md` → `plan.md` → diff+tests → reviewed PR → incident record) with humans at every gate. `assess` (default) probes the repo for evidence of each of the 16 plays and writes a 🟢/🟡/🔴/⚪ scorecard with a dependency-ordered adoption path; `adopt` scaffolds the chosen plays as real, verified files adapted to the repo's own commands and named gate owners (artifact templates, tuned `CLAUDE.md`, seed policy skill, protected-path/secrets/test-protection hooks tested on both allow and block fixtures, `REVIEW.md`, verifier subagent, agent-evals CI, `bands.yaml`) behind one interview, merging settings additively and never committing; `run` drives a single work item through the chain gate by gate, offering the commit at each acceptance because the commit trail is the control. Composes with `spec-elicitation`, `plan-review`, and `orchestrate`; complementary to `/agentnative:suite` (workspace layer vs. process layer).
 
 ## Quality Standards
 
