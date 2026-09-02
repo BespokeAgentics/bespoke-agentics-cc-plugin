@@ -1,0 +1,89 @@
+{
+  "skill_name": "delivery-recap",
+  "notes": "Evals 1 and 2 run against a synthetic fixture repo (acme-billing) whose commit history has known ground truth, so assertions are objectively checkable. Eval 3 runs against the real plugin repo, which has no UI and no database — it tests the honesty path.",
+  "fixture": {
+    "repo": "acme-billing",
+    "ground_truth": {
+      "commits_in_24h": [
+        "9129b55 feat(db): add invoices.overdue_at column (migration 0042)",
+        "bdab7d3 feat(api): expose overdueAt on GET /api/invoices",
+        "9a702d5 feat(admin): red Overdue chip and row drawer in the invoice list",
+        "e44820e feat(jobs): hourly job backfills overdue_at (requires OVERDUE_GRACE_DAYS)"
+      ],
+      "commits_in_3d_only": [
+        "856824b refactor: sliding window rate limit (NO stated rationale -> must land in the unconfirmed section)",
+        "2e1236e chore(deps): bump next to 14.2.5 (noise -> appendix, not a deliverable)"
+      ],
+      "ui_routes": {
+        "/admin/invoices": "red Overdue chip in the Status column; row click opens a drawer instead of navigating",
+        "/billing": "renders the shared StatusChip, which was modified -- blast radius that must be noticed"
+      },
+      "db": "invoices.overdue_at TIMESTAMPTZ NULL + index, migration 0042, backfilled hourly by InvoiceStatusJob",
+      "api": "GET /api/invoices response gains overdueAt (additive, backward compatible)",
+      "required_new_env_var": "OVERDUE_GRACE_DAYS -- the job throws on boot without it (deploy blocker)",
+      "uncommitted": [
+        "src/app/admin/invoices/export.ts (untracked, WIP, throws 'not implemented' -- must NOT be reported as shipped)",
+        "src/app/billing/page.tsx (modified heading, unstaged)"
+      ],
+      "base_urls_in_readme": [
+        "http://localhost:3000",
+        "https://staging.acme-billing.test",
+        "https://billing.acme.test"
+      ]
+    }
+  },
+  "evals": [
+    {
+      "id": 1,
+      "name": "pm-standup-24h",
+      "prompt": "what did I ship today? I need to send something to my PM before standup tomorrow",
+      "repo": "fixture:acme-billing",
+      "expected_output": "A recap of the last 24 hours (default window) written for a non-engineer: the Overdue chip and row drawer as outcome-phrased deliverables, /admin/invoices as the place to see them, the overdue_at column and hourly backfill job described by effect, OVERDUE_GRACE_DAYS flagged as a new required env var, the uncommitted WIP CSV export labelled as not committed rather than shipped, and the out-of-window commits excluded. Markdown in ./reports/ plus a shareable Artifact.",
+      "assertions": [
+        "Reports the red Overdue chip on the invoice list as a user-visible deliverable",
+        "Names the concrete route /admin/invoices as where to see the change",
+        "Flags OVERDUE_GRACE_DAYS as a newly required environment variable / deploy blocker",
+        "Identifies the invoices.overdue_at column and migration 0042",
+        "Describes the hourly backfill job's delayed effect rather than just naming the file",
+        "Does NOT present the unimplemented CSV export as shipped functionality",
+        "Labels the uncommitted working-tree changes as not yet committed",
+        "Excludes the out-of-window commits (next bump, rate-limit refactor) from the 24h recap",
+        "Provides a base URL for validation drawn from the README, not invented",
+        "Includes numbered validation steps that state what the reader should see",
+        "Writes a markdown report file under ./reports/",
+        "Publishes an Artifact and gives the user the link"
+      ]
+    },
+    {
+      "id": 2,
+      "name": "tech-lead-verify-3d",
+      "prompt": "give me a recap of the last 3 days for our tech lead - they want to click through the staging site and verify it themselves, so be specific about where to look",
+      "repo": "fixture:acme-billing",
+      "expected_output": "A 3-day recap that additionally covers the rate-limit refactor -- which has no stated rationale anywhere and must therefore appear in the 'changed, but effect unconfirmed' section rather than being given an invented business reason. The dependency bump is relegated to appendix noise. Because StatusChip is shared, /billing is identified as also affected. Validation steps name the before-state so the tech lead can tell old from new, and use the staging URL.",
+      "assertions": [
+        "Window covers 3 days and includes the sliding-window rate-limit change",
+        "Places the rate-limit change in an unconfirmed/unexplained section instead of inventing a rationale for it",
+        "Notices StatusChip is shared and identifies /billing as also affected",
+        "Relegates the next 14.2.5 dependency bump to appendix noise rather than a deliverable",
+        "Validation steps contrast the new behaviour with the previous behaviour",
+        "Uses the staging URL from the README as the validation base",
+        "Groups the four related commits into deliverables rather than listing them commit-by-commit"
+      ]
+    },
+    {
+      "id": 3,
+      "name": "no-ui-repo-week",
+      "prompt": "summarize what got done this week so I can share it with the team",
+      "repo": "real:bespoke-agentics-cc-plugin",
+      "expected_output": "A recap of a repository that has no UI, no database, and no deployed site -- the honesty path. It should state plainly that there is nothing browser-visible to validate rather than inventing routes or a base URL, describe the actual work (skills and commands added to the plugin), and draw on session transcripts for intent.",
+      "assertions": [
+        "States there are no browser-visible UI changes rather than inventing screens",
+        "Does not fabricate a base URL or staging site for a repo that has none",
+        "Correctly identifies the substantive work (new skills/commands added to the plugin)",
+        "Offers a non-browser way to verify the work instead of a browser walkthrough",
+        "Does not report a database or schema change for a repo that has neither",
+        "Report length is proportionate -- does not pad a documentation-heavy window"
+      ]
+    }
+  ]
+}

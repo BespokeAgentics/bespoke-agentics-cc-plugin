@@ -480,6 +480,43 @@ proportionally via `defect-intake`'s documentation routing, feeds a knowledge st
 (silently skipped when not), and resumes with a corrected restatement in its own words. A verified
 non-misunderstanding is a successful run. **Never commits.**
 
+### When to Use the Delivery-Recap Command
+
+| Situation                                                                                                                       | Command                                                                                                       |
+| ------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------- |
+| A PM, tech lead, or client needs to know what actually shipped — and be able to open the site and verify it without asking you | `/bespoke-agentics:delivery-recap [window] [--author me] [--sessions current\|all\|none] [--out <dir>]` |
+
+The Delivery-Recap command answers the question a status update is really being asked: **"is the
+thing I asked for actually there, and how do I go look at it?"** A `git log` with prettier headings
+answers a different question — which files changed — so the skill's unit of reporting is the
+**deliverable, not the commit**: several commits routinely add up to one outcome, and several more
+add up to none. Evidence comes from a bundled deterministic collector (`scripts/collect_window.py`,
+stdlib-only) that gathers four sources over a window defaulting to **the last 24 hours** — git
+commits, **uncommitted working-tree changes** (labeled as such, because a reader assumes anything
+listed is on the branch), **Claude Code session transcripts** (the only source that records what the
+engineer was _trying_ to do, in their own words, including intent that produced no commit), and wiki
+page edits — emitting one JSON document with a `notes` array of everything unavailable, so blind
+spots survive into the report instead of being smoothed over. Each changed path carries a
+`bucket_hint` (ui/api/service/db/config) **with the rule that produced it**, because a path guess is
+right most of the time and wrong exactly where it matters. The skill then reads the real diffs
+(fanning out to parallel `Explore` agents when several areas changed), and — the step that separates
+this from a changelog — **traces every changed UI file up to the route that renders it**, since a
+reader cannot open `InvoiceTable.tsx`; a shared component's blast radius is enumerated, and a change
+that is genuinely invisible (flagged, admin-only, a pure refactor) is _said_ to be invisible. Backend
+work is described by effect, not by filename: which column, nullable or not, migration run or not,
+backward compatible or not, and **any newly required env var called out in its own sentence** as the
+deploy blocker it is. One `AskUserQuestion` confirms the base URL from candidates grepped out of the
+README, `.env.example`, and deploy config — then the payload, a numbered walkthrough where each step
+names where to go, what to do, and **what the reader should see, contrasted with what it replaced**.
+Confidence is content: every claim is labeled **verified** (traced end to end) / **inferred** (the
+code implies it) / **unconfirmed**, and a change whose user-visible effect cannot be established gets
+its own honest section rather than an invented business rationale — the single failure that makes a
+reader stop believing the rest. Lands as markdown in `./reports/recap-YYYY-MM-DD.md` **and** a
+shareable Artifact; offers wiki ingestion when a vault exists. Distinct from `repo-audit` (grades
+code health) and `proof-of-work` (agent evidence in CI): this one reports **what a human delivered,
+to a human who has to trust it**. Read-only — never edits application code, never commits, never
+pushes.
+
 ### When to Use the Skill-Reverse-Engineer Command
 
 | Situation                                                                                                                         | Command                                                                                                            |
@@ -682,6 +719,7 @@ When assessing features or making decisions, use the standard color system:
     │  ├─ xstate-refactor/            # Feature state logic + UI → XState v5 machine/statechart/actors
     │  ├─ dead-code-sweep/            # Post-session dead-code cleanup: diff-seeded, gated waves, tiered confirmation, regression-proofed
     │  ├─ defect-intake/              # Known defect → verify, classify by blast radius, failing-test-first fix, document, resume (user-invoked)
+    │  ├─ delivery-recap/            # Time window → PM/tech-lead delivery recap: deliverables, UI routes to click, backend/DB effects, confidence labels
     │  ├─ misunderstanding/           # Wrong inference → source-quoted inference ledger → targeted interview → source correction + work disposition (user-invoked)
     │  ├─ skill-reverse-engineer/     # Target skill → determinism audit (DS/TP/CT/VF/AM/RB/KM + host grounding) → gated refactor or hardened new version
     │  ├─ orchestrate/                # Plan/task → gated multi-agent implementation (Fable orchestrates, Opus/Sonnet implement)
@@ -805,6 +843,8 @@ When assessing features or making decisions, use the standard color system:
 35. **Correct a wrong inference before it compounds**: Run `/bespoke-agentics:misunderstanding ['<what was misunderstood>']` — for the moment a plan step, a wiki claim, a doc, or an earlier turn led to a reading that was wrong and work is already sitting on top of it. Restating in prose fixes the conversation and nothing else: the misleading claim stays in the source, and the contaminated work stays in the tree. Like `defect-intake` it is **user-invoked only** and never self-triggers. It reconstructs an **inference ledger** — every belief paired with the **verbatim source text** that produced it, labeled `stated` / `inferred` / `assumed-from-silence`, which are three different defects with three different fixes — scopes to the flagged belief's **blast radius** (siblings from the same source, dependents; not a session-wide audit), then interviews in specifics: every `AskUserQuestion` **quotes its source**, leads with the current belief as a one-click confirmation, and offers the alternative readings a competent person could have taken from the same words (≤4 per call, ≤3 rounds, ordered by blast radius). Contradictions between the correction and what the artifact actually says are **surfaced, never reconciled**. It then corrects the source (repo docs edited; wiki updated and logged with **raw sources never modified**; external content reported verbatim, never edited), inventories the work built on the error and offers **keep / revise / revert per item** — never auto-reverting — records proportionally via `defect-intake`'s documentation routing, feeds a knowledge store when one exists, and resumes with a corrected restatement in its own words. A verified non-misunderstanding is a successful run. **Never commits.**
 
 36. **Make the whole development process AI-native**: Run `/bespoke-agentics:ai-native-sdlc` — it implements Anthropic's AI-Native SDLC playbook around the committed-artifact chain (`intent.md` → `spec.md` → `plan.md` → diff+tests → reviewed PR → incident record) with humans at every gate. `assess` (default) probes the repo for evidence of each of the 16 plays and writes a 🟢/🟡/🔴/⚪ scorecard with a dependency-ordered adoption path; `adopt` scaffolds the chosen plays as real, verified files adapted to the repo's own commands and named gate owners (artifact templates, tuned `CLAUDE.md`, seed policy skill, protected-path/secrets/test-protection hooks tested on both allow and block fixtures, `REVIEW.md`, verifier subagent, agent-evals CI, `bands.yaml`) behind one interview, merging settings additively and never committing; `run` drives a single work item through the chain gate by gate, offering the commit at each acceptance because the commit trail is the control. Composes with `spec-elicitation`, `plan-review`, and `orchestrate`; complementary to `/agentnative:suite` (workspace layer vs. process layer).
+
+37. **Tell a PM what actually shipped**: Run `/bespoke-agentics:delivery-recap` — it answers the question behind every status request: *is the thing I asked for there, and how do I go look at it?* A bundled stdlib-only collector gathers the window (default **last 24 hours**; override with "this week", "since Monday", "last 3 days") from four sources — commits, uncommitted working-tree changes, **Claude Code session transcripts** (what the engineer was trying to do, in their own words, including intent that never became a commit), and wiki edits — with a `notes` array recording everything unavailable so the report's blind spots stay visible. It reads the real diffs (parallel `Explore` agents when several areas changed), groups them into **deliverables rather than commits**, and **traces every changed UI file up to the route that renders it** — a reader cannot open `InvoiceTable.tsx`, but they can open `/admin/invoices`; a shared component's blast radius is enumerated and a genuinely invisible change is said to be invisible. Backend work is described by effect (which column, nullable, migration run or not, backward compatible or not), with **new required env vars called out as the deploy blockers they are**. One question confirms the base URL from candidates grepped out of the README and deploy config; then the payload — numbered steps naming what the reader should see, **contrasted with what it replaced**. Every claim is labeled **verified / inferred / unconfirmed**, and anything whose user-visible effect can't be established gets an honest section instead of an invented rationale. Lands as markdown in `./reports/` **and** a shareable Artifact. Read-only: never edits code, never commits.
 
 ## Quality Standards
 
