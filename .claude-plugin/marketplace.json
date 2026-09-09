@@ -21,6 +21,16 @@
         "url": "https://github.com/BespokeAgentics/impeccable-microdots.git",
         "sha": "d1232533addb4667dc99a54912f5ca17fc10f566"
       }
+    },
+    {
+      "name": "microdots-creator",
+      "version": "0.1.0",
+      "description": "Framework-owner workflows for a MicroDots checkout: resumable batch generation, compiler and catalog extension, fragment extraction, Catalog lifecycle, and identity-bound completion evidence.",
+      "source": {
+        "source": "url",
+        "url": "https://github.com/BespokeAgentics/microdots-creator.git",
+        "sha": "383316c4bc8aac9fe2efd9fdb922c912adc21c60"
+      }
     }
   ]
 }
