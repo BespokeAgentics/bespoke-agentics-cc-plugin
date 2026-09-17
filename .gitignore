@@ -16,3 +16,5 @@ __pycache__/
 
 # skill-creator eval workspaces (test-run outputs, gradings, benchmarks — not plugin content)
 skills/*-workspace/
+# ...but bun-workspace is a real skill, not an eval workspace
+!skills/bun-workspace/
