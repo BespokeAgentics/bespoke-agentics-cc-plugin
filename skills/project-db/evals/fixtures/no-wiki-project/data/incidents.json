@@ -1,0 +1,7 @@
+[
+ {"id": "INC-101", "date": "2025-11-22", "severity": "sev1", "summary": "Double charges from webhook retries", "adr": "0003-stripe-webhooks", "resolved": true},
+ {"id": "INC-102", "date": "2026-01-15", "severity": "sev3", "summary": "Reconcile job lag 20 min", "adr": "0004-stripe-sync-job", "resolved": true},
+ {"id": "INC-103", "date": "2026-03-02", "severity": "sev2", "summary": "Invoice totals off by rounding for EU customers", "adr": null, "resolved": false},
+ {"id": "INC-104", "date": "2026-06-18", "severity": "sev2", "summary": "Ledger replay took 6h", "adr": "0002-event-sourcing", "resolved": false},
+ {"id": "INC-105", "date": "2026-08-30", "severity": "sev3", "summary": "Stale tier on 3 gold accounts", "adr": null, "resolved": true}
+]

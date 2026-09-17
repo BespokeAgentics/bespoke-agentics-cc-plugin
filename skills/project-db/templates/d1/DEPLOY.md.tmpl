@@ -1,0 +1,57 @@
+# Deploy — project-db on Cloudflare D1
+
+This directory is the MCP Worker for the **{{PROJECT_NAME}}** project database. `/db:publish` regenerates
+`../d1/import.sql` from the local SQLite build and pushes it to D1; the Worker serves read-only MCP tools
+(`db_query`, `db_schema`, `db_search`) over that database.
+
+## One-time setup
+
+```bash
+cd .claude/db/worker
+npm install
+npx wrangler login                                  # opens a browser; or set CLOUDFLARE_API_TOKEN
+npx wrangler d1 create {{DATABASE_NAME}}            # copy database_id into wrangler.toml (publish does this)
+npx wrangler secret put MCP_BEARER_TOKENS           # comma-separated tokens; Worker refuses requests until set
+```
+
+## Publish data (what /db:publish runs)
+
+```bash
+python3 ../db.py sync
+python3 ../db.py export-d1                          # writes ../d1/import.sql — no BEGIN/COMMIT, statements < 100 KB
+npx wrangler d1 execute {{DATABASE_NAME}} --remote --file=../d1/import.sql --yes
+npx wrangler deploy                                 # first time, or after editing src/index.ts
+```
+
+Test the import locally first (Miniflare, no account needed):
+
+```bash
+npx wrangler d1 execute {{DATABASE_NAME}} --local --file=../d1/import.sql --yes
+npx wrangler d1 execute {{DATABASE_NAME}} --local --command "SELECT type, COUNT(*) FROM pages GROUP BY 1"
+```
+
+## Verify
+
+```bash
+WORKER_URL="https://project-db-{{SLUG}}.<your-subdomain>.workers.dev"
+curl -fsS "$WORKER_URL/health"
+curl -fsS -X POST "$WORKER_URL/mcp" -H "Authorization: Bearer <token>" -H "Content-Type: application/json" \
+  -d '{"jsonrpc":"2.0","id":1,"method":"tools/call","params":{"name":"db_query","arguments":{"sql":"SELECT type, COUNT(*) AS n FROM pages GROUP BY 1"}}}'
+```
+
+## Connect a client
+
+Claude Code (`.mcp.json` or `claude mcp add`): type `http`, URL `$WORKER_URL/mcp`, header `Authorization: Bearer <token>`.
+
+## Limits that matter
+
+| Limit (D1) | Value | How project-db copes |
+|---|---|---|
+| SQL statement length | 100 KB | export batches rows to < 90 KB; cells > 60 KB are appended in chunks |
+| Database size | 500 MB free / 10 GB paid | export warns above 500 MB |
+| Query timeout | 30 s | Worker caps rows; write narrow queries |
+| Bound parameters | 100 | tools bind ≤ 2 |
+
+D1 supports FTS5, views and JSON functions, so the schema is identical to the local file. There is no
+read-only role in D1: the Worker's validator + bearer token **are** the read-only role. Rotate tokens with
+`wrangler secret put MCP_BEARER_TOKENS`.

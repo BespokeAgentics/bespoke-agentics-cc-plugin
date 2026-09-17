@@ -1,0 +1,69 @@
+{
+  "skill_name": "project-db",
+  "evals": [
+    {
+      "id": 1,
+      "name": "wiki-init-local",
+      "prompt": "This repo has a Karpathy-style LLM wiki under wiki/ (schema in wiki/_schema/SCHEMA.md, typed pages: features, gaps, decisions, meetings, questions, entities, integrations). Set it up so agents can answer questions about the wiki with SQL instead of grepping through pages: build a queryable database over the wiki, load the raw sources pages cite, and make the database the default way agents query the wiki in this project. Local only, no PII concerns. When you're done, show me three example queries I could run against it and what they return.",
+      "expected_output": "A local SQLite database built from the wiki with base tables (pages, links, tags, sources, sections, raw documents, FTS), one typed view per page type with columns derived from frontmatter/template keys, curated views (open_gaps, backlinks, broken_links\u2026), a guarded read-only query script, a SessionStart hook that syncs, an MCP registration, and a CLAUDE.md mandate telling agents to query the DB first. Three working example queries with their real results.",
+      "files": [
+        "../../wiki"
+      ],
+      "setup": "Copy the wiki directory into a fresh project directory (the output dir) and work there; do not modify the source wiki.",
+      "expectations": [
+        "A SQLite database exists with one row per wiki page (>= 60 rows, path/slug column)",
+        "Wikilinks are queryable as rows (>= 200 link rows with from/to columns)",
+        "Typed access exists: a gap-typed table/view exposes 'severity' as a column",
+        "Full-text search exists (FTS5 virtual table or equivalent)",
+        "Cited raw sources are modelled (a sources / raw_documents object)",
+        "Query path is guarded read-only (mode=ro / authorizer / SELECT-only validation in a script)",
+        "CLAUDE.md tells agents to query the database before reading/grepping pages",
+        "A sync/rebuild mechanism exists",
+        "A SessionStart hook keeps the database fresh automatically",
+        "ANSWER.md shows three example queries with real results"
+      ]
+    },
+    {
+      "id": 2,
+      "name": "wiki-structured-question",
+      "prompt": "Using this project's wiki (wiki/), answer two things and give me a compact table with citations to the wiki pages: (1) Which open gaps are critical or high severity, what resolution approach is planned for each, and which feature is each related to? (2) Which meeting pages mention co-op billing? Be exact \u2014 I'm going to check these against the wiki pages.",
+      "expected_output": "An exact, complete list of the open gaps with severity critical/high, their resolution-approach and related-feature values as recorded in frontmatter, and the meeting pages whose bodies mention co-op billing, each cited by page path/slug. With the skill: the answer comes from SQL over a built database (typed view / FTS), not from reading every page.",
+      "files": [
+        "../../wiki"
+      ],
+      "setup": "Copy the wiki directory into a fresh project directory (the output dir) and work there; do not modify the source wiki.",
+      "expectations": [
+        "Lists all 4 critical open gaps (budget-management-engine, co-op-billing, custom-item-design-and-proofing, virtual-warehouse-inventory-model)",
+        "Lists all 5 high open gaps (procurement-controlled-order-release, program-window-time-gating, proxy-delegate-ordering, request-access-flow, virtual-warehouse-inventory-transfers)",
+        "Resolution approach custom-dev reported for the gaps (>= 9 mentions or a stated 'all custom-dev')",
+        "Related feature per gap matches frontmatter (order-management, custom-pos-ordering, catalog-browsing, user-onboarding, vw-management)",
+        "Meetings mentioning co-op billing are exactly 01-merchtank-overview, 02-virtual-warehouse-walkthrough, 03-custom-requests, 05-finance-workflow",
+        "Rows cite wiki pages by path or wikilink (>= 9 citations)",
+        "Answer was obtained with SQL over a built database (transcript shows SQL queries)"
+      ]
+    },
+    {
+      "id": 3,
+      "name": "no-wiki-source-of-truth",
+      "prompt": "There's no wiki in this project. Make the project's knowledge queryable with SQL \u2014 the ADRs in docs/adr, the plans in plans/, the runbooks, and the customer and incident data under data/ \u2014 and enforce the database as the source of truth for agents working here, the same way a wiki-first mandate would. Local only; there's no PII. Assume sensible defaults instead of asking me. Finish by answering from the database: which ADRs are accepted, and which unresolved incidents point at an ADR that is not accepted?",
+      "expected_output": "A local SQLite database with typed views for adrs/plans/runbooks, tables for customers and incidents, a CLAUDE.md DB-first mandate (query before answering, update sources then sync, never write to the DB), a SessionStart sync hook, a guarded query script, and correct SQL-derived answers: accepted ADRs = 0001-use-postgres and 0004-stripe-sync-job; unresolved incidents pointing at a non-accepted ADR = INC-104 (adr 0002-event-sourcing, proposed).",
+      "files": [
+        "evals/fixtures/no-wiki-project"
+      ],
+      "setup": "Copy the fixture project into a fresh project directory (the output dir) and work there.",
+      "expectations": [
+        "ADRs are queryable as a typed table/view with 4 rows and a status column",
+        "Plans are queryable as a typed table/view with 2 rows",
+        "customers.csv is a table with 8 rows and numeric mrr",
+        "incidents.json is a table with 5 rows",
+        "CLAUDE.md mandate: query the DB before answering, update sources then sync, never write to the DB directly",
+        "A SessionStart hook (or equivalent automatic refresh) is installed",
+        "Query path is guarded read-only",
+        "Accepted ADRs answered exactly: 0001-use-postgres and 0004-stripe-sync-job",
+        "Unresolved incidents pointing at a non-accepted ADR answered exactly: INC-104 (0002-event-sourcing, proposed)",
+        "Both answers show the SQL used (>= 2 queries in ANSWER.md)",
+        "Cross-document links (plan/ADR wikilinks) are queryable as rows"
+      ]
+    }
+  ]
+}
