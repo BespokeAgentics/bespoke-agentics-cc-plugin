@@ -1,6 +1,6 @@
 ---
 name: wiki-lint
-description: "Run comprehensive health checks on the wiki. Detect broken links, orphaned pages, contradictions, stale content, and missing cross-references. Optionally auto-fix fixable issues."
+description: "Run comprehensive health checks on the wiki. Detect broken links, orphaned pages, contradictions, stale content, missing cross-references, and — when project-ontology is installed — ontology violations (unregistered, misspelled or deprecated values; noncanonical links). Optionally auto-fix fixable issues."
 ---
 
 You are the Wiki Lint Agent. Your role is to monitor wiki health, detect structural and content problems, and optionally repair them automatically.
@@ -18,22 +18,23 @@ The user invokes `/wiki:lint` or asks for "wiki health check", "lint the wiki", 
 ## Workflow
 
 1. **Discover & parse pages** — see `references/discovery.md` for the find command, scope filter, and frontmatter extraction.
-2. **Run the seven checks** — see `references/checks.md` for the full algorithm, severity, fix strategy, and report format for each check:
+2. **Run the eight checks** — see `references/checks.md` for the full algorithm, severity, fix strategy, and report format for each check:
    - Broken wiki-links (CRITICAL)
    - Orphan detection (MEDIUM)
    - Contradictions (HIGH)
    - Stale pages (LOW)
    - Missing cross-references (MEDIUM)
-   - Frontmatter validation (MEDIUM)
+   - Frontmatter validation (MEDIUM) — required keys from the vault's templates, values from its vocabulary; never hard-coded; one issue per page
    - Decision drift (HIGH)
-3. **Apply auto-fixes** — only when `fix=true` and `report-only=false`. Auto-fixable items per check are documented in `references/checks.md`. Never auto-fix contradictions or decision drift.
+   - Ontology (HIGH / LOW) — only when `.claude/ontology/ontology.py` exists; runs the same engine as the write hook
+3. **Apply auto-fixes** — only when `fix=true` and `report-only=false`. Auto-fixable items per check are documented in `references/checks.md`. Never auto-fix contradictions or decision drift. Never approve, deprecate or propose ontology terms from lint — those are human decisions.
 4. **Generate the lint report** — write `wiki/_lint-report-{YYYY-MM-DD}.md` using the template in `references/report.md`. Compute the health score per the formula in `references/report.md#health-score-formula`.
 5. **Append the log row** — add the run summary to `wiki/_log.md` using the format in `references/report.md#log-row`.
 
 ## Validation checklist before returning
 
 - [ ] All pages discovered and parsed.
-- [ ] All seven checks executed.
+- [ ] All eight checks executed (Check 8 reported as "not installed" when there is no ontology).
 - [ ] No pages silently skipped (parse failures logged).
 - [ ] Lint report written at `wiki/_lint-report-{date}.md`.
 - [ ] Log row appended to `wiki/_log.md`.
@@ -52,5 +53,5 @@ The user invokes `/wiki:lint` or asks for "wiki health check", "lint the wiki", 
 ## Reference files
 
 - `references/discovery.md` — discovery & frontmatter parsing.
-- `references/checks.md` — the seven checks (algorithms, severity, fix strategies, report format).
+- `references/checks.md` — the eight checks (algorithms, severity, fix strategies, report format).
 - `references/report.md` — full lint-report template, health-score formula, and `_log.md` row format.

@@ -91,6 +91,30 @@ The Funcspec skill is the companion to `claude-design-to-app-workflow` (`design-
 
 The Knowledge Loop skill is the project's _learning layer_: a lightweight facts → hypotheses → rules store (one trio per domain) that compounds across tasks. It is **wiki-first compatible by design** — the store lives inside the vault at `wiki/knowledge/` (so `/wiki:query`, `/wiki:lint`, and `/wiki:status` see it), and confirmed rules are **promoted into proper wiki pages**, satisfying the mandate that validated knowledge become wiki content. Evidence is strict: every confirmation/contradiction must cite a distinct, dated, linkable source, so `rules.md` stays trustworthy enough to **apply by default**. `init` writes the before/after-task mandate into `CLAUDE.md` and installs a SessionStart hook that surfaces the active rules, so the loop fires without being invoked. Promotion bar: `confirmations ≥ 3` (distinct) and `contradictions = 0`; a single contradiction demotes a rule back to a hypothesis.
 
+### When to Use Each Project DB Command
+
+| Situation                                                                                        | Command                                            |
+| ------------------------------------------------------------------------------------------------ | -------------------------------------------------- |
+| Make the wiki (or a no-wiki project's docs + data) queryable with SQL; install hook + mandate     | `/db:init [--mode local\|d1\|both] [--slug <s>]`  |
+| Structured question: counts, filters, joins, "what links to X", "which meetings discussed Y"     | `/db:query '<question or SELECT …>'`               |
+| Wiki/sources changed, or `views.sql` / `config.json` edited                                      | `/db:sync [--full] [--verify]`                     |
+| Publish to Cloudflare D1 and deploy the read-only MCP Worker (modes `d1`, `both`)                | `/db:publish [--dry-run]`                          |
+
+The Project DB skill is the wiki's _query layer_: the wiki stays the record, the database at `.claude/db/project.sqlite` is the index. `init` builds the schema **from** the wiki — base tables (pages, `page_fields`, `links`, `tags`, `sources`, `sections`, `raw_documents`, FTS5) plus one typed view per page type with column docs mined from `_schema/templates/`, and curated views (`open_gaps`, `pending_decisions`, `open_questions`, `backlinks`, `broken_links`, `meeting_mentions`…). It vendors a stdlib-Python engine into `.claude/db/db.py` so the SessionStart hook (incremental sync + banner), the guarded CLI (`db.py query`: read-only authorizer, one statement, 200-row cap, 5 s timeout, CSV, audit log), the local stdio MCP server and the D1 Worker share one policy. Agents read `.claude/db/SCHEMA.md` (generated schema-as-prompt) before writing SQL and promote repeated queries into `.claude/db/views.sql`. With no wiki, `init` interviews + scans the repo, maps sources to collections (`--markdown adr=docs/adr`, `--tabular data/x.csv`) and installs a DB-first mandate that mirrors the Wiki-First Mandate. D1 is SQLite, so one export serves both.
+
+### When to Use Each Project Ontology Command
+
+| Situation                                                                                                   | Command                                                                     |
+| ----------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------- |
+| Values drift (a client spelled two ways, statuses no template declares); make the vocabulary enforceable    | `/ontology:init [--govern <dir>]`                                           |
+| Check pages, the vault, or only what a branch changed against the vocabulary                                | `/ontology:check [<path>\|--all\|--changed-since <ref>]`                   |
+| A page genuinely needs a value the vocabulary lacks                                                         | `/ontology:propose <id> --label '…' --definition '…'`                       |
+| Decide pending terms (humans only) / retire a term                                                          | `/ontology:approve <id>…` · `/ontology:deprecate <id> --replaced-by <id>`   |
+| Rewrite aliases, spelling variants, deprecated values, noncanonical links                                   | `/ontology:apply --dry-run`, then `/ontology:apply`                         |
+| Counts, open violations, pending approvals                                                                  | `/ontology:status`                                                          |
+
+The Project Ontology skill is the wiki's _vocabulary layer_. `init` mines what the vault already declares and uses — page types, template `key: # a|b|c` comments, SCHEMA.md value lists, observed values, scope folders, tags, frontmatter link fields — into one declaration, `wiki/_schema/ontology.yaml`, of **dot-notated terms** (`gap.severity.critical`, `client.acme-corp`, `tag.budget-management`, `rel.related-feature`) with a **proposed → approved → deprecated** lifecycle, rendered to `wiki/_schema/ONTOLOGY.md`. **Pages keep plain values** (`severity: critical`); page ids are **derived from paths** (`client.acme.gap.co-op-billing`), never written into pages. Declared values are approved, observed-only values are proposed, spelling variants become proposed aliases — nothing is silently approved — and an interview settles vocabulary conflicts. **One engine** (`.claude/ontology/ontology.py`, stdlib, never PyYAML) enforces it in every place a value can enter or be read: a **PreToolUse hook** reconstructs the post-write file and blocks a Write/Edit that *adds* a strict violation (unregistered, misspelled or deprecated value; broken, ambiguous or noncanonical `[[link]]`; relation target of the wrong type), naming the approved values and the exact propose command — violations already on a page never block (**ratchet**), so a messy vault adopts enforcement on day one; a **PostToolUse hook** reports what still stands; a **Bash guard** turns `approve`/`deprecate`/`init --write` into a permission prompt and blocks shell writes into pages; a guard on `ontology.yaml` rejects agent edits that approve, deprecate, remove, re-spell or loosen anything (**humans own approval**); a **SessionStart banner** keeps counts and rules in context; CI runs `check --changed-since <base>`; **project-db** loads `ontology_terms`, `ontology_aliases`, `ontology_fields`, `ontology_violations` and `pages.ontology_id` at every sync (optional `fail` gate, alias-aware search); **wiki-lint** reports it as Check 8. `apply` rewrites only what has one right answer (aliases, spelling variants, deprecated values with a replacement, uniquely-resolvable links) — every other byte preserved.
+
 ### When to Use the Repo Audit Command
 
 | Situation                                                                              | Command                                                                                |
@@ -700,7 +724,7 @@ When assessing features or making decisions, use the standard color system:
     │  ├─ wiki-ingest-meeting/        # Ingest meeting pipeline outputs
     │  ├─ wiki-ingest-document/       # Ingest emails, specs, PDFs
     │  ├─ wiki-confluence-reconcile/  # Bidirectional Confluence sync
-    │  ├─ wiki-lint/                  # 7-dimension health check
+    │  ├─ wiki-lint/                  # 8-dimension health check (Check 8: ontology, when installed)
     │  ├─ wiki-query/                 # Natural language search + synthesis
     │  ├─ glean-agent-toolkit/        # Scaffold, extend, and triage Glean agents
     │  ├─ bun-workspace/              # Convert/audit/extend Bun workspace monorepos
@@ -708,6 +732,8 @@ When assessing features or making decisions, use the standard color system:
     │  ├─ claude-design-to-app-workflow/  # Design zip → component library + Storybook
     │  ├─ funcspec/                   # Storybook pages → validated implementation plan
     │  ├─ knowledge-loop/             # Self-improving facts → hypotheses → rules loop
+    │  ├─ project-db/                 # Queryable SQLite (+ Cloudflare D1) database over the wiki or docs+data: typed views, guarded SQL CLI, sync hook, MCP, D1 publish
+    │  ├─ project-ontology/           # Enforced dot-notated vocabulary over the wiki: mined ontology.yaml, PreToolUse ratchet hook, human approval gate, DB tables, lint Check 8
     │  ├─ ui-issue-to-plan/           # Narrated UI screencast → code-grounded plan (fixes + UX enhancements)
     │  ├─ screencast-highlight-reel/  # Long app-demo screencast → grounded, narrated, subtitled highlight video (TTS + ffmpeg assembly)
     │  ├─ screencast-capture/         # Browser flow → MP4 (gif tab-capture or --engine screen native-res) → hands to screencast-highlight-reel
@@ -743,14 +769,8 @@ When assessing features or making decisions, use the standard color system:
     │  ├─ hermetic-deploy/            # One-command local instances, N at a time (Compose -p isolation)
     │  └─ sim-data/                   # Production-realistic deterministic seed scenarios
     ├─ commands/                      # Slash commands
-    │  ├─ wiki/                       # Wiki commands (namespaced)
-    │  │  ├─ init.md                  # /wiki:init
-    │  │  ├─ new-client.md            # /wiki:new-client
-    │  │  ├─ ingest-meeting.md        # /wiki:ingest-meeting
-    │  │  ├─ ingest-document.md       # /wiki:ingest-document
-    │  │  ├─ lint.md                  # /wiki:lint
-    │  │  ├─ query.md                 # /wiki:query
-    │  │  └─ status.md                # /wiki:status
+    │  ├─ wiki/                       # Wiki commands
+    │  │  └─ init.md                  # /wiki:init (the other /wiki:* commands are the flat wiki-*.md files below)
     │  ├─ glean/                      # Glean commands (namespaced)
     │  │  ├─ init.md                  # /glean:init
     │  │  ├─ add-tool.md              # /glean:add-tool
@@ -779,6 +799,19 @@ When assessing features or making decisions, use the standard color system:
     │  │  ├─ extract.md               # /knowledge:extract
     │  │  ├─ promote.md               # /knowledge:promote
     │  │  └─ audit.md                 # /knowledge:audit
+    │  ├─ db/                         # Project DB commands (namespaced)
+    │  │  ├─ init.md                  # /db:init
+    │  │  ├─ query.md                 # /db:query
+    │  │  ├─ sync.md                  # /db:sync
+    │  │  └─ publish.md               # /db:publish
+    │  ├─ ontology/                   # Project Ontology commands (namespaced)
+    │  │  ├─ init.md                  # /ontology:init
+    │  │  ├─ check.md                 # /ontology:check
+    │  │  ├─ propose.md               # /ontology:propose
+    │  │  ├─ approve.md               # /ontology:approve
+    │  │  ├─ deprecate.md             # /ontology:deprecate
+    │  │  ├─ apply.md                 # /ontology:apply
+    │  │  └─ status.md                # /ontology:status
     │  ├─ funcspec-evaluate.md        # /bespoke-agentics:funcspec-evaluate
     │  ├─ funcspec-plan.md            # /bespoke-agentics:funcspec-plan
     │  ├─ funcspec-status.md          # /bespoke-agentics:funcspec-status
@@ -787,7 +820,7 @@ When assessing features or making decisions, use the standard color system:
     │  ├─ codex-prompt.md             # /bespoke-agentics:codex-prompt
     │  ├─ prune-node-modules.md       # /bespoke-agentics:prune-node-modules
     │  ├─ ux-audit-*.md               # /bespoke-agentics:ux-audit-{a11y,code,quick,visual}
-    │  └─ wiki-*.md                   # Flat command aliases
+    │  └─ wiki-*.md                   # /wiki:new-client, :ingest-meeting, :ingest-document, :lint, :query, :status (flat files, namespaced by `name:`)
     │
     │  NOTE: capabilities that also ship as a skill have NO command file.
     │  They are invoked as /bespoke-agentics:<skill-name> — see skills/ below.
@@ -845,6 +878,10 @@ When assessing features or making decisions, use the standard color system:
 36. **Make the whole development process AI-native**: Run `/bespoke-agentics:ai-native-sdlc` — it implements Anthropic's AI-Native SDLC playbook around the committed-artifact chain (`intent.md` → `spec.md` → `plan.md` → diff+tests → reviewed PR → incident record) with humans at every gate. `assess` (default) probes the repo for evidence of each of the 16 plays and writes a 🟢/🟡/🔴/⚪ scorecard with a dependency-ordered adoption path; `adopt` scaffolds the chosen plays as real, verified files adapted to the repo's own commands and named gate owners (artifact templates, tuned `CLAUDE.md`, seed policy skill, protected-path/secrets/test-protection hooks tested on both allow and block fixtures, `REVIEW.md`, verifier subagent, agent-evals CI, `bands.yaml`) behind one interview, merging settings additively and never committing; `run` drives a single work item through the chain gate by gate, offering the commit at each acceptance because the commit trail is the control. Composes with `spec-elicitation`, `plan-review`, and `orchestrate`; complementary to `/agentnative:suite` (workspace layer vs. process layer).
 
 37. **Tell a PM what actually shipped**: Run `/bespoke-agentics:delivery-recap` — it answers the question behind every status request: *is the thing I asked for there, and how do I go look at it?* A bundled stdlib-only collector gathers the window (default **last 24 hours**; override with "this week", "since Monday", "last 3 days") from four sources — commits, uncommitted working-tree changes, **Claude Code session transcripts** (what the engineer was trying to do, in their own words, including intent that never became a commit), and wiki edits — with a `notes` array recording everything unavailable so the report's blind spots stay visible. It reads the real diffs (parallel `Explore` agents when several areas changed), groups them into **deliverables rather than commits**, and **traces every changed UI file up to the route that renders it** — a reader cannot open `InvoiceTable.tsx`, but they can open `/admin/invoices`; a shared component's blast radius is enumerated and a genuinely invisible change is said to be invisible. Backend work is described by effect (which column, nullable, migration run or not, backward compatible or not), with **new required env vars called out as the deploy blockers they are**. One question confirms the base URL from candidates grepped out of the README and deploy config; then the payload — numbered steps naming what the reader should see, **contrasted with what it replaced**. Every claim is labeled **verified / inferred / unconfirmed**, and anything whose user-visible effect can't be established gets an honest section instead of an invented rationale. Lands as markdown in `./reports/` **and** a shareable Artifact. Read-only: never edits code, never commits.
+
+38. **Give agents SQL over the project**: Run `/db:init` — with a wiki present it builds the schema *from* the wiki (base tables for pages, frontmatter fields, resolved wikilinks, tags, sources, sections, cited raw documents, FTS5; one typed view per page type with column docs mined from `_schema/templates/`; curated views such as `open_gaps`, `pending_decisions`, `backlinks`, `broken_links`), vendors a stdlib-Python engine into `.claude/db/`, and installs the guarded query CLI (read-only authorizer, one statement, 200-row cap, 5 s timeout, CSV, audit log), a SessionStart hook that syncs incrementally and prints a banner, a local stdio MCP server, and a CLAUDE.md block that makes the database the first stop for structured questions while the wiki stays the record. Without a wiki it interviews you, scans the repo, maps sources to collections (`--markdown adr=docs/adr`, `--tabular data/x.csv`) and installs a DB-first mandate. Then `/db:query '<question>'` answers with one SELECT and cites pages, `/db:sync` keeps it fresh, and `/db:publish` pushes the same schema to Cloudflare D1 behind a read-only MCP Worker (modes `d1`/`both`).
+
+39. **Stop vocabulary drift for good**: Run `/ontology:init` — it scans the wiki (page types, template `key: # a|b|c` comments, SCHEMA.md value lists, observed values, scope folders, tags, frontmatter link fields), interviews you only on what the scan cannot decide (template-vs-SCHEMA conflicts, values no one declared, spelling variants of a client, which tags to trust), and writes `wiki/_schema/ontology.yaml` — dot-notated terms (`gap.severity.critical`, `client.acme-corp`, `rel.related-feature`) with a proposed → approved → deprecated lifecycle — plus a rendered `ONTOLOGY.md`, template comments that name their binding, a CLAUDE.md block, a SessionStart banner, and the guard hooks. From then on a Write/Edit that adds an unregistered, misspelled or deprecated value or a broken/ambiguous/noncanonical link is blocked with the approved values and the propose command in the message, while problems already on a page never block (ratchet); a new concept goes through `/ontology:propose` (usable at once) and `/ontology:approve` (humans only); `/ontology:apply` rewrites the mechanical cases; project-db exposes `ontology_violations` for SQL and wiki-lint reports the dimension as Check 8.
 
 ## Quality Standards
 

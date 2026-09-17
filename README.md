@@ -77,7 +77,7 @@ A Karpathy-style LLM wiki system that serves as the single source of truth for p
 | **Wiki Ingest Meeting** | `/wiki:ingest-meeting` | Ingest a meeting transcript or analysis pipeline output. Creates or updates feature, gap, question, and decision pages, then links all entities to the new meeting summary. |
 | **Wiki Ingest Document** | `/wiki:ingest-document` | Ingest a lightweight document (email, PDF, spec, Slack message). Updates affected feature, gap, decision, and question pages with new information. |
 | **Wiki Query** | `/wiki:query` | Natural language search across wiki pages. Synthesizes answers with citations and optionally promotes substantive answers to new wiki pages. |
-| **Wiki Lint** | `/wiki:lint` | Run a 7-dimension health check: broken links, orphaned pages, contradictions, stale content, missing cross-references, schema violations, and frontmatter errors. Optionally auto-fixes. |
+| **Wiki Lint** | `/wiki:lint` | Run an 8-dimension health check: broken links, orphaned pages, contradictions, stale content, missing cross-references, frontmatter errors (against the vault's own vocabulary), decision drift, and — with project-ontology installed — ontology violations. Optionally auto-fixes. |
 | **Wiki Confluence Reconcile** | Skill only | Detect drift between the wiki and Confluence exports, generate reconciliation reports, and optionally sync changes bidirectionally. |
 
 **Wiki slash commands** provide quick access to common operations:
@@ -91,6 +91,37 @@ A Karpathy-style LLM wiki system that serves as the single source of truth for p
 | `/wiki:query '<question>'` | Search and synthesize wiki knowledge |
 | `/wiki:lint --scope full` | Run full health check |
 | `/wiki:status` | Display wiki health dashboard |
+
+### Project DB — SQL for agents
+
+Gives agents **one tool, SQL, over everything the project knows**, with the guardrails a data team puts in front of a read replica. With a wiki present, the schema is built *from* the wiki: base tables (pages, frontmatter fields, wikilinks, tags, sources, sections, cited raw documents, FTS5) plus one typed view per page type whose column docs come from the page templates, and curated cross-type views (`open_gaps`, `pending_decisions`, `backlinks`, `broken_links`…). Without a wiki it interviews you, scans the codebase, designs the schema, and installs a DB-first mandate. Same schema on SQLite locally and Cloudflare D1 remotely.
+
+| Command | Description |
+|---------|-------------|
+| `/db:init [--mode local\|d1\|both]` | Build the database, vendor the engine into `.claude/db/`, install the guarded query CLI, SessionStart sync hook, local MCP server, and the CLAUDE.md mandate |
+| `/db:query '<question or SELECT>'` | Answer a structured question with one read-only SELECT (row cap, timeout, CSV, audit log), then cite the source pages |
+| `/db:sync [--full]` | Incremental refresh by content hash; regenerates typed views, re-applies `views.sql`, rebuilds FTS, rewrites `SCHEMA.md` |
+| `/db:publish` | Export to D1, dry-run on local D1, push with wrangler, deploy the read-only MCP Worker, smoke-test, log |
+
+Guardrails: read-only connection + SQLite authorizer, one statement per call, 200-row cap, 5 s timeout, cells truncated at 400 chars, every query audited (`python3 .claude/db/db.py audit --top` shows which repeated queries deserve a view). Requires `python3`; `uv` for the local MCP server; `wrangler` for D1.
+
+### Project Ontology — an enforced, dot-notated vocabulary
+
+A vocabulary written in a schema document drifts the week it is written: this plugin's own sample wiki had four disagreeing value lists and one client spelled two ways across 50 pages. `/ontology:init` mines what the vault already declares and uses — page types, template `key: # a|b|c` comments, SCHEMA.md value lists, observed values, scope folders, tags, link fields — into one file, `wiki/_schema/ontology.yaml`, of dot-notated terms (`gap.severity.critical`, `client.acme-corp`, `tag.budget-management`, `rel.related-feature`) with a proposed → approved → deprecated lifecycle. Pages keep plain values; page ids are derived from paths (`client.acme.gap.co-op-billing`). Declared values are approved, observed-only values are proposed — nothing is silently approved — and an interview settles the conflicts.
+
+One engine enforces it everywhere: a **PreToolUse hook** blocks any write that *adds* a strict violation (unregistered or misspelled value, deprecated term, broken/ambiguous/noncanonical `[[link]]`, wrong relation target) and names the approved values and the propose command — violations already on a page never block (ratchet), so an existing vault adopts it on day one; a **PostToolUse hook** reports what still stands; a **Bash guard** turns approvals into a permission prompt and blocks shell writes into pages; a **SessionStart banner** keeps the vocabulary in context; CI runs `check --changed-since`; **project-db** loads `ontology_terms` / `ontology_violations`; **wiki-lint** reports it as Check 8.
+
+| Command | Description |
+|---------|-------------|
+| `/ontology:init` | Scan the vault, interview on conflicts and outside values, write `ontology.yaml` + `ONTOLOGY.md`, sync template comments, install hooks, banner and CLAUDE.md block |
+| `/ontology:check [<path>\|--all\|--changed-since <ref>]` | The write hook's rules on demand; exit 1 on strict violations; `--format lint\|json` |
+| `/ontology:propose <id> --label … --definition …` | Register a value the vocabulary lacks (usable at once, flagged until approved) |
+| `/ontology:approve <id>…` | Human gate: confirm pending terms and record who approved them |
+| `/ontology:deprecate <id> --replaced-by <id>` | Human gate: retire a term; pages using it are flagged and `apply` rewrites them |
+| `/ontology:apply [--dry-run]` | Rewrite aliases, spelling variants, deprecated values and noncanonical links to canonical form — nothing else |
+| `/ontology:status` | Terms by status, policy, open violations by rule, pending approvals |
+
+Requires `python3` only (stdlib; never PyYAML, so every machine checks the same way).
 
 ### Utility Skills
 

@@ -17,6 +17,22 @@ You will receive three required arguments:
 - **meeting-dir** (string, required): Absolute path to the meeting folder containing analysis outputs, typically like `/path/to/BostonBeerCompany/meetings/2024-03-15-discovery/analysis/`
 - **meeting-label** (string, required): Human-readable meeting identifier (e.g., "2024-03-15-discovery" or "2024-03-15-kickoff")
 
+## Controlled vocabulary — resolve it before writing any frontmatter
+
+Frontmatter values are not free text, and the defaults in the steps below are fallbacks, not the vault's
+vocabulary. Resolve the vocabulary once, before Step 2:
+
+1. **Ontology installed** (`wiki/_schema/ontology.yaml`, from `/ontology:init`): read
+   `wiki/_schema/ONTOLOGY.md` and write only approved values, spelled exactly as listed (`P1`, not `p1`;
+   the client slug, not the display name). A value the vault genuinely needs but lacks is proposed first —
+   `python3 .claude/ontology/ontology.py propose <type>.<field>.<value> --label "…" --definition "…" --source <page>` —
+   never replaced by a near-synonym. The PreToolUse hook blocks unregistered values and names the approved ones.
+2. **No ontology:** a key's vocabulary is the `# a|b|c` comment on that key in
+   `wiki/_schema/templates/<type>.md`; a key without one is free text.
+3. **Where a default below is not in the vault's vocabulary** (e.g. the vault's feature statuses are
+   `active|deprecated|in-discovery|blocked`, so there is no `identified`), use the vault's value with the
+   same meaning — the initial state for a newly discovered item — and note the mapping in the ingest log.
+
 ## Process: 7-Step Ingest Workflow
 
 ### Step 1: Discover All Analysis Artifacts
@@ -87,11 +103,11 @@ Populate:
 - **Frontmatter**:
   - `type: feature`
   - `client: {company}`
-  - `status: identified` (default; update if analysis specifies something else)
-  - `category:` (guess from context: catalog|ordering|checkout|budget|account|fulfillment|reporting|integration|admin)
+  - `status:` the vocabulary's initial status for a newly discovered feature (`identified` where the vault declares it; update if the analysis specifies something else)
+  - `category:` (from the `feature.category` vocabulary — guess from context, e.g. catalog|ordering|checkout|budget|account|fulfillment|reporting|integration|admin)
   - `decision:` (from analysis if mentioned; otherwise blank)
   - `effort:` (from analysis if estimated; otherwise blank)
-  - `priority:` (P1 if mentioned as critical, otherwise P2)
+  - `priority:` (from the `feature.priority` vocabulary — e.g. P1 if mentioned as critical, otherwise P2)
   - `created: {today}`
   - `updated: {today}`
   - `sources: [{source-file-path}]` (the analysis file that mentioned it)
@@ -118,8 +134,8 @@ When creating a new gap page:
 - **Frontmatter**:
   - `type: gap`
   - `client: {company}`
-  - `severity: high` (adjust based on analysis: critical|high|medium|low)
-  - `status: open` (or `resolved` if the analysis mentions a solution)
+  - `severity: high` (adjust based on analysis, within the `gap.severity` vocabulary: critical|high|medium|low)
+  - `status: open` (or the vocabulary's resolved state if the analysis mentions a solution)
   - `created: {today}`
   - `updated: {today}`
   - `sources: [{source-file}]`
@@ -146,8 +162,8 @@ When creating a new question:
 - **Frontmatter**:
   - `type: question`
   - `client: {company}`
-  - `priority: P1` (P1 if blocking, P2 if nice-to-have)
-  - `status: open`
+  - `priority: P1` (P1 if blocking, P2 if nice-to-have — values from the `question.priority` vocabulary)
+  - `status: open` (from the `question.status` vocabulary)
   - `created: {today}`
   - `updated: {today}`
   - `sources: [{source-file}]`
@@ -247,7 +263,7 @@ If new analysis contradicts previous assessments:
 Every page update must include:
 - New `updated:` date
 - New entries in `sources:` array
-- Meeting tag in `tags:` (format: `meeting-{meeting-label}`)
+- Meeting tag in `tags:` (format: `meeting-{meeting-label}`; when the ontology enforces tags strictly, propose `tag.meeting-{meeting-label}` first)
 
 ### Cross-Link Rigorously
 - Features should link to related gaps
@@ -277,6 +293,7 @@ Before considering the ingest complete:
 - [ ] `wiki/_log.md` updated with ingest entry
 - [ ] No contradictions left undocumented
 - [ ] All source files referenced in frontmatter
+- [ ] Every controlled frontmatter value is in the vault's vocabulary: with an ontology, no write was left blocked and `python3 .claude/ontology/ontology.py check --changed-since HEAD` (vault under git) shows no new strict violations; without one, values match the template comments
 
 ## Error Handling
 

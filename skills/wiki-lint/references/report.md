@@ -34,6 +34,7 @@ Write the final report at `wiki/_lint-report-{YYYY-MM-DD}.md` using this scaffol
 - Missing cross-refs: {N} (MEDIUM)
 - Invalid frontmatter: {N} (MEDIUM)
 - Decision drift: {N} (HIGH)
+- Ontology violations: {N} (strict {S} HIGH · warn {W} LOW) — or "not installed"
 
 **Quick Wins** (easy to fix):
 - {N} broken links with obvious targets
@@ -86,7 +87,7 @@ Write the final report at `wiki/_lint-report-{YYYY-MM-DD}.md` using this scaffol
 
 ### Check 6: Frontmatter Validation
 
-**Count**: {N} | **Severity**: MEDIUM
+**Count**: {N pages} (one issue per page, all its problems listed) | **Severity**: MEDIUM
 
 - Missing required fields: {list}
 - Invalid values (wrong type, bad format): {list}
@@ -99,6 +100,22 @@ Write the final report at `wiki/_lint-report-{YYYY-MM-DD}.md` using this scaffol
 {list of features with drifting decision status across meetings}
 
 **Recommendation**: Add an "Update" or "Contradiction Notice" section to each affected feature page explaining the change.
+
+### Check 8: Ontology
+
+**Count**: {N} (strict {S} · warn {W}) | **Severity**: HIGH (strict) / LOW (warn) — or **not installed**
+
+| Rule | Count | Example | Fix |
+|------|-------|---------|-----|
+| value-unknown | {N} | {page:line — field: value} | propose the term, or use an approved value |
+| value-noncanonical | {N} | {…} | `/ontology:apply` |
+| value-deprecated | {N} | {…} | `/ontology:apply` (replacement known) |
+| value-proposed | {N} | {…} | `/ontology:approve` (human) |
+| link-broken / -ambiguous / -noncanonical | {N} | {…} | fix target / qualify / `/ontology:apply` |
+| relation-* | {N} | {…} | link a page of the right type |
+
+**Mechanical rewrites available**: {N} (`python3 .claude/ontology/ontology.py apply --dry-run`)
+**Terms awaiting human approval**: {N}
 
 ---
 
@@ -114,6 +131,7 @@ Write the final report at `wiki/_lint-report-{YYYY-MM-DD}.md` using this scaffol
 | Missing cross-refs | {N} | <5 | 🟡 if >5 |
 | Invalid frontmatter | {N} | 0 | 🔴 if >0 |
 | Decision drift | {N} | 0 | 🔴 if >0 |
+| Ontology violations (strict) | {N} | 0 | 🔴 if >0 |
 | **Overall Health** | **{X%}** | **>90%** | **{status}** |
 
 ---
@@ -185,6 +203,7 @@ Append to `wiki/_log.md`:
 - Missing cross-refs: {N}
 - Invalid frontmatter: {N}
 - Decision drift: {N}
+- Ontology violations: {N} (strict {S} · warn {W})
 **Auto-fixes applied**: {M}
 **Report**: wiki/_lint-report-{date}.md
 **Status**: ✓ Complete

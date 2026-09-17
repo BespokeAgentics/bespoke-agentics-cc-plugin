@@ -34,6 +34,7 @@ Settled with the user; honor them unless the user overrides at runtime.
 - **The loop persists via CLAUDE.md + a SessionStart hook.** `init` writes the loop mandate into the project `CLAUDE.md` (inside managed sentinels) and installs a SessionStart hook that surfaces the active rules for the launch domain — so "before/after every task" actually fires without the user invoking anything.
 - **A subcommand suite, not one command.** `/knowledge:init | :review | :extract | :promote | :audit`, mirroring the `/wiki`, `/bun`, and `/disclosure` suites.
 - **Evidence or it doesn't count.** Every confirmation and contradiction must cite a *distinct*, dated, linkable source (a meeting page, a commit, a task, a transcript). The same source can never increment a counter twice. This is what makes "apply by default" safe.
+- **Ontology-aware.** When the vault has an ontology (`wiki/_schema/ontology.yaml`, from `/ontology:init`), facts, hypotheses and rules use its registered values, and a rule names the terms it governs in a `terms:` field (`terms: gap.severity.critical, rel.related-feature`) so `review` can surface it whenever a task touches those terms and a deprecation of a term flags the rules that cite it. The store's own pages (`type: knowledge`) are governed like any other page — propose `type.knowledge` and its `layer` values if the ontology does not declare them yet.
 - **Idempotent + non-destructive.** Generated blocks in `CLAUDE.md` and the hook sit between `<!-- knowledge-loop:managed -->` … `<!-- /knowledge-loop:managed -->` sentinels. Re-runs update only the managed block. Store entries are append/transition, never silently rewritten.
 
 ## The store layout
@@ -88,9 +89,10 @@ Read `references/loop-algorithm.md` first. Then:
 1. **Harvest insights** from what just happened (the conversation, diffs, meeting/transcript, results). For each, decide its layer: a discrete observation → **fact**; a candidate generalization → **hypothesis**; direct evidence for/against an existing hypothesis or rule → a **counter increment**.
 2. **Write facts** to `knowledge.md` with source + date.
 3. **Update hypotheses.** For a new generalization, open a hypothesis with `confirmations: 1`. For evidence supporting an existing one, add a dated, linked evidence bullet and increment `confirmations` — but only if the source is *distinct* from every source already logged on that entry (counter-integrity guard). Evidence against increments `contradictions`.
-4. **Auto-promote.** Any hypothesis reaching the promotion bar (default: `confirmations ≥ 3` from distinct sources **and** `contradictions = 0`) moves to `rules.md`, stamped `promoted-on`, evidence trail intact. Note promotion in the run summary and recommend `/knowledge:promote` to bridge it to a wiki page.
-5. **Auto-demote.** Any rule contradicted by new evidence moves back to `hypotheses.md` with `status: demoted`, the contradicting source recorded, and `confirmations`/`contradictions` carried over. If it has a bridged wiki page, mark that page `status: revisited` and log it.
-6. **Update counts** in `INDEX.md`, append a one-line entry to `wiki/_log.md`, and keep `related:` links bidirectional.
+4. **Cite ontology terms.** When an ontology exists, set `terms:` on new hypotheses to the term ids the claim is about (see `wiki/_schema/ONTOLOGY.md`); promotion carries it to the rule.
+5. **Auto-promote.** Any hypothesis reaching the promotion bar (default: `confirmations ≥ 3` from distinct sources **and** `contradictions = 0`) moves to `rules.md`, stamped `promoted-on`, evidence trail intact. Note promotion in the run summary and recommend `/knowledge:promote` to bridge it to a wiki page.
+6. **Auto-demote.** Any rule contradicted by new evidence moves back to `hypotheses.md` with `status: demoted`, the contradicting source recorded, and `confirmations`/`contradictions` carried over. If it has a bridged wiki page, mark that page `status: revisited` and log it.
+7. **Update counts** in `INDEX.md`, append a one-line entry to `wiki/_log.md`, and keep `related:` links bidirectional.
 
 ### Mode: `promote` — *the wiki bridge*
 
@@ -101,7 +103,7 @@ Read `references/loop-algorithm.md` first. Then:
 
 ### Mode: `audit` — *health check*
 
-Read every domain and report: entry counts per layer; **promotion candidates** (hypotheses at or near the bar); **stale hypotheses** (no new evidence in N days — default 30); **contradiction hotspots** (rules with `contradictions > 0`, hypotheses with confirmations and contradictions both high); **integrity violations** (a counter incremented twice by the same source, or a count that disagrees with its evidence bullets); **bridge gaps** (rules with no `wiki-page:`); and **broken `[[links]]`/`related:`**. Output a prioritized fix list. Read-only unless the user asks for `--fix`.
+Read every domain and report: entry counts per layer; **ontology drift** (entries whose `terms:` cite a deprecated or unregistered ontology term, when the vault has an ontology); **promotion candidates** (hypotheses at or near the bar); **stale hypotheses** (no new evidence in N days — default 30); **contradiction hotspots** (rules with `contradictions > 0`, hypotheses with confirmations and contradictions both high); **integrity violations** (a counter incremented twice by the same source, or a count that disagrees with its evidence bullets); **bridge gaps** (rules with no `wiki-page:`); and **broken `[[links]]`/`related:`**. Output a prioritized fix list. Read-only unless the user asks for `--fix`.
 
 ## Wiki-first compatibility
 

@@ -1,0 +1,66 @@
+{
+  "skill_name": "project-ontology",
+  "fixture": "evals/fixtures/ontology-vault",
+  "grader": "evals/grade.py",
+  "evals": [
+    {
+      "id": 1,
+      "name": "init-and-enforce",
+      "skill": "project-ontology",
+      "prompt": "The wiki in this project (wiki/) has vocabulary drift: frontmatter values are spelled inconsistently and some are not declared anywhere. Build an enforceable, dot-notated ontology for it and apply it to the wiki and the agent context (CLAUDE.md), with a hook that stops agents from writing values outside the ontology. Work without asking me questions: treat what the page templates and the schema declare as authoritative, and flag everything else for my review rather than silently accepting it. Then prove enforcement: feed the hook exactly what Claude Code would send when an agent creates wiki/clients/northwind/gaps/payment-terms.md as a gap with `severity: urgent`, and show the exit code and output. Finish with ANSWER.md: where the ontology lives, how many terms it has, what you flagged for my review, and the hook proof.",
+      "expected_output": "A dot-notated ontology declared from the templates/schema (gap severities critical|high|medium|low approved), observed-only values such as priority P0 registered as proposed (not approved), the `Northwind Traders` client spelling identified as a variant of `northwind`, a PreToolUse Write/Edit hook that blocks `severity: urgent` naming the approved severities, allows valid writes, and does not block unrelated edits to pages with pre-existing violations; a CLAUDE.md block; a SessionStart banner; no content page rewritten.",
+      "setup": "Copy the fixture project (evals/fixtures/ontology-vault) into <run>/outputs/project and work there.",
+      "expectations": [
+        "An ontology declaration uses dot-notated ids, including gap.severity.critical",
+        "All four template severities (critical, high, medium, low) are allowed gap severity values",
+        "priority P0 (observed, undeclared) is not silently approved: it is proposed / flagged for review",
+        "The client spelling `Northwind Traders` is identified as a variant or alias of `northwind`",
+        "A PreToolUse hook for Write/Edit is registered in .claude/settings.json",
+        "The installed hook blocks creating a gap with `severity: urgent` and names the approved severities (grader re-runs it)",
+        "The installed hook allows creating a valid gap with `severity: high` (grader re-runs it)",
+        "The installed hook does not block an unrelated edit to a page that already has a violation (ratchet; grader re-runs it)",
+        "CLAUDE.md tells agents to use ontology values and how new terms get added and approved",
+        "A SessionStart hook surfaces the ontology at session start",
+        "No content page under wiki/clients/ was rewritten"
+      ]
+    },
+    {
+      "id": 2,
+      "name": "propose-approve",
+      "skill": "project-ontology",
+      "prompt": "Add a new Northwind gap page, 'Payment Terms Enforcement': severity urgent (Northwind insists urgent is above critical), status open, related to the credit-limits feature, tagged finance. Follow this project's ontology rules. I'm Jordan Lee, the wiki owner, and I approve adding `urgent` as a gap severity — record my approval properly. Finish with ANSWER.md showing the new page, the ontology change, and proof that the new page has no remaining ontology violations.",
+      "expected_output": "gap.severity.urgent registered with a definition, approved by Jordan Lee (not by the agent on its own), ONTOLOGY.md re-rendered, the governance change logged; a new gap page with client northwind, severity urgent, related-feature \"[[credit-limits]]\"; the engine reports no strict violation and no unapproved severity on the new page; no other content page touched.",
+      "setup": "Copy the fixture project into <run>/outputs/project, then run: python3 <skill>/scripts/ontology.py init --scan --root . && python3 <skill>/scripts/ontology.py init --write --root . --skill-dir <skill> --by setup",
+      "expectations": [
+        "A new gap page exists under wiki/clients/northwind/gaps/ with severity urgent",
+        "The new page uses the canonical client value `northwind`",
+        "gap.severity.urgent is registered in wiki/_schema/ontology.yaml with status approved",
+        "The approval is attributed to Jordan Lee",
+        "The new term has a definition",
+        "related-feature links canonically to credit-limits",
+        "The ontology engine reports no strict violation and no unapproved severity on the new page (grader runs it)",
+        "The governance change is logged in wiki/_log.md",
+        "ONTOLOGY.md lists gap.severity.urgent",
+        "Pre-existing content pages under wiki/clients/ changed only to cross-link the new page (no value rewritten, nothing removed)"
+      ]
+    },
+    {
+      "id": 3,
+      "name": "lint-ontology-dimension",
+      "skill": "wiki-lint",
+      "prompt": "Run a full health check of this wiki and write the lint report into the wiki. Report only: do not change any page and do not change the ontology.",
+      "expected_output": "A lint report in wiki/ that includes the ontology dimension computed by the project's ontology engine — the relation-range violation in bulk-import, `Northwind Traders` as a noncanonical client value, the broken [[missing-vendor-eval]] link, and P0 as a proposed term awaiting human approval — with no page or ontology file modified and the run logged.",
+      "setup": "Copy the fixture project into <run>/outputs/project, then run the project-ontology init with defaults (as in eval 2).",
+      "expectations": [
+        "A lint report file exists under wiki/",
+        "The report has an ontology dimension/section",
+        "The report lists the relation-range problem in bulk-import (related-feature points at a gap)",
+        "The report lists `Northwind Traders` as a noncanonical / variant client value",
+        "The report lists the broken [[missing-vendor-eval]] link",
+        "The report lists P0 as a proposed term awaiting approval",
+        "No content page and no ontology file was modified",
+        "The lint run is logged in wiki/_log.md"
+      ]
+    }
+  ]
+}

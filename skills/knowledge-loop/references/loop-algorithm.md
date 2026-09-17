@@ -40,6 +40,7 @@ Entries are Markdown sections under the layer file's `## Entries` heading. Keep 
 - confirmations: 2
 - contradictions: 0
 - applies-when: any deal with a requested discount > 20%
+- terms: deal.approval.vp-signoff   # optional: ontology term ids the claim is about (when the vault has an ontology)
 - opened: 2026-05-20
 - updated: 2026-06-09
 - evidence:
@@ -63,6 +64,11 @@ Entries are Markdown sections under the layer file's `## Entries` heading. Keep 
   - +1 2026-06-15 [[deal-initech-expansion]]
 - tags: pricing, approvals
 ```
+
+`terms` is optional and only meaningful when the vault has a project-ontology: the ids of the terms a
+hypothesis or rule is about. It is carried from hypothesis to rule on promotion, lets `review` match a
+task that touches those terms, and lets `audit` flag a rule whose cited term has been deprecated (the
+rule's wording may now use a retired value).
 
 `applies-when` is mandatory on hypotheses and rules — it is the trigger `review` matches against
 the current task to decide what to surface and what is testable today.

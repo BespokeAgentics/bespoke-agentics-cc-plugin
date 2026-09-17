@@ -39,6 +39,7 @@ Instead, **discover** all of this from the repo and the user.
 8. **Create platform stubs** (only if Q4 selected platforms) — see `references/schema-and-templates.md#step-7`.
 9. **Create org process stubs** (only if Q5 org name was provided) — see `references/schema-and-templates.md#step-8`. Always include `wiki-maintenance.md`. Only add other process pages if repo discovery revealed concrete workflows.
 10. **Log and report** — append a row to `_log.md` and print the final summary block in `references/schema-and-templates.md#step-9`.
+11. **Offer the ontology** — one line in the summary: `/ontology:init` turns the templates' value comments into an enforced, dot-notated vocabulary (write hook, banner, lint Check 8). Offer, do not run it.
 
 ## Key behaviors (apply throughout)
 
@@ -48,6 +49,7 @@ Instead, **discover** all of this from the repo and the user.
 - NEVER hardcode org names — use whatever the user specifies, or skip entirely.
 - Adapt folder structure to the organizational model chosen (clients, projects, teams, domains).
 - Write a project-specific SCHEMA.md, not a generic template.
+- Declare each controlled value list **once**, as the `# a|b|c` comment on its key in the page template; SCHEMA.md points to the templates instead of restating the values (two lists drift apart).
 - Check for an existing vault — never overwrite.
 - Use individual `mkdir` calls — brace expansion is unreliable.
 - Log every operation in `_log.md`.

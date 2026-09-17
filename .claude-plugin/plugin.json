@@ -1,7 +1,7 @@
 {
   "name": "bespoke-agentics",
-  "version": "2.6.0",
-  "description": "AI transparency auditing, agent architecture generation, progressive-disclosure context layering for large codebases, UX evaluation, code-grounded interactive wireframing, Pi harness customization, video-to-deliverables pipelines, workflow analysis, Biome AI guardrails with brownfield type-debt ratchets, and the Agent-Native Engineering suite (fast CI, label-triggered agents, chore crons, agent evidence, hermetic deploys, simulation data) for Claude Code",
+  "version": "2.8.0",
+  "description": "AI transparency auditing, agent architecture generation, progressive-disclosure context layering for large codebases, UX evaluation, code-grounded interactive wireframing, Pi harness customization, video-to-deliverables pipelines, workflow analysis, Biome AI guardrails with brownfield type-debt ratchets, the Agent-Native Engineering suite (fast CI, label-triggered agents, chore crons, agent evidence, hermetic deploys, simulation data), a queryable project database (SQLite + Cloudflare D1) that gives agents guarded SQL over the wiki, and an enforceable dot-notated ontology (controlled vocabulary with a write-hook ratchet and a human approval gate) over the wiki, the database and the agent context — for Claude Code",
   "author": {
     "name": "Bespoke Agentics"
   },
@@ -221,6 +221,26 @@
     "ui-impact",
     "route-tracing",
     "deploy-blocker",
-    "confidence-labels"
+    "confidence-labels",
+    "project-db",
+    "sql-for-agents",
+    "queryable-wiki",
+    "sqlite",
+    "cloudflare-d1",
+    "d1",
+    "mcp-sql",
+    "schema-as-prompt",
+    "read-only-sql",
+    "agent-database",
+    "project-ontology",
+    "ontology",
+    "controlled-vocabulary",
+    "dot-notation",
+    "taxonomy",
+    "vocabulary-drift",
+    "frontmatter-validation",
+    "pretooluse-hook",
+    "human-approval-gate",
+    "canonical-values"
   ]
 }

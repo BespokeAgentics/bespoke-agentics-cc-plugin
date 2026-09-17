@@ -50,6 +50,13 @@ The schema is the **constitution** of the wiki. Tailor it to THIS project (inter
 
 Templates are structural scaffolds, identical across project types.
 
+**Controlled keys carry their vocabulary as a trailing comment** — `severity: # critical|high|medium|low`,
+`status: # open|mitigated|resolved|accepted`, `priority: # P1|P2|P3`. This is the single declaration:
+project-db turns it into column docs, wiki-lint Check 6 validates against it, and `/ontology:init` mines
+it into the ontology (after which the comment is rewritten to name its binding:
+`severity: # gap.severity: critical|high|medium|low`). Do not restate the lists in SCHEMA.md — link to the
+templates (or to `_schema/ONTOLOGY.md` once the ontology exists).
+
 - `feature.md` — title, type, client, status, source, date, related + Overview, Current Implementation, Target Implementation, Decision Status, Open Questions, Source References.
 - `gap.md` — title, type, client, severity, status, source, date, related + Gap Description, Business Impact, Current Workaround, Proposed Resolution, Resolution Status, Source References.
 - `meeting.md` — title, type, client, meeting-date, attendees, source, date, related + Summary, Key Topics, Decisions Made, Action Items, Features/Gaps/Questions Mentioned, Source.
@@ -198,10 +205,12 @@ Next Steps:
   1. Open the vault in Obsidian
   2. Add your first {client/project/entry}:
      /wiki:new-client '<name>' '<platform>'
-  3. Ingest content:
+  3. Optional: enforce the vocabulary (template value comments → dot-notated ontology + write hook):
+     /ontology:init
+  4. Ingest content:
      /wiki:ingest-meeting '<name>' '<dir>' '<label>'
      /wiki:ingest-document '<name>' '<path>' '<type>'
-  4. Check wiki health:
+  5. Check wiki health:
      /wiki:lint --scope full
 
 Wiki is ready for knowledge accumulation.

@@ -1,7 +1,7 @@
 ---
 name: "wiki:ingest-meeting"
 description: "Ingest a completed migration pipeline meeting output into the Karpathy-style LLM Wiki. Validates meeting analysis outputs and imports structured data."
-argument-hint: '<company>' '<meeting-dir>' '<meeting-label>'
+argument-hint: "'<company>' '<meeting-dir>' '<meeting-label>'"
 allowed-tools: Skill(wiki-ingest-meeting), Agent, Bash, Read, Write, Edit, Glob, Grep
 ---
 

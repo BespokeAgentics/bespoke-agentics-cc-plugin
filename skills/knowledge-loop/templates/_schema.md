@@ -57,6 +57,8 @@ See `references/loop-algorithm.md` §2 for the full field list. Minimal shapes:
   dated linked `evidence:` bullets (`+1`/`-1`), `tags:`.
 - **Rule:** id + title, `from:`, `confirmations:`, `contradictions: 0`, `applies-when:`,
   `promoted-on:`, `wiki-page:`, `evidence:`, `tags:`.
+- **Optional on hypotheses and rules:** `terms:` — ontology term ids the entry is about, when the vault
+  has `_schema/ontology.yaml` (use registered values in every entry; propose new ones first).
 
 ## The loop (one screen)
 

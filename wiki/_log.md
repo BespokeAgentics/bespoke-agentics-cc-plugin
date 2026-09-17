@@ -1,6 +1,6 @@
 ---
 type: log
-updated: 2026-08-19
+updated: 2026-09-17
 ---
 
 # Wiki Operation Log
@@ -403,3 +403,58 @@ Note: 18 custom features, 1 config feature (product-catalog-and-browse)
 6. **Link validation** — Verify all [[wiki-links]] resolve correctly
 
 ---
+
+## 2026-09-16 — project-db skill added — queryable database over the wiki (v2.7.0)
+
+**What**: new skill `skills/project-db/` + commands `/db:init`, `/db:query`, `/db:sync`, `/db:publish`.
+Builds a SQLite index of the wiki (pages, frontmatter fields, wikilinks with resolution, tags, sources,
+sections, cited raw documents, FTS5), one typed view per page type with column docs mined from
+`_schema/templates/`, curated cross-type views, a guarded read-only query CLI, a SessionStart sync
+hook, a local MCP server, and a Cloudflare D1 + Worker publish path. Without a wiki: interview +
+codebase scan → schema → DB-first mandate.
+
+**Why**: agents answered structured questions ("which critical gaps…", "which meetings mentioned…")
+by reading pages one by one. SQL over the wiki answers them in one query; the wiki stays the record,
+the database is the index (derived, gitignored, rebuilt incrementally).
+
+**Verification**: engine tested on this vault (61 pages, 745 links, 30/30 verify checks), on a
+no-wiki fixture (typed views + CSV/JSON tables), on local D1 (FTS5, views, JSON), and over MCP stdio.
+Evals in `skills/project-db/evals/`.
+
+## 2026-09-17 — project-ontology skill added — enforceable dot-notated vocabulary (v2.8.0)
+
+**What**: new skill `skills/project-ontology/` + commands `/ontology:init`, `/ontology:check`,
+`/ontology:propose`, `/ontology:approve`, `/ontology:deprecate`, `/ontology:apply`, `/ontology:status`.
+`init` mines a vault (page types, template `key: # a|b|c` vocabularies, SCHEMA.md value lists, observed
+values, scope folders, tags, frontmatter link fields) into `wiki/_schema/ontology.yaml` — dot-notated terms
+with a proposed → approved → deprecated lifecycle — rendered to `ONTOLOGY.md`. One stdlib engine enforces it:
+PreToolUse ratchet hook (blocks writes that add strict violations; pre-existing ones never block), PostToolUse
+context, Bash guard (approvals → permission prompt; shell writes into pages blocked), SessionStart banner,
+`check --changed-since` for CI. project-db (engine 1.1.0, schema v2) loads `ontology_terms`,
+`ontology_aliases`, `ontology_fields`, `ontology_violations` and `pages.ontology_id`; wiki-lint gains Check 8
+and Check 6 now reads the vault's vocabulary instead of a hard-coded list; wiki-init, wiki-ingest-meeting,
+wiki-ingest-document and knowledge-loop use registered values.
+
+**Why**: this vault's vocabulary had drifted in four places — SCHEMA.md, the page templates, wiki-lint's
+hard-coded checks and ingest-meeting's defaults disagreed (e.g. gap status `open|under-review|resolved|workaround`
+vs `open|mitigated|resolved|accepted`); `client` was written `Boston Beer Company` on 10 pages and
+`boston-beer-company` on 40; all 19 features carry `status: draft`, which no vocabulary declares.
+
+**Decisions** (design interview): plain values with path-derived ids; strict ratchet; wiki + DB + agent
+context; separate skill with a PreToolUse hook; global vocabularies, path-scoped ids; human-only approval.
+See `docs/plans/project-ontology.md`.
+
+**Verification** (scratch copy of this vault, defaults, no page edited): 241 terms (93 approved, 148
+proposed), every observed value classified (51 approved · 147 proposed · 1 noncanonical · 0 unknown); 698
+open violations (445 strict — 288 broken links, 130 noncanonical links, 10 relation-broken, 10 client
+variants, 7 ambiguous links; 253 warn), none blocking; `apply --dry-run` = 140 mechanical rewrites in 31
+files; a Write adding `severity: urgent` is blocked naming `critical · high · medium · low`. Engine tests
+59/59, project-db tests 23/23. Evals (3 × with/without skill, graded by re-running each run's installed hooks):
+with skill 29/29, baseline 25/29 — the baseline misses were governance (unrequested page rewrites, no
+SessionStart surfacing, unlogged lint run). The live vault was not modified: installing enforcement here is a
+separate decision.
+
+**Defects fixed along the way**: project-db parsed frontmatter with PyYAML when installed (`related: [[Page]]`
+lost its link on those machines) and dropped unindented YAML block lists; links inside code blocks counted as
+links; wiki-lint Check 6 hard-coded a vocabulary that contradicted the vault; ingest-meeting wrote
+`status: identified`, a value this vault does not declare.

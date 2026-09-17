@@ -27,6 +27,7 @@ This is a **precision update** workflow, contrasting with the comprehensive meet
 
 - **Do not over-create.** This is a lightweight ingest. Prefer updating existing pages.
 - **Merge, never replace.** When updating, add new sections or refine existing ones. Never delete or overwrite previous information without explaining why.
+- **Use the vault's controlled vocabulary.** When `wiki/_schema/ontology.yaml` exists, every frontmatter value and tag you write must be registered — read `wiki/_schema/ONTOLOGY.md`; for a genuinely new value run `python3 .claude/ontology/ontology.py propose …` instead of inventing a spelling. The PreToolUse hook blocks unregistered values. Without an ontology, follow the `# a|b|c` comments in `wiki/_schema/templates/`.
 - **Document the source meticulously.** Every new fact must be traceable to the document: inline citation (`From {document-type}: ...`), section header (`## Evidence from {document-identifier}`), and the page's `sources:` frontmatter.
 
 ## Contradiction handling
