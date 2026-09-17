@@ -62,6 +62,14 @@ def bare_git_env() -> dict[str, str]:
     credential helper and fails for everyone else -- which is the shape of the
     bug it is meant to catch. GIT_CONFIG_GLOBAL=/dev/null also neutralises any
     url.insteadOf rewrite that would quietly turn ssh into https.
+
+    GIT_CONFIG_NOSYSTEM is the one that matters on macOS: Apple Git reads
+    /Library/Developer/CommandLineTools/usr/share/git-core/gitconfig, which
+    sets credential.helper=osxkeychain, and GIT_CONFIG_SYSTEM=/dev/null does
+    NOT suppress it. A private repo therefore answered from the developer's
+    keychain and this script printed green, while CI -- with no keychain --
+    failed on the same commit. That is the exact false-green this env exists
+    to prevent, so the helper list is also reset on the command line in git().
     """
     env = dict(os.environ)
     env.pop("SSH_AUTH_SOCK", None)
@@ -69,6 +77,7 @@ def bare_git_env() -> dict[str, str]:
     env["GIT_ASKPASS"] = "/bin/echo"
     env["GIT_CONFIG_GLOBAL"] = "/dev/null"
     env["GIT_CONFIG_SYSTEM"] = "/dev/null"
+    env["GIT_CONFIG_NOSYSTEM"] = "1"
     env["GIT_SSH_COMMAND"] = (
         "ssh -o BatchMode=yes -o IdentitiesOnly=yes "
         "-o IdentityFile=/dev/null -o StrictHostKeyChecking=no"
@@ -77,8 +86,10 @@ def bare_git_env() -> dict[str, str]:
 
 
 def git(args: list[str], cwd: Path | None = None) -> subprocess.CompletedProcess:
+    # -c credential.helper= empties the helper list whatever scope set it,
+    # including a helper compiled into a vendor's system config.
     return subprocess.run(
-        ["git", *args],
+        ["git", "-c", "credential.helper=", *args],
         cwd=str(cwd) if cwd else None,
         env=bare_git_env(),
         capture_output=True,
@@ -132,6 +143,7 @@ def check_manifest(
 
 
 def check_remote(name: str, src: dict, declared_version: str | None) -> None:
+    before_errors = len(errors)
     kind = src.get("source")
 
     # C1
@@ -222,6 +234,11 @@ def check_remote(name: str, src: dict, declared_version: str | None) -> None:
             fail(name, f"pinned tree has no .claude-plugin/plugin.json")
             return
         check_manifest(name, manifest, declared_version, root)
+        # A remote whose manifest declares no skills path used to pass with no
+        # output at all, while the summary still counted it among the entries
+        # it called install-clean.
+        if len(errors) == before_errors:
+            note(f"{name}: pinned {sha[:8]} loads at v{declared_version}")
 
 
 def bump(target: str) -> int:
@@ -265,6 +282,7 @@ def main() -> int:
         name = entry.get("name", "<unnamed>")
         src = entry.get("source")
         version = entry.get("version")
+        verdicts = (len(notes), len(errors))
         if isinstance(src, str):
             if not src.startswith("./"):
                 fail(
@@ -278,6 +296,12 @@ def main() -> int:
             check_remote(name, src, version)
         else:
             fail(name, f"source must be a relative path string or an object, got {type(src).__name__}")
+
+        # The summary reports the entry COUNT, so an entry that produced
+        # neither a note nor a failure would be counted as clean without
+        # having been checked. Silence is a bug in this script, not a pass.
+        if (len(notes), len(errors)) == verdicts:
+            fail(name, "validator reached no verdict for this entry (silent pass)")
 
     for n in notes:
         print(f"  ok  {n}")

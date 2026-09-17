@@ -47,5 +47,55 @@ cases = [
    'C2: ssh url', 'SSH endpoint'),
 ]
 results = [run(m, l, x) for m, l, x in cases]
+
+
+def check(label, ok, detail=''):
+    print(f"{'PASS' if ok else 'MISS'}  {label}")
+    if not ok and detail:
+        print(f"        {detail}")
+    return ok
+
+
+def load_validator():
+    import importlib.util
+    spec = importlib.util.spec_from_file_location('vm', 'scripts/validate-marketplace.py')
+    mod = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(mod)
+    return mod
+
+
+# The reachability probe once answered from the developer's macOS keychain:
+# Apple Git's system gitconfig sets credential.helper=osxkeychain and
+# GIT_CONFIG_SYSTEM=/dev/null does not suppress it, so a PRIVATE repo
+# validated green locally and failed in CI on the same commit.
+vm = load_validator()
+helpers = vm.git(['config', '--get-all', 'credential.helper']).stdout.strip()
+results.append(check(
+    'probe is anonymous: no credential helper survives',
+    helpers == '',
+    f'git still resolves credential.helper={helpers!r} under bare_git_env()',
+))
+results.append(check(
+    'bare_git_env sets GIT_CONFIG_NOSYSTEM',
+    vm.bare_git_env().get('GIT_CONFIG_NOSYSTEM') == '1',
+))
+
+# An entry whose manifest declared no skills path produced no output at all,
+# yet the summary counted it among the entries it called install-clean.
+vm2 = load_validator()
+vm2.check_remote = lambda *a, **k: None          # a check that reports nothing
+f = Path(tempfile.mkdtemp()) / 'marketplace.json'
+f.write_text(json.dumps({'plugins': [
+    {'name': 'silent', 'version': '1.0.0',
+     'source': {'source': 'url', 'url': 'https://example.invalid/x.git', 'sha': '0' * 40}},
+]}))
+vm2.MARKETPLACE = f
+rc = vm2.main()
+results.append(check(
+    'an entry that reports nothing is a failure, not a pass',
+    rc == 1 and any('silent pass' in e for e in vm2.errors),
+    f'exit {rc}, errors={vm2.errors}',
+))
+
 print(f"\n{sum(results)}/{len(results)} tamper cases caught")
 sys.exit(0 if all(results) else 1)
