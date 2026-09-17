@@ -1,6 +1,6 @@
 # project-ontology — enforceable dot-notated ontology over the wiki, the database, and the agent context
 
-**Status:** done — designed, built and verified 2026-09-17 (plugin v2.8.0, not yet committed). Design interview
+**Status:** done — designed, built, verified and released 2026-09-17 as plugin v2.8.0. Design interview
 below; verification evidence at the end.
 **Requested:** 2026-09-16, during the `project-db` build.
 
@@ -230,8 +230,11 @@ eval 1 baseline reported that this repo's CLAUDE.md (which documents the skill) 
 ## History
 
 - 2026-09-16 — backlog entry written during the `project-db` build; a forked session drafted an
-  engine-integrated version (`docs/plans/project-ontology-draft/`, explicit `ontology:` key,
+  engine-integrated version (the ontology living inside `db.py`, an explicit `ontology:` key per page,
   PostToolUse). Parked so the project-db eval iteration stayed clean.
-- 2026-09-17 — design interview (decisions above); the draft is superseded by the separate skill
-  (`project-ontology-draft/README.md` marked superseded).
+- 2026-09-17 — design interview (decisions above) superseded that draft: plain values with derived ids,
+  a separate skill, a PreToolUse ratchet. The draft folder was deleted once this plan carried its
+  rationale — the "Settled decisions" table above is the record of what it got wrong and why.
 - 2026-09-17 — built, evaluated and verified (sections above).
+- 2026-09-17 — released: `project-db` (2.7.0) and `project-ontology` (2.8.0) committed and merged to
+  `main`, plugin version 2.8.0.

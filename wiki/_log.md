@@ -458,3 +458,9 @@ separate decision.
 lost its link on those machines) and dropped unindented YAML block lists; links inside code blocks counted as
 links; wiki-lint Check 6 hard-coded a vocabulary that contradicted the vault; ingest-meeting wrote
 `status: identified`, a value this vault does not declare.
+
+**Released**: `project-db` (2.7.0) and `project-ontology` (2.8.0) committed on `feat/project-ontology`,
+rebased onto `origin/main` — which had gained the `microdots-creator` marketplace entry meanwhile — and
+pushed as `main`; plugin version 2.8.0 (origin was 2.6.0; 2.7.0 was never released separately).
+Marketplace validated after the rebase: 8/8 tamper cases caught, all 3 entries install-clean. The superseded draft folder `docs/plans/project-ontology-draft/` was deleted (never
+tracked); what it got wrong and why is the "Settled decisions" table in `docs/plans/project-ontology.md`.
