@@ -1,6 +1,6 @@
 ---
 type: log
-updated: 2026-09-17
+updated: 2026-09-18
 ---
 
 # Wiki Operation Log
@@ -464,3 +464,21 @@ rebased onto `origin/main` — which had gained the `microdots-creator` marketpl
 pushed as `main`; plugin version 2.8.0 (origin was 2.6.0; 2.7.0 was never released separately).
 Marketplace validated after the rebase: 8/8 tamper cases caught, all 3 entries install-clean. The superseded draft folder `docs/plans/project-ontology-draft/` was deleted (never
 tracked); what it got wrong and why is the "Settled decisions" table in `docs/plans/project-ontology.md`.
+
+## 2026-09-18 — marketplace validator false green fixed; microdots-creator published
+
+**What**: `scripts/validate-marketplace.py` printed "All 3 entries install-clean" on this machine while
+GitHub Actions failed on the same commit with "not reachable anonymously". Two defects, both fixed with
+tests (tamper cases 8 -> 11): the probe's `GIT_CONFIG_SYSTEM=/dev/null` does not suppress Apple Git's
+system gitconfig, which sets `credential.helper=osxkeychain`, so a **private** repo answered from the
+local keychain (now `GIT_CONFIG_NOSYSTEM=1` plus `git -c credential.helper=`); and a remote entry whose
+manifest declared no skills path produced no output at all while the summary counted it clean (every
+entry must now leave a verdict — silence fails).
+
+**Why it mattered**: the entry it was hiding, `microdots-creator` (added by PR #2 on 2026-09-11), pointed
+at a private repo, so every install of it failed and `main` had been red since. The repo was published
+after scanning its full history (2 commits) for credential patterns and risky filenames — clean — and its
+pinned sha `383316c4` already matched HEAD. Marketplace: all 3 entries install-clean, CI green.
+
+**Also**: the teamboard eval fixture's `vite` went `^5.4.8` -> `^6.4.3`, clearing 3 Dependabot alerts
+(1 high, 2 moderate) on a fixture nothing installs or builds.
