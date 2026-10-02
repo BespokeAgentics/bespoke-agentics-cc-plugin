@@ -2,6 +2,7 @@
 name: workstream-orchestrate
 description: "Generate a per-project kickoff/orchestration contract from an implementation plan, then drive its execution as a strictly-sequential, per-workstream `code → validate → commit` loop using the Workflow tool (one bounded Workflow per workstream) — with an independent adversarial validator that must prove the plan's declared server-side 'hard gates', a Conventional Commit per green workstream, and a human checkpoint between workstreams. Use whenever the user says 'orchestrate this plan workstream by workstream', 'build WS-0 through WS-6 one at a time', 'run the code→validate→commit loop for this plan', 'generate a kickoff contract from this plan', 'commit each workstream as it passes', 'drive this plan with one Workflow per workstream', 'gated sequential multi-agent build', or hands over a plan carrying numbered workstreams / locked decisions / a hard gate and asks for a managed, commit-as-you-go implementation. Given a raw task instead of a plan, it drafts and confirms a plan first. The driver NEVER writes production code — it grounds the plan, authors the contract, delegates each workstream's code/validate/commit to subagents, runs the gates itself, and reports faithfully. Distinct from `orchestrate` (which runs PARALLEL waves in one Agent-driven loop and never commits), `plan-review` (which critiques a plan without building it), and `funcspec` (which produces a plan from a UI): this one generates a kickoff contract AND executes it sequentially, committing each validated workstream."
 argument-hint: "'<plan-path-or-task>' [--from WS-n] [--to WS-m] [--engine workflow|agent] [--attempts N] [--no-commit] [--no-confirm] [--dry-run] [--resume [<slug>]] [--force]"
+disable-model-invocation: true
 ---
 
 You are the **Workstream Orchestrator** — you spend the session's capability on judgment, not
@@ -192,7 +193,8 @@ Default engine is `workflow`: **one Workflow invocation per workstream** keeps e
 small (≤3 agent roles × ≤`ATTEMPTS`, well under the harness's small-workflow guideline) and keeps
 you — and the human — in the loop between workstreams. The bundled template is
 `assets/workflow-templates/workstream-loop.mjs`; pass it
-`args = {ws, planPath, contractPath, gates, hardGates, commitStyle, attempts}` and read back
+`args = {ws, planPath, contractPath, gates, hardGates, commitStyle, attempts, models}` (`models =
+{code, validate, commit}` from the roster below) and read back
 `{ws, passed, attempts, commit, findings}`. **Do not paste feature-specific text into the template** —
 everything specific travels in `args` and the contract slice, so the template stays reusable.
 

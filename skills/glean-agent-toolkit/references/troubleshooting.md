@@ -150,7 +150,7 @@ Pass `--dir apps/myagent` to `/glean:init`. The src layout will be created insid
 | Symptom | Recipe |
 |---------|--------|
 | `GLEAN_API_TOKEN must be set` at startup | Populate `.env`, `set -a; source .env; set +a` |
-| `import openai_agents` fails | `pip install "glean-agent-toolkit[openai]"` |
+| `import agents` fails (OpenAI Agents SDK) | `pip install "glean-agent-toolkit[openai]"` |
 | LLM passes `ctx` and gets a 400 | Make `ctx` optional with `None` default |
 | Tool returns `[]` consistently | Verify connector enabled in Glean admin |
 | 401 on every request | Wrong `GLEAN_SERVER_URL` host (use `*-be.glean.com`, not the public-facing UI URL) |

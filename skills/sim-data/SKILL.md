@@ -19,6 +19,7 @@ args:
   - name: scenario
     description: "Optional single scenario to build or rebuild: `default` | `demo` | `edge` | `load` | a custom name. Defaults to the full set chosen in the interview."
     required: false
+disable-model-invocation: true
 ---
 
 <role>
@@ -34,8 +35,7 @@ deterministic scenarios every agent can reproduce byte-for-byte from a seed valu
 </role>
 
 <context>
-The user invokes this via `/agentnative:sim-data [mode] [scenario]`, or implicitly when test
-data is unrealistic or agents need production-like environments.
+The user invokes this via `/agentnative:sim-data [mode] [scenario]`.
 
 Tool selection and shape-mining queries live in `references/data-tools.md` (read before
 building). The two pipelines, chosen by prod access:

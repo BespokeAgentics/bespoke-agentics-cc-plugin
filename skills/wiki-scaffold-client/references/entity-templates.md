@@ -2,7 +2,7 @@
 
 ## Step 3a — Client entity page
 
-Path: `wiki/clients/{company-slug}/entities/{company-slug}.md`. Template: `wiki/_schema/TEMPLATES.md` → Entity.
+Path: `wiki/{group}/{company-slug}/entities/{company-slug}.md`. Template: `wiki/_schema/templates/entity.md`.
 
 Frontmatter:
 
@@ -13,7 +13,8 @@ type: entity
 client: {company-slug}
 entity-type: client
 status: active
-date: {today}
+created: {today}
+updated: {today}
 related:
   - {platform-source-slug}
 ---
@@ -25,17 +26,17 @@ Example body opener:
 
 ```markdown
 ## Overview
-Boston Beer Company, a leading independent brewer...
+Acme Corp, a regional distributor of industrial supplies...
 
 ## Migration Context
-**Source Platform**: MerchTank
-**Target Platform**: Salesforce B2B Commerce
-**Scope**: Full B2B commerce platform replacement with integration to Oracle ERP
+**Source Platform**: {Platform Source}
+**Target Platform**: {Platform Target}
+**Scope**: Full platform replacement with integration to the ERP
 ```
 
 ## Step 3b — Source-platform entity page
 
-Path: `wiki/clients/{company-slug}/entities/{platform-source-slug}.md`. Slug derivation: e.g. `MerchTank → merchtank`, `Shopify Plus → shopify-plus`.
+Path: `wiki/{group}/{company-slug}/entities/{platform-source-slug}.md`. Slug derivation: e.g. `Shopify Plus → shopify-plus`.
 
 Frontmatter:
 
@@ -46,7 +47,8 @@ type: entity
 client: {company-slug}
 entity-type: source-platform
 status: active
-date: {today}
+created: {today}
+updated: {today}
 related:
   - {company-slug}
 ---
@@ -60,15 +62,15 @@ Body must cover: brief platform description, current version/edition (if known),
 
 Read the file (supports `.txt`, `.md`, `.pdf`, transcripts). Extract:
 
-- **Mentioned features** — e.g. "We use MerchTank for budgets, quotes, pricing..."
-- **Integrations** — e.g. "MerchTank syncs with Oracle ERP, Salesforce CRM..."
+- **Mentioned features** — e.g. "We use the current platform for budgets, quotes, pricing..."
+- **Integrations** — e.g. "The current platform syncs with the ERP and the CRM..."
 - **Known gaps** — e.g. "We can't do dynamic discounts", "No subscription support..."
 - **Open questions** — e.g. "How will payment tokenization work?", "Multi-currency scope?"
 - **Business context** — company size, locations, key business drivers.
 
 ### 4b. Feature stub template
 
-Path: `wiki/clients/{company-slug}/features/{feature-slug}.md`. Template: `wiki/_schema/TEMPLATES.md` → Feature.
+Path: `wiki/{group}/{company-slug}/features/{feature-slug}.md`. Template: `wiki/_schema/templates/feature.md`.
 
 ```yaml
 ---
@@ -76,8 +78,9 @@ title: "{Feature Name}"
 type: feature
 client: {company-slug}
 status: stub
-source: initial-context
-date: {today}
+sources: [{initial-context}]
+created: {today}
+updated: {today}
 related:
   - {source-platform-slug}
 ---
@@ -101,7 +104,7 @@ Stub created from initial context document. Details to be populated from discove
 
 ### 4c. Integration stub template
 
-Path: `wiki/clients/{company-slug}/integrations/{integration-slug}.md`.
+Path: `wiki/{group}/{company-slug}/integrations/{integration-slug}.md`.
 
 ```yaml
 ---
@@ -109,8 +112,9 @@ title: "{System Name} Integration"
 type: integration
 client: {company-slug}
 status: stub
-source: initial-context
-date: {today}
+sources: [{initial-context}]
+created: {today}
+updated: {today}
 related:
   - {system-entity}
 ---
@@ -126,7 +130,7 @@ Integration between [Source Platform] and [System Name] for [purpose, if known].
 [Description of what data flows where, if mentioned]
 
 ## Migration Impact
-[Implications for the Salesforce migration, if known]
+[Implications for the migration to {Platform Target}, if known]
 
 ## Status
 Stub created from initial context. Details to be extracted in discovery phase.
@@ -134,7 +138,7 @@ Stub created from initial context. Details to be extracted in discovery phase.
 
 ### 4d. Question stub template
 
-Path: `wiki/clients/{company-slug}/questions/{question-slug}.md`.
+Path: `wiki/{group}/{company-slug}/questions/{question-slug}.md`.
 
 ```yaml
 ---
@@ -143,8 +147,9 @@ type: question
 client: {company-slug}
 status: open
 priority: P2
-source: initial-context
-date: {today}
+sources: [{initial-context}]
+created: {today}
+updated: {today}
 related: []
 ---
 ```

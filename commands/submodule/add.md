@@ -2,8 +2,11 @@
 name: "submodule:add"
 description: "Add a remote repository as a Git submodule of the current repo. Wires .gitmodules, pins the commit, and commits the result."
 argument-hint: "<url> [<path>] [--branch <branch>] [--name <name>] [--force]"
-allowed-tools: Skill(git-submodules), AskUserQuestion, Bash, Read, Write, Edit, Glob, Grep
+allowed-tools: AskUserQuestion, Bash, Read, Write, Edit, Glob, Grep
+disable-model-invocation: true
 ---
+
+> **How this command loads its skill.** `git-submodules` is manual-only (`disable-model-invocation: true`), so do not call it through the Skill tool. Read `${CLAUDE_PLUGIN_ROOT}/skills/git-submodules/SKILL.md` and follow it. Paths inside a SKILL.md are relative to its own directory, and the arguments it expects are the ones given to this command.
 
 # Submodule Add
 
@@ -27,7 +30,7 @@ If `$ARGUMENTS` is empty, the skill collects the URL and path interactively.
 
 ## Process
 
-Invoke the `git-submodules` skill with `mode: add` and forward `$ARGUMENTS`.
+Follow the `git-submodules` skill (loaded as described above) with `mode: add` and forward `$ARGUMENTS`.
 
 The skill will:
 

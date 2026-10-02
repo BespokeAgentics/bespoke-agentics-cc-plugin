@@ -2,8 +2,11 @@
 name: "knowledge:promote"
 description: "Bridge confirmed rules into the wiki: turn each rule that has no wiki page into a proper ADR-style wiki page (single source of truth), cross-linked back to the rule. Also handles manual promote/demote overrides."
 argument-hint: "[--domain <slug>] [--demote <rule-id>] [--rule <rule-id>]"
-allowed-tools: Skill(knowledge-loop), Agent, AskUserQuestion, Read, Write, Edit, Glob, Grep
+allowed-tools: Agent, AskUserQuestion, Read, Write, Edit, Glob, Grep
+disable-model-invocation: true
 ---
+
+> **How this command loads its skill.** `knowledge-loop` is manual-only (`disable-model-invocation: true`), so do not call it through the Skill tool. Read `${CLAUDE_PLUGIN_ROOT}/skills/knowledge-loop/SKILL.md` and follow it. Paths inside a SKILL.md are relative to its own directory, and the arguments it expects are the ones given to this command.
 
 # Knowledge Loop — Promote (the wiki bridge)
 
@@ -26,12 +29,13 @@ Parse from `$ARGUMENTS`:
 
 ## Process
 
-Invoke the `knowledge-loop` skill with `mode: promote`. The skill:
+Follow the `knowledge-loop` skill (loaded as described above) with `mode: promote`. The skill:
 
 1. **Finds candidates** — rules with an empty `wiki-page:` (plus any named via `--rule`).
 2. **Creates/updates the wiki page** — default mapping is an **ADR-style `type: decision`** page
    (`status: approved`), located by domain (a client → that client's `decisions/`; otherwise
-   `wiki/verndale/playbooks/`). It confirms the location/type via `AskUserQuestion` on the first
+   `wiki/{org}/playbooks/`, where `{org}` is the internal-section folder chosen at `/wiki:init` —
+   ask if the vault has none). It confirms the location/type via `AskUserQuestion` on the first
    promotion of a run.
 3. **Cross-links** — sets the rule's `wiki-page:` to the new page and adds the rule to the page's
    `related:` (bidirectional).

@@ -13,6 +13,7 @@ description: >-
   the existing @foundry/ui library is in play — design-zip-to-library builds a library
   from scratch; THIS one starts from the base and only adds what's missing. Also governs
   reuse-first when asked to "add a component" to a Foundry project.
+disable-model-invocation: true
 ---
 
 **Invocation.** `/foundry-project --name <app> [--design "<path-to-design.zip>"] [--out <dir>]`.
@@ -120,7 +121,10 @@ after.
 ## Promote-back (keep the base the source of truth)
 
 If you improve or add a **canon** component in a product, it belongs in `foundry-base`,
-not a fork: commit it there (or open a PR) so every Foundry app inherits it. Product
+not a fork, so every Foundry app inherits it. Never commit unprompted — stage nothing; tell
+the user which canon files to commit in `foundry-base` with a suggested message (e.g.
+`feat(canon): improve <Component>`), and offer to commit it (or open a PR) — do so only on
+their explicit yes. Product
 sections (`apps/<name>/`) stay in the product. The index's `provenance` field tracks
 lineage so future library merges can dedup against canon.
 

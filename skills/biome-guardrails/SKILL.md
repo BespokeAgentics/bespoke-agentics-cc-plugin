@@ -1,6 +1,7 @@
 ---
 name: biome-guardrails
 description: "Install Biome.js + sidecar ESLint as strict AI-code guardrails in a JS/TS project, OR audit an existing codebase for weak-typing debt and install ratchet-based enforcement that blocks new debt without breaking the build. Use for: 'add Biome', 'set up linting', 'enforce code quality', 'lint guardrails', 'audit typing', 'find any usage', 'no-explicit-any', 'type ratchet', 'harden types', 'stop huge files', 'file size limit', or when weak types / oversized files slipped through review and the user wants it to never happen again."
+disable-model-invocation: true
 ---
 
 <objective>
@@ -190,6 +191,8 @@ After writing, verify the config is valid:
 {PMX} biome check --max-diagnostics=0 biome.json
 ```
 
+The reference config targets the Biome 1.9 schema (`$schema` in the file). If the installed Biome major is newer, first run `{PMX} biome migrate --write` to convert the config, then re-run the check. A rule the newer major dropped (e.g. `noConsoleLog`) that migration doesn't map surfaces as an unknown-rule error, handled below.
+
 If the check command fails with an unknown rule error, read the error output and remove the offending rule from `biome.json`. Report the removed rule to the user — this can happen when the installed Biome version does not support a nursery rule.
 
 </phase_3>
@@ -275,7 +278,7 @@ Read the template at `templates/lint-on-edit-hook.sh`. This hook runs `biome che
 
 Write the script to `.claude/scripts/lint-on-edit.sh` and make it executable (`chmod +x`).
 
-**IMPORTANT:** Before writing the lint-on-edit script, replace the hardcoded `npx` on lines 12 and 21 with the detected `PMX` value from Phase 1. This ensures the hook uses the correct package manager exec command (e.g., `bunx biome check` for bun projects).
+Before writing the lint-on-edit script, replace the `__PMX__` placeholder with the detected `PMX` value from Phase 1, so the hook uses the project's package manager exec command (e.g. `bunx` for bun projects).
 
 **6c. Register Hooks**
 
@@ -291,7 +294,7 @@ Read `.claude/settings.local.json` if it exists. Add or merge the hook entries:
           {
             "type": "command",
             "command": "bash .claude/scripts/protect-lint-config.sh",
-            "timeout": 5000
+            "timeout": 5
           }
         ]
       }
@@ -303,7 +306,7 @@ Read `.claude/settings.local.json` if it exists. Add or merge the hook entries:
           {
             "type": "command",
             "command": "bash .claude/scripts/lint-on-edit.sh",
-            "timeout": 15000
+            "timeout": 15
           }
         ]
       }

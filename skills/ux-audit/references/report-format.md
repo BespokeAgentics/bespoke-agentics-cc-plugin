@@ -1,7 +1,7 @@
 # Report Format Reference
 
 Generate a self-contained HTML report. All styles are inline — no external dependencies.
-Save to `/mnt/user-data/outputs/ux-audit-report.html`.
+Save to `./ux-audit-report.html` (or the path the user gives).
 
 ---
 

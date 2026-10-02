@@ -1,6 +1,6 @@
 # Client README template
 
-Write at `wiki/clients/{company-slug}/README.md`.
+Write at `wiki/{group}/{company-slug}/README.md` (`{group}` = the grouping folder in `_schema/SCHEMA.md`).
 
 ```markdown
 # {Company Name}
@@ -16,9 +16,9 @@ Write at `wiki/clients/{company-slug}/README.md`.
 
 ## Scope
 
-Migrating from **{Platform Source}** to **{Platform Target}** B2B commerce platform.
+Migrating from **{Platform Source}** to **{Platform Target}**.
 
-[If platform-target differs from default, note the rationale here.]
+[If platform-target differs from the vault's default target platform (per `_schema/SCHEMA.md`), note the rationale here.]
 
 ## Workspace Structure
 
@@ -60,14 +60,10 @@ See the Recommended Next Steps section below.
 
 ### Step 1 — Analyze a Discovery Meeting
 
-```bash
-/verndale:migration-pipeline '{meeting-dir}' '{company}' '{meeting-label}'
-```
-
-Example:
+Run the project's meeting-analysis pipeline on the recording or transcript so it writes markdown analysis files into a meeting folder — for example:
 
 ```bash
-/verndale:migration-pipeline 'BostonBeerCompany/meetings/2026-03-15/' 'Boston Beer Company' 'discovery-01'
+/bespoke-agentics:video-to-deliverables 'Acme/meetings/2026-03-15/recording.mp4' 'acme-corp' 'discovery-01' --profile meeting
 ```
 
 ### Step 2 — Ingest Pipeline Outputs
@@ -82,12 +78,12 @@ Example:
 /wiki:ingest-document '{company}' '{document-path}' '{type}'
 ```
 
-Types: `spec`, `rfp`, `email-thread`, `requirements`, `architecture`, etc.
+Types: `email`, `pdf`, `spec`, `slack`, `other`.
 
 Example:
 
 ```bash
-/wiki:ingest-document 'Boston Beer Company' 'Documents/BBC_Requirements.pdf' 'spec'
+/wiki:ingest-document 'acme-corp' 'Documents/Acme_Requirements.pdf' 'spec'
 ```
 
 ### Step 4 — Validate the Wiki
@@ -102,7 +98,7 @@ Reports: missing cross-references, conflicting information, stale or incomplete 
 
 **Account Lead**: [TBD — update after kickoff]
 **Technical Lead**: [TBD — update after kickoff]
-**Verndale Team**: [Assign team members as they join]
+**{Org Name} Team**: [Assign team members as they join] _(org section per `_schema/SCHEMA.md`; omit this line if the vault has none)_
 
 ## Key Decisions
 

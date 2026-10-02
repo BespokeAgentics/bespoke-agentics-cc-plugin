@@ -5,7 +5,7 @@
 For each entity (feature, gap, decision) found in Confluence:
 
 1. Normalize the name to a wiki slug (e.g., "Budget Management" → `budget-management`).
-2. Find the wiki page: `wiki/clients/{company}/{type}/{slug}.md`.
+2. Find the wiki page: `wiki/{group}/{company}/{type}/{slug}.md` (`{group}` per `_schema/SCHEMA.md`).
 3. Categorize the match:
    - **Exact** — wiki and Confluence both present, same entity.
    - **Partial** — Confluence has it, wiki page missing or named differently.

@@ -5,7 +5,7 @@ Deliverable profile that reverse-engineers a technical video into an installable
 Originally designed for technical talks and tutorials (e.g., a Neo4j graph-RAG walkthrough), but also supports conceptual / architecture talks (doc-only skills) and product demos (setup / integration skills derived from UI + narration).
 
 ## Primary Deliverable
-`{PROJECT_DIR}/generated-plugin-{PLUGIN_SLUG}/plugin.json`
+`{PROJECT_DIR}/generated-plugin-{PLUGIN_SLUG}/.claude-plugin/plugin.json`
 
 `PLUGIN_SLUG` is set during the Wave 2 interview (defaults to `PROJECT_SLUG-{LABEL}`).
 
@@ -32,7 +32,7 @@ Wave 1 and Wave 4 are run entirely by subagents. Wave 2 is conducted by the **pa
 
 ## Final Deliverables (generated plugin)
 All under `{PLUGIN_DIR} = {PROJECT_DIR}/generated-plugin-{PLUGIN_SLUG}/`:
-- `{PLUGIN_DIR}/plugin.json` — plugin manifest (primary)
+- `{PLUGIN_DIR}/.claude-plugin/plugin.json` — plugin manifest (primary; Claude Code reads the manifest from `.claude-plugin/`)
 - `{PLUGIN_DIR}/README.md` — plugin overview, install instructions, source video citation
 - `{PLUGIN_DIR}/skills/{skill-name}/SKILL.md` — one per user-selected skill
 - `{PLUGIN_DIR}/skills/{skill-name}/scripts/*` — executable scripts (when user promoted artifacts)
@@ -312,7 +312,7 @@ Read `{DOCS_DIR}/interview-answers.json` and launch the following agents in para
 
 `PLUGIN_DIR = {PROJECT_DIR}/generated-plugin-{plugin.slug}`
 
-Create `{PLUGIN_DIR}/` and its subdirectories (`skills/`, `commands/`, `agents/`, `references/`) before launching.
+Create `{PLUGIN_DIR}/` and its subdirectories (`.claude-plugin/`, `skills/`, `commands/`, `agents/`, `references/`) before launching.
 
 ### Templates
 
@@ -339,7 +339,7 @@ Prompt: |
   Read: {DOCS_DIR}/interview-answers.json
 
   Produce:
-  1. {PLUGIN_DIR}/plugin.json — plugin manifest. Use this shape:
+  1. {PLUGIN_DIR}/.claude-plugin/plugin.json — plugin manifest (Claude Code reads it from `.claude-plugin/`). Use this shape:
      {
        "name": "<plugin.slug>",
        "version": "<plugin.version>",
@@ -516,13 +516,13 @@ Prompt: |
   Validate the generated plugin at {PLUGIN_DIR} for schema correctness.
 
   Checks:
-  1. {PLUGIN_DIR}/plugin.json parses as valid JSON and has required fields: name, version, description, skills.
+  1. {PLUGIN_DIR}/.claude-plugin/plugin.json parses as valid JSON and has required fields: name, version, description, skills.
   2. Every {PLUGIN_DIR}/skills/*/SKILL.md has parseable YAML frontmatter with `name` and `description` fields.
   3. Every SKILL.md `name` field matches the directory it lives in.
   4. Every command file in {PLUGIN_DIR}/commands/ has valid frontmatter and the command name matches {plugin.slug}:{x}.
   5. Every referenced script path (in SKILL.md body) actually exists under scripts/.
   6. Every referenced references/*.md actually exists.
-  7. No unsubstituted placeholders of the form {variable-name} or ${CLAUDE_PLUGIN_ROOT} embedded in content that should have been replaced.
+  7. No unsubstituted placeholders of the form {variable-name}. `${CLAUDE_PLUGIN_ROOT}` in script references is expected and correct — do not flag it.
 
   Output findings to {DOCS_DIR}/skill-factory-validation.md under a "## Schema Validation" section. Use:
     ✓ check passed
@@ -596,7 +596,7 @@ Prompt: |
   For each SKILL.md, evaluate:
   - Description triggers: does the description include natural-language phrases a user would actually say? Are trigger phrases concrete and non-overlapping with other skills in the plugin?
   - Structure: is the body well-organized (objective → prerequisites → procedure → validation)?
-  - Naming: does the `name` field match plugin conventions (namespace:slug)?
+  - Naming: does each `name` match its directory with no namespace prefix (the plugin supplies the namespace)?
   - Argument handling: if the skill takes arguments, are they documented?
   - Clarity: are steps imperative and actionable? Are frame references preserved but not overwhelming?
 

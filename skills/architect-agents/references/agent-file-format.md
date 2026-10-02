@@ -39,25 +39,25 @@ You own: {list of owned paths}
 - Never use `~` or relative paths
 - "You own:" lists the specific directories this agent is responsible for
 
-### `<constraints>` (required, minimum 5)
+### `<constraints>` (required, 3–7 rules)
 
 ```xml
 <constraints>
-- **ALWAYS read existing code first.** Check {paths} before creating anything new.
-- **NEVER {anti-pattern}.** {explanation of why}.
-- **ALWAYS {required practice}.** {explanation}.
-- **ALWAYS write tests** using {test framework} for every {testable unit}.
+- Read existing code in {paths} before creating anything new.
+- {Project-specific rule} — {reason}.
+- {Project-specific rule} — {reason}.
+- Write tests using {test framework} for every {testable unit}.
 - Run {validation commands} before reporting completion.
 </constraints>
 ```
 
 **Rules:**
-- Minimum 5 constraints
-- Use **NEVER** and **ALWAYS** bold formatting
-- First constraint is always "read existing code first" with specific paths
-- Last constraint is always "run validation before reporting"
+- 3–7 constraints, each a concrete project rule plus its reason (e.g. "Use the client in `src/lib/api.ts`, not `fetch` — it carries auth and retries")
+- State rules plainly; reserve NEVER for hard safety or data constraints
+- First constraint: read existing code first, naming the paths
+- Last constraint: run validation before reporting
 - Middle constraints come from: CLAUDE.md rules, AGENTS.md guidelines, framework-specific anti-patterns, domain-specific requirements
-- Be specific: "NEVER use localStorage" not "NEVER use bad patterns"
+- Be specific: "Don't use localStorage — session data must survive a new device" not "Avoid bad patterns"
 
 ### `<architecture>` (required)
 

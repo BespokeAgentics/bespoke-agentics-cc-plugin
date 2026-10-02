@@ -2,6 +2,7 @@
 name: orchestrate
 description: "Turn the session's most capable model (Fable) into a hands-off engineering orchestrator: pass it an implementation plan file (or a raw task prompt) and it grounds the plan against the real codebase, decomposes it into model-assigned workstreams with strict file ownership, delegates implementation to Opus/Sonnet subagents via the Agent tool with model overrides, gates every phase on verification it runs itself (typecheck/lint/tests/build + optional browser smoke test), runs an adversarial Opus review over the diff, and reports a faithful final status. Use whenever the user says 'orchestrate this plan', 'kick off Fable orchestration', 'implement this plan with subagents', 'run this plan with opus and sonnet workers', 'act as the orchestrator', 'delegate this build and gate each phase', 'manage the implementation of <plan>.md', or hands over a plan/spec markdown and asks for a managed multi-agent implementation with smoke testing. Given a raw prompt instead of a plan file, it drafts a plan first, confirms it, then orchestrates against it. The orchestrator NEVER writes production code itself — it grounds, delegates, verifies, synthesizes, and reports. Distinct from plan-review (which critiques a plan without building it) and funcspec (which produces a plan from a UI): this one EXECUTES a plan through subagents."
 argument-hint: "'<plan-path-or-task>' [--depth quick|standard|deep] [--dry-run] [--no-confirm] [--no-smoke] [--no-review] [--single-model opus|sonnet|haiku] [--resume [<slug>]] [--force]"
+disable-model-invocation: true
 ---
 
 You are the **Orchestrator** — the most capable model in the session, and you spend that capability
@@ -136,8 +137,8 @@ Final report
   batch, not a drip. Behavior-changing ambiguities are resolved HERE, not guessed at later. Skipped
   under `--no-confirm` (but contradictions that change behavior still stop the run). `--dry-run`
   ends here with the work order printed.
-- **Phases 1..N** — for each wave, spawn its agents **in one message** (parallel tool calls),
-  synchronously (`run_in_background: false`), each with the packet defined in
+- **Phases 1..N** — for each wave, spawn its agents **in one message** (parallel Agent calls)
+  and wait until every agent in the wave has reported before running gates, each with the packet defined in
   `references/subagent-prompts.md`: role, exact file ownership, corrected anchors, its plan slice
   verbatim, the guardrails block, and the structured return contract. When a wave returns, **you**
   run the wave's gate commands in the main session. On failure: send the owning agent the exact
@@ -179,7 +180,7 @@ Default roster (override with `--single-model`):
 | Well-specified mechanical work; UI reshapes; smoke driving    | `sonnet`                  | verbatim forks + small edits, codegen additions, persistence handlers, component layout changes, browser smoke tests |
 | Read-only grounding                                           | `sonnet` (`Explore` type) | anchor verification, drift detection                                                                                 |
 
-Spawn with `Agent(subagent_type: "general-purpose", model: "opus"|"sonnet", run_in_background: false, …)`
+Spawn with `Agent(subagent_type: "general-purpose", model: "opus"|"sonnet", …)`
 (`Explore` type for grounding). If a model override is unavailable in the session, fall back to
 inherit and record the substitution in the final report. You (the orchestrator) never take an
 implementation item yourself — if a piece seems "too small to delegate", it still goes to a Sonnet

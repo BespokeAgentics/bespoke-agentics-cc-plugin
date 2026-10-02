@@ -5,7 +5,7 @@ description: >-
   backlog, or gap-register) from the validated synthesis. Launched in parallel by the
   funcspec skill in Phase 6 (ultracode mode) — one agent per document. Writes only
   validated content; never invents requirements; never edits synthesis state.
-allowed-tools: Read, Write, Glob, Grep
+tools: Read, Write, Glob, Grep
 ---
 
 # Deliverable Writer

@@ -16,6 +16,7 @@ description: >
   Stale tests, mocks, fixtures, and snapshots of removed code are swept with it; a failing test is
   never deleted to make gates green. Every removal is evidence-cited, backed up under
   .dead-code-sweep/ with one-command restore, and reported honestly. Never commits.
+disable-model-invocation: true
 ---
 
 # Dead-Code Sweep

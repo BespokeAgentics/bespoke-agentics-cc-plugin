@@ -2,6 +2,7 @@
 name: extract-video-frames
 description: "Extract frames + timestamped audio segments from video files (GIF, MP4, MOV) at a given interval, with a manifest.json. Use for video analysis, transcription prep, or visual review."
 argument-hint: [video-path] [interval-seconds] [output-dir]
+disable-model-invocation: true
 ---
 
 <objective>

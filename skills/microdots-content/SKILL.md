@@ -1,6 +1,7 @@
 ---
 name: microdots-content
 description: Research, write, and publish content mined from a MicroDots workspace's own git history and wiki — work-recap blog posts, changelogs/release notes, feature deep-dives, and social short-form — written in the brand voice with Mermaid diagrams where they earn their place, published as self-contained branded HTML. Use whenever the user asks to "write a blog post", "post about what we shipped", "recap this week's work", "write the changelog" or "release notes", "deep-dive on <MicroDot or feature>", "write a social post/thread about", or any request to turn repo history, a shipped plan, or a feature into publishable content — even when no format is named.
+disable-model-invocation: true
 ---
 
 # MicroDots content generation

@@ -2,12 +2,15 @@
 name: "db:init"
 description: "Build a queryable SQLite (and optionally Cloudflare D1) database for this project — schema from the wiki when one exists, otherwise from an interview + codebase scan — and install the guarded query CLI, SessionStart sync hook, local MCP server and the DB-first mandate in CLAUDE.md. Idempotent."
 argument-hint: "[--mode local|d1|both] [--slug <slug>] [--no-raw] [--exclude-key <key>]... [--markdown <type>=<dir>]... [--tabular <path>]... [--force]"
-allowed-tools: Skill(project-db), Agent, AskUserQuestion, Bash, Read, Write, Edit, Glob, Grep
+allowed-tools: Agent, AskUserQuestion, Bash, Read, Write, Edit, Glob, Grep
+disable-model-invocation: true
 ---
+
+> **How this command loads its skill.** `project-db` is manual-only (`disable-model-invocation: true`), so do not call it through the Skill tool. Read `${CLAUDE_PLUGIN_ROOT}/skills/project-db/SKILL.md` and follow it. Paths inside a SKILL.md are relative to its own directory, and the arguments it expects are the ones given to this command.
 
 # Project DB — Init
 
-Invoke the `project-db` skill with `mode: init` and forward:
+Follow the `project-db` skill (loaded as described above) with `mode: init` and forward:
 
 ```
 $ARGUMENTS

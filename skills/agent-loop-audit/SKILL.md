@@ -7,8 +7,8 @@ description: >
   payload-before-listener races, idle treated as done instead of branching on stop_reason,
   unanswered tool-approval requests (server-side deadlock), undifferentiated errors, and missing
   interrupt+redirect steering. Tiered rules: a stack-agnostic core (raw SSE/WebSocket, any vendor)
-  plus an Anthropic pack (user.message/user.interrupt, session.status.idle, stop_reason,
-  agent/session/fan event families). TS/JS + Python. Severity-rated file:line report,
+  plus an Anthropic pack (user.message/user.interrupt, session.status_idle, stop_reason,
+  agent/session/span event families). TS/JS + Python. Severity-rated file:line report,
   interview-gated fixes. Use when the user says "audit my AI integration", "my agent hangs", "app
   stalls waiting for the AI", "why does my session deadlock", "check my stop_reason handling", or
   invokes /bespoke-agentics:agent-loop-audit. Complements ai-transparency and ai-waiting-ux.
@@ -19,6 +19,7 @@ args:
   - name: path
     description: "Optional path to scope the audit (a file, directory, or service). Defaults to every agent-loop surface discovered in Phase 1."
     required: false
+disable-model-invocation: true
 ---
 
 <role>
@@ -48,13 +49,18 @@ The rule catalog lives in `references/rules.md` (read it before auditing). It is
   streaming. Rule families: `EL*` (event-loop lifecycle), `SR*` (stop-reason & state semantics),
   `RS*` (resilience & steering), `OB*` (observability & protocol hygiene).
 - **Anthropic pack** — the same rules bound to the concrete Anthropic managed-agent vocabulary:
-  the **five fixed input event types** (chiefly `user.message` to initiate and `user.interrupt` to
-  steer), the **three output-event families** (agent events narrating reasoning/tool calls, session
-  events for system status/control flow, fan events for timing/token observability),
-  `session.status.idle`, and the `stop_reason` payload field whose two values — successful
-  completion vs **requires-action** (blocked awaiting client approval for tool calls, with the
-  pending event IDs nested inside) — determine what the client must do next. Activates when Phase 0
-  detects an Anthropic SDK.
+  the **six input event types** (`user.message` to initiate, `user.interrupt` to steer,
+  `user.tool_confirmation` and `user.custom_tool_result` to answer a blocked session,
+  `user.define_outcome`, `system.message`), the **three output-event families** (agent events
+  narrating reasoning/tool calls, session events for system status/control flow, span events —
+  `span.model_request_start` / `span.model_request_end` with `model_usage` — for timing/token
+  observability), `session.status_idle`, and its `stop_reason` object, whose `type` sets the
+  client's next move: `end_turn` (turn finished — an interrupted turn reports this too),
+  `requires_action` (blocked on the client: `stop_reason.event_ids` lists the
+  `agent.tool_use`/`agent.mcp_tool_use` events awaiting `user.tool_confirmation` and the
+  `agent.custom_tool_use` events awaiting `user.custom_tool_result`), or `budget_reached` (paused
+  at the session budget; only settle events are accepted). Activates when Phase 0 detects an
+  Anthropic SDK.
 
 Correct-pattern reference implementations (TypeScript and Python) live in
 `references/patterns.md`. Fixes must follow those shapes, adapted to the project's conventions —
@@ -67,7 +73,7 @@ never pasted verbatim over existing style.
    the initial events (a race condition, and the single most common startup failure).
 2. Send the initial task payload only after listener confirmation.
 3. Loop over incoming event packets, decoding by event family.
-4. On **every** idle event, branch on the stop reason: completed → finalize; requires-action →
+4. On **every** idle event, branch on the stop reason: end_turn → finalize; requires-action →
    answer the pending tool-call approvals (a _client_ responsibility — skipping it deadlocks the
    server-side process indefinitely); otherwise → interrupt and redirect.
 5. Error handlers that differentiate transient network breaks (reconnect/resume) from hard API

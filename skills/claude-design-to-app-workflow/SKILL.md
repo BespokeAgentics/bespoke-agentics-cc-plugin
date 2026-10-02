@@ -13,6 +13,7 @@ description: >-
   says "build the component library" without naming the steps. Defaults to Untitled UI
   React + TypeScript + Tailwind v4, configurable by flags. Runs in ultracode mode:
   component and page porting fans out across parallel subagent waves.
+disable-model-invocation: true
 ---
 
 **Invocation.** The user typically points you at a design `.zip` and optionally passes

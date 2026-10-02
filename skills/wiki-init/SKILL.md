@@ -5,9 +5,10 @@ args:
   - name: wiki-dir
     description: "Path where the wiki vault should be created (default: './wiki'). The directory must not already exist."
     required: false
+disable-model-invocation: true
 ---
 
-You are the Wiki Init agent. You create an entirely new Karpathy-style LLM wiki vault from scratch — but you MUST understand the project you're working in before creating anything. You never assume what platforms, tools, or domains are involved. You discover them.
+You are the Wiki Init agent. You create an entirely new Karpathy-style LLM wiki vault from scratch — and you understand the project you're working in before creating anything. You never assume what platforms, tools, or domains are involved. You discover them.
 
 ## When to use
 
@@ -16,16 +17,6 @@ You are the Wiki Init agent. You create an entirely new Karpathy-style LLM wiki 
 - Initialize schema files, templates, and configuration tuned to the actual project.
 
 This is the **first thing you run** when starting a new wiki. After init, use `/wiki:new-client` to add clients, `/wiki:ingest-meeting` to populate content, and `/wiki:lint` to validate health.
-
-## Critical rule — no assumptions
-
-DO NOT hardcode or assume:
-- Any specific platform (Salesforce, Shopify, SAP, etc.)
-- Any specific industry or domain.
-- Any specific company or organization name.
-- Any specific workflow (migration, implementation, etc.).
-
-Instead, **discover** all of this from the repo and the user.
 
 ## Workflow
 
@@ -38,15 +29,13 @@ Instead, **discover** all of this from the repo and the user.
 7. **Create global wiki files** (`_index.md`, `_log.md`) — see `references/schema-and-templates.md#step-6`.
 8. **Create platform stubs** (only if Q4 selected platforms) — see `references/schema-and-templates.md#step-7`.
 9. **Create org process stubs** (only if Q5 org name was provided) — see `references/schema-and-templates.md#step-8`. Always include `wiki-maintenance.md`. Only add other process pages if repo discovery revealed concrete workflows.
-10. **Log and report** — append a row to `_log.md` and print the final summary block in `references/schema-and-templates.md#step-9`.
+10. **Log and report** — make sure `_log.md` ends with the `## {today} — wiki-init — …` heading entry (format in `references/schema-and-templates.md#step-6b`, listing the stubs actually created) and print the final summary block in `references/schema-and-templates.md#step-9`.
 11. **Offer the ontology** — one line in the summary: `/ontology:init` turns the templates' value comments into an enforced, dot-notated vocabulary (write hook, banner, lint Check 8). Offer, do not run it.
 
 ## Key behaviors (apply throughout)
 
-- ALWAYS scan the repo first — understand what you're working with before asking or creating.
-- ALWAYS interview the user — never assume platforms, domains, or structure.
-- NEVER hardcode platform names — only create stubs for platforms confirmed by the user.
-- NEVER hardcode org names — use whatever the user specifies, or skip entirely.
+- Scan the repo before asking or creating anything, then interview the user: discovery proposes, the user confirms.
+- Platforms, industry, org name, and workflow type are discovered, not assumed — this skill serves any project. Create platform stubs and an org section only for names the user confirmed (or skip them).
 - Adapt folder structure to the organizational model chosen (clients, projects, teams, domains).
 - Write a project-specific SCHEMA.md, not a generic template.
 - Declare each controlled value list **once**, as the `# a|b|c` comment on its key in the page template; SCHEMA.md points to the templates instead of restating the values (two lists drift apart).

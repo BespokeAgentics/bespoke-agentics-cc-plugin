@@ -2,8 +2,11 @@
 name: "hook:inspect"
 description: "Audit existing Claude Code SessionStart / SessionEnd / Stop hooks. Reports configured hooks, missing timeouts, broken script references, and inline secret risks."
 argument-hint: ""
-allowed-tools: Skill(session-hooks), Read, Glob, Grep, Bash
+allowed-tools: Read, Glob, Grep, Bash
+disable-model-invocation: true
 ---
+
+> **How this command loads its skill.** `session-hooks` is manual-only (`disable-model-invocation: true`), so do not call it through the Skill tool. Read `${CLAUDE_PLUGIN_ROOT}/skills/session-hooks/SKILL.md` and follow it. Paths inside a SKILL.md are relative to its own directory, and the arguments it expects are the ones given to this command.
 
 # Hook Inspect
 
@@ -11,7 +14,7 @@ Read the current `.claude/settings.json` and `.claude/settings.local.json` files
 
 ## Process
 
-Invoke the `session-hooks` skill with `mode: inspect`.
+Follow the `session-hooks` skill (loaded as described above) with `mode: inspect`.
 
 The skill will:
 

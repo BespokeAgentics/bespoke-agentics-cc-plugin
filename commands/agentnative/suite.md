@@ -2,8 +2,11 @@
 name: "agentnative:suite"
 description: "Orchestrate the Agent-Native Engineering suite end to end: probe the repo across all six dimensions (CI speed, hermetic deploy, sim data, proof-of-work, label-dispatched agents, chore crons), write a 🟢/🟡/🔴 readiness scorecard with evidence, then — gated behind an interview that picks dimensions, modes, and budget — dispatch the individual skills in dependency order (fast-ci → hermetic-deploy → sim-data → proof-of-work → issue-to-agent → chore-crons), persisting state so an interrupted or repeated run skips what already landed. Use when the user says 'make this repo agent-native', 'set up the whole agent suite', 'where do we stand on agent readiness', or wants the six skills sequenced instead of run piecemeal."
 argument-hint: "[mode: assess|run] [dimensions: 'fast-ci,hermetic-deploy,...'] [--resume]"
-allowed-tools: Skill(fast-ci), Skill(hermetic-deploy), Skill(sim-data), Skill(proof-of-work), Skill(issue-to-agent), Skill(chore-crons), Agent, AskUserQuestion, Bash, Read, Write, Edit, Glob, Grep
+allowed-tools: Agent, AskUserQuestion, Bash, Read, Write, Edit, Glob, Grep
+disable-model-invocation: true
 ---
+
+> **How this command loads the six skills.** `fast-ci`, `hermetic-deploy`, `sim-data`, `proof-of-work`, `issue-to-agent` and `chore-crons` are manual-only (`disable-model-invocation: true`), so do not call them through the Skill tool. When a dimension's turn comes in Phase C — not before — read `${CLAUDE_PLUGIN_ROOT}/skills/<dimension>/SKILL.md` and follow it. Paths inside a SKILL.md are relative to its own directory.
 
 # Agent-Native Suite
 
@@ -85,8 +88,9 @@ are skipped unless the user opts in for a re-audit.
 For each selected dimension in confirmed order:
 
 1. Mark `in_progress` in the state file.
-2. Invoke the skill via its Skill tool with the chosen mode as its argument. Let the skill run
-   its own interview and quality bar — do not pre-answer its questions or suppress its gates.
+2. Load the skill — read `${CLAUDE_PLUGIN_ROOT}/skills/<dimension>/SKILL.md` and follow it, with
+   the chosen mode as its argument. Let the skill run its own interview and quality bar — do not
+   pre-answer its questions or suppress its gates.
 3. On completion: record `landed` (or `audited` for read-only modes) with the skill's report
    path and one-line outcome in the state file and scorecard.
 4. On failure or a skill's own verification refusing to pass: record `blocked` with the reason,

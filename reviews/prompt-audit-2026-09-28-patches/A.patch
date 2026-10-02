@@ -1,0 +1,228 @@
+diff --color -ruN a/CLAUDE.md b/CLAUDE.md
+--- a/CLAUDE.md	2026-09-28 11:27:41
++++ b/CLAUDE.md	2026-09-28 11:28:25
+@@ -2,7 +2,7 @@
+ 
+ ## Response Style
+ 
+-Responses to the user should be brief and specific to the request. Do not provide too much explanation. The user can request additional information if needed.
++Responses to the user should be brief and specific to the request; the user will ask for more detail when they want it.
+ 
+ ## Operating Manual (read first)
+ 
+@@ -37,7 +37,7 @@
+ | Someone asks a question about the project       | `/wiki:query '<question>' --client <slug>`                |
+ | Weekly maintenance or health check              | `/wiki:lint --scope full`                                 |
+ | Checking wiki statistics                        | `/wiki:status`                                            |
+-| Syncing with Confluence                         | Use the `wiki-confluence-reconcile` skill                 |
++| Syncing with Confluence                         | `/bespoke-agentics:wiki-confluence-reconcile`             |
+ 
+ ### When to Use Each Glean Command
+ 
+@@ -169,7 +169,7 @@
+ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+ | Execute an implementation plan (or a raw task) through a managed, gated, multi-agent build — the session model orchestrates, Opus/Sonnet subagents implement and smoke-test | `/bespoke-agentics:orchestrate '<plan-path-or-task>' [--depth quick\|standard\|deep] [--dry-run] [--no-confirm] [--no-smoke] [--no-review] [--single-model <m>] [--resume [<slug>]]` |
+ 
+-The Orchestrate command turns the session's most capable model (Fable) into a **hands-off
++The Orchestrate command turns the session model into a **hands-off
+ engineering orchestrator** that never writes production code itself. Given a plan file it first
+ **grounds** every `file:line` anchor and claim against current source via read-only agents (anchors
+ are hints, not gospel), synthesizes a **work order** — waves of work items, each with an assigned
+@@ -691,7 +691,7 @@
+ 
+ **After completing any analysis task:**
+ 
+-1. Ingest results into the wiki using the appropriate skill
++1. Ingest results with `/wiki:ingest-meeting` or `/wiki:ingest-document`
+ 2. Verify cross-references are intact
+ 3. Update `wiki/_index.md` if new pages were created
+ 4. Add a log entry to `wiki/_log.md`
+@@ -745,7 +745,7 @@
+ ## Plugin Structure
+ 
+     bespoke-agentics-plugin/
+-    ├─ skills/                        # All agent skills
++    ├─ skills/                        # One directory per skill (`ls skills/` is the full inventory; highlights below)
+     │  ├─ wiki-init/                  # Initialize a new wiki vault
+     │  ├─ wiki-scaffold-client/       # Scaffold a new client/project workspace
+     │  ├─ wiki-ingest-meeting/        # Ingest meeting pipeline outputs
+@@ -775,7 +775,7 @@
+     │  ├─ delivery-recap/            # Time window → PM/tech-lead delivery recap: deliverables, UI routes to click, backend/DB effects, confidence labels
+     │  ├─ misunderstanding/           # Wrong inference → source-quoted inference ledger → targeted interview → source correction + work disposition (user-invoked)
+     │  ├─ skill-reverse-engineer/     # Target skill → determinism audit (DS/TP/CT/VF/AM/RB/KM + host grounding) → gated refactor or hardened new version
+-    │  ├─ orchestrate/                # Plan/task → gated multi-agent implementation (Fable orchestrates, Opus/Sonnet implement)
++    │  ├─ orchestrate/                # Plan/task → gated multi-agent implementation (session model orchestrates, Opus/Sonnet implement)
+     │  ├─ workstream-orchestrate/     # Plan → kickoff contract → sequential per-WS code→validate→commit (Workflow) + hard-gate proofs
+     │  ├─ microdots-port-prototype/   # Claude Design prototype → extracted source → inferred + validated MicroDots build plan
+     │  ├─ microdots-port-app/         # Whole app → MicroDots framework port (composition proposal, gated waves)
+@@ -839,6 +839,8 @@
+     │  │  ├─ deprecate.md             # /ontology:deprecate
+     │  │  ├─ apply.md                 # /ontology:apply
+     │  │  └─ status.md                # /ontology:status
++    │  ├─ hook/                       # /hook:{add-start,add-stop,design,inspect} (session-hooks)
++    │  ├─ submodule/                  # /submodule:{add,convert,init,status} (git-submodules)
+     │  ├─ funcspec-evaluate.md        # /bespoke-agentics:funcspec-evaluate
+     │  ├─ funcspec-plan.md            # /bespoke-agentics:funcspec-plan
+     │  ├─ funcspec-status.md          # /bespoke-agentics:funcspec-status
+@@ -849,11 +851,10 @@
+     │  ├─ ux-audit-*.md               # /bespoke-agentics:ux-audit-{a11y,code,quick,visual}
+     │  └─ wiki-*.md                   # /wiki:new-client, :ingest-meeting, :ingest-document, :lint, :query, :status (flat files, namespaced by `name:`)
+     │
+-    │  NOTE: capabilities that also ship as a skill have NO command file.
+-    │  They are invoked as /bespoke-agentics:<skill-name> — see skills/ below.
+-    │  Shipping both put duplicate entries in the slash picker; the wrappers
+-    │  were folded into their skills and deleted.
+-    ├─ agents/
++    │  NOTE: command files are thin wrappers that load one skill by path
++    │  (${CLAUDE_PLUGIN_ROOT}/skills/<name>/SKILL.md). A skill with no
++    │  wrapper is invoked as /bespoke-agentics:<skill-name> — see skills/ above.
++    ├─ agents/                        # Subagent definitions (`ls agents/` is the full inventory; highlights below)
+     │  ├─ ui-frame-analyst.md         # UI screencast frame + narration analyst
+     │  ├─ prototype-screen-analyst.md # Claude Design prototype module → screen profile + theater findings
+     │  └─ wiki-pipeline.md            # Wiki orchestration agent (3 workflows)
+diff --color -ruN a/README.md b/README.md
+--- a/README.md	2026-09-28 11:27:41
++++ b/README.md	2026-09-28 11:28:01
+@@ -16,7 +16,7 @@
+ 
+ ## Skills
+ 
+-> Most primary skills are invoked directly by the Skill tool (or by Claude when it recognizes the trigger) — no slash command needed. Slash commands are kept only for skills that benefit from `argument-hint`-style invocation (the `wiki:*` and `ux-audit-*` families below).
++> Every skill and command is manual-only (`disable-model-invocation: true`): type `/bespoke-agentics:<name>` to run it. The only exceptions are the eight commands in `scripts/invocation-policy.json`, which installed mandates tell an agent to run.
+ 
+ ### Primary Skills
+ 
+@@ -39,20 +39,6 @@
+ | **ai-waiting-ux** | Audit/scaffold real-time AI waiting UX in Next.js + claude-agent-sdk projects. |
+ | **codex-prompt-builder** | Convert session context, bug reports, or feature notes into a Codex prompt. |
+ 
+-## Spec Interviewer UI
+-
+-The interactive web interface lives in `apps/spec-interviewer/`. It loads `skills/spec-elicitation/SKILL.md` as the source of truth, starts a Claude Agent SDK session, renders `AskUserQuestion` calls as structured form cards, and writes the final Markdown spec inside this repository.
+-
+-```bash
+-cd apps/spec-interviewer
+-npm install
+-npm run dev
+-```
+-
+-Open `http://127.0.0.1:4177`.
+-
+-The Agent SDK can use your local Claude Code OAuth login automatically. `ANTHROPIC_API_KEY` is optional if you prefer key-based auth.
+-
+ ### Pi Assistant
+ 
+ All Pi tasks route through the `pi-assistant` skill. Describe the task in natural language ("build a Pi extension that…", "search Pi packages for browser automation", "review my local Pi setup", "install Pi package X globally") and the skill routes to the right surface — harness customization, extension/skill/package authoring, package search, install, or setup review. See `skills/pi-assistant/SKILL.md` and its `references/` for surface-by-surface guidance.
+@@ -139,7 +125,6 @@
+ |-------|-------------|
+ | `ai-transparency` | Read-only scanner that reports AI transparency violations with file:line references |
+ | `video-to-deliverables` | Video analysis subagent for producing configurable deliverables |
+-| `workflow-analyzer` | Workflow analysis subagent for documentation and automation recommendations |
+ | `wiki-pipeline` | Orchestrator for complex multi-step wiki operations: Full Meeting Ingest, Bulk Bootstrap, and Weekly Maintenance workflows |
+ 
+ ## Hooks
+diff --color -ruN a/agents/video-to-deliverables.md b/agents/video-to-deliverables.md
+--- a/agents/video-to-deliverables.md	2026-09-28 11:27:41
++++ b/agents/video-to-deliverables.md	2026-09-28 11:28:09
+@@ -23,6 +23,7 @@
+ - Deduplicate findings across analysis chunks before synthesis
+ - All output files must use consistent PROJECT_SLUG naming
+ - Respect the deliverable profile — only produce what was requested
++- For workflow profiles: every automation recommendation names a specific implementation approach, not just "use AI"
+ </constraints>
+ 
+ <validation>
+diff --color -ruN a/agents/workflow-analyzer.md b/agents/workflow-analyzer.md
+--- a/agents/workflow-analyzer.md	2026-09-28 11:27:41
++++ b/agents/workflow-analyzer.md	1969-12-31 19:00:00
+@@ -1,46 +0,0 @@
+----
+-name: workflow-analyzer
+-description: "Workflow analysis subagent — analyzes video frames, transcripts, and documents to produce workflow documentation, application inventories, and automation recommendations for client workflows."
+-tools: Read, Write, Edit, Bash, Grep, Glob
+-model: sonnet
+----
+-
+-<role>
+-You are a Workflow Analysis Agent specializing in documenting client workflows from video recordings.
+-
+-Your capabilities include:
+-- Analyzing video frames to identify applications, screens, and user actions
+-- Processing transcripts to extract pain points, workflow rationale, and volume data
+-- Synthesizing multi-source analysis into structured workflow documentation
+-- Mapping automation opportunities to Claude/AI agent capabilities
+-- Producing client-ready deliverables with actionable recommendations
+-</role>
+-
+-<constraints>
+-- Always anonymize sensitive client data visible in frames (email addresses, account numbers, etc.)
+-- Frame analysis must use the Read tool to visually inspect PNG files
+-- Cross-reference transcript timestamps with frame timestamps when both are available
+-- Deduplicate findings across analysis chunks before synthesis
+-- Automation recommendations must include specific implementation approaches, not just "use AI"
+-- All output files must use consistent CLIENT_SLUG naming
+-</constraints>
+-
+-<validation>
+-- Verify all referenced files exist before reading
+-- Confirm output files are written successfully after each phase
+-- Cross-check application inventory against frame evidence
+-- Ensure workflow timeline is chronologically consistent
+-- Validate that every friction point has a corresponding automation recommendation where feasible
+-</validation>
+-
+-<output_format>
+-All outputs are Markdown files saved to the deliverables/ directory:
+-- frame-analysis-chunk-{N}.md — Per-chunk frame analysis
+-- application-inventory.md — Complete application/tool catalog
+-- workflow-timeline.md — Chronological workflow map
+-- friction-catalog.md — All friction points and challenges
+-- transcript-deep-analysis.md — Transcript insights (if transcript available)
+-- automation-opportunities.md — AI automation opportunity map
+-- {CLIENT_SLUG}-workflow-analysis.md — Primary deliverable (full report)
+-- {CLIENT_SLUG}-workflow-summary.md — Executive summary
+-</output_format>
+diff --color -ruN a/channels/wireframe-feedback/server.ts b/channels/wireframe-feedback/server.ts
+--- a/channels/wireframe-feedback/server.ts	2026-09-28 11:27:41
++++ b/channels/wireframe-feedback/server.ts	2026-09-28 11:28:09
+@@ -120,9 +120,13 @@
+   tools: [{
+     name: "reply",
+     description:
+-      "Reply to a wireframe browser comment; the reply renders in the page's thread panel " +
+-      "within ~2 seconds. Pass slug from the channel tag, and reply_to = fb_id to thread " +
+-      "the answer under the comment it addresses.",
++      "Reply to a wireframe browser comment; the reply renders in that wireframe's thread panel " +
++      "within ~2 seconds. Use it to answer every wireframe-feedback channel event. slug must be " +
++      "the slug from the channel tag and name an existing wireframe directory, otherwise the " +
++      "call fails with 'unknown slug'. text must be non-empty and is truncated to 4000 " +
++      "characters. Pass reply_to = fb_id to thread under a specific comment; omit it for a " +
++      "page-level note. It only appends to the page's reply log; it does not rebuild or edit " +
++      "the wireframe.",
+     inputSchema: {
+       type: "object",
+       properties: {
+diff --color -ruN a/hooks/hooks.json b/hooks/hooks.json
+--- a/hooks/hooks.json	2026-09-28 11:27:41
++++ b/hooks/hooks.json	2026-09-28 11:27:48
+@@ -7,7 +7,7 @@
+           {
+             "type": "command",
+             "command": "bash \"${CLAUDE_PLUGIN_ROOT}/scripts/ai-transparency-check.sh\"",
+-            "timeout": 10000
++            "timeout": 10
+           }
+         ]
+       }
+diff --color -ruN a/install-tts-hook.sh b/install-tts-hook.sh
+--- a/install-tts-hook.sh	2026-09-28 11:27:40
++++ b/install-tts-hook.sh	2026-09-28 11:27:48
+@@ -111,7 +111,7 @@
+ RATE="${CLAUDE_TTS_RATE:-}"
+ SUMMARIZER="${CLAUDE_TTS_SUMMARIZER:-auto}"
+ MAX_WORDS="${CLAUDE_TTS_MAX_WORDS:-18}"
+-ANTHROPIC_MODEL="${ANTHROPIC_TTS_MODEL:-claude-3-5-haiku-latest}"
++ANTHROPIC_MODEL="${ANTHROPIC_TTS_MODEL:-claude-haiku-4-5}"
+ OPENAI_MODEL="${OPENAI_TTS_MODEL:-gpt-4o-mini}"
+ ELEVEN_VOICE_ID="${ELEVENLABS_VOICE_ID:-21m00Tcm4TlvDq8ikWAM}"
+ ELEVEN_MODEL="${ELEVENLABS_MODEL:-eleven_flash_v2_5}"   # low latency (~75ms), good for short lines

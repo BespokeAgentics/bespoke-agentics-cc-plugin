@@ -35,6 +35,7 @@ args:
   - name: out
     description: "Output directory for `new-version` mode. Default: ./skill-re-out/<name>/ (deliberately outside auto-registered skill paths so the copy and the original never compete for triggering)."
     required: false
+disable-model-invocation: true
 ---
 
 <role>
@@ -61,7 +62,7 @@ exactly the situation skills exist to handle.
 
 <context>
 Invoked via `/bespoke-agentics:skill-reverse-engineer '<target>' [--mode audit|apply|new-version]
-[--out <dir>]`, or implicitly when someone wants a skill hardened. Parse whatever the user typed
+[--out <dir>]`. Parse whatever the user typed
 against that form: the first token is `target`, `--mode` and `--out` are optional flags, and
 anything omitted takes the default stated in the `args` frontmatter above.
 
@@ -228,7 +229,7 @@ Use AskUserQuestion to gate scope before touching anything:
      generation date.
      In a non-interactive run, the stated defaults apply and are recorded as assumptions.
 
-No file is created or edited before this gate. Deselected findings are recorded in the report as
+No target-skill file is created or edited before this gate. Deselected findings are recorded in the report as
 `acknowledged — out of scope`.
 
 ## Phase 5 — Apply the accepted refactors
@@ -314,7 +315,8 @@ about the target skill.
 <quality_bar>
 
 - Zero findings without a `file:line`.
-- Zero files created or edited before the Phase 4 gate.
+- Zero target-skill files created or edited before the Phase 4 gate (the report and its host-context
+  sidecar are the only earlier writes).
 - Every CRITICAL finding phrased as the run-to-run consequence it produces.
 - Every shipped script has been executed at least once in this run.
 - The essential-judgment register is never empty for a non-trivial skill — a report that proposes

@@ -2,8 +2,10 @@
 name: "knowledge:extract"
 description: "After a task: extract insights into the domain store — write facts, open or reinforce hypotheses (one distinct, dated, linked source per increment), auto-promote any hypothesis confirmed 3+ times, and auto-demote any rule new evidence contradicts."
 argument-hint: "[<what you learned>] [--domain <slug>]"
-allowed-tools: Skill(knowledge-loop), Read, Write, Edit, Glob, Grep, AskUserQuestion
+allowed-tools: Read, Write, Edit, Glob, Grep, AskUserQuestion
 ---
+
+> **How this command loads its skill.** `knowledge-loop` is manual-only (`disable-model-invocation: true`), so do not call it through the Skill tool. Read `${CLAUDE_PLUGIN_ROOT}/skills/knowledge-loop/SKILL.md` and follow it. Paths inside a SKILL.md are relative to its own directory, and the arguments it expects are the ones given to this command.
 
 # Knowledge Loop — Extract (after a task)
 
@@ -24,7 +26,7 @@ Parse from `$ARGUMENTS`:
 
 ## Process
 
-Invoke the `knowledge-loop` skill with `mode: extract`. It reads `references/loop-algorithm.md`,
+Follow the `knowledge-loop` skill (loaded as described above) with `mode: extract`. It reads `references/loop-algorithm.md`,
 then:
 
 1. **Classifies each insight** — discrete observation → **fact** (`knowledge.md`); candidate

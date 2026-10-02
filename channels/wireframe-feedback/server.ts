@@ -120,9 +120,13 @@ mcp.setRequestHandler(ListToolsRequestSchema, async () => ({
   tools: [{
     name: "reply",
     description:
-      "Reply to a wireframe browser comment; the reply renders in the page's thread panel " +
-      "within ~2 seconds. Pass slug from the channel tag, and reply_to = fb_id to thread " +
-      "the answer under the comment it addresses.",
+      "Reply to a wireframe browser comment; the reply renders in that wireframe's thread panel " +
+      "within ~2 seconds. Use it to answer every wireframe-feedback channel event. slug must be " +
+      "the slug from the channel tag and name an existing wireframe directory, otherwise the " +
+      "call fails with 'unknown slug'. text must be non-empty and is truncated to 4000 " +
+      "characters. Pass reply_to = fb_id to thread under a specific comment; omit it for a " +
+      "page-level note. It only appends to the page's reply log; it does not rebuild or edit " +
+      "the wireframe.",
     inputSchema: {
       type: "object",
       properties: {

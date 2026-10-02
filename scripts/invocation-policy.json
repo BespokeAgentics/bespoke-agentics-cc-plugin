@@ -1,0 +1,24 @@
+{
+  "_doc": "Everything in this plugin is manual-only (disable-model-invocation: true) except the commands below. A command earns a place here only when text the plugin installs into a user's project tells an agent to run it unprompted. Enforced by scripts/check-invocation-policy.py.",
+  "model_invocable_commands": [
+    "wiki:query",
+    "wiki:ingest-meeting",
+    "wiki:ingest-document",
+    "knowledge:review",
+    "knowledge:extract",
+    "db:sync",
+    "ontology:check",
+    "ontology:propose"
+  ],
+  "why": {
+    "wiki:query": "Wiki-First Mandate rule 1 and 'When answering questions' (CLAUDE.wiki.md): query the wiki before answering; --promote new findings.",
+    "wiki:ingest-meeting": "Wiki-First Mandate rule 2 (CLAUDE.wiki.md): the wiki MUST be updated after every content-producing operation.",
+    "wiki:ingest-document": "Wiki-First Mandate rule 2 (CLAUDE.wiki.md).",
+    "knowledge:review": "knowledge-loop SessionStart banner: 'Before a task: /knowledge:review'.",
+    "knowledge:extract": "knowledge-loop SessionStart banner: 'After a task: /knowledge:extract'.",
+    "db:sync": "project-db CLAUDE.md block rule 3: after changing wiki pages, run /db:sync.",
+    "ontology:check": "project-ontology CLAUDE.md block: check a page or the vault.",
+    "ontology:propose": "project-ontology CLAUDE.md block and the write hook's block message: register a value before using it."
+  },
+  "listing_budget_chars": 3000
+}

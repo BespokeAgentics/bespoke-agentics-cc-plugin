@@ -17,6 +17,7 @@ args:
   - name: labels
     description: "Optional comma-separated label→behavior overrides, e.g. 'needs-repro:repro,spike:poc'. Defaults to the taxonomy proposed in the interview."
     required: false
+disable-model-invocation: true
 ---
 
 <role>

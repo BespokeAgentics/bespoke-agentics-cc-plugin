@@ -100,7 +100,7 @@ Do NOT create pages for:
 
 ### New decision page
 
-Path: `wiki/clients/{company}/decisions/{decision-slug}.md`. Template: `wiki/_schema/templates/decision.md`.
+Path: `wiki/{group}/{company}/decisions/{decision-slug}.md`. Template: `wiki/_schema/templates/decision.md`.
 
 Frontmatter:
 
@@ -108,6 +108,7 @@ Frontmatter:
 type: decision
 client: {company}
 status: approved  # (or other accurate status)
+decision: {ootb|config|custom|gap|tbd|third-party}  # Decision Status Color, if the document states it
 created: {today}
 updated: {today}
 sources: [{document-path}]
@@ -130,10 +131,10 @@ Only if the document poses a significant, unresolved question. Use `wiki/_schema
 
 ### Email with a decision
 
-- doc: `/data/emails/2024-04-01-budget-approval.eml`, type `email`, summary `"Client approved custom LWC for dynamic budget enforcement"`.
-- Affected: `features/budget-enforcement.md` (update decision status), `gaps/budget-enforcement-gap.md` (mark gap as having resolution), possibly create `decisions/budget-custom-lwc.md`.
-- Updates: feature gets "Decision Update" section, `decision: custom`, `updated` date refreshed; gap notes resolution + links to decision; new decision page sets `status=approved`, `source=email`.
-- Log: "Email from client CTO approving custom LWC scope".
+- doc: `/data/emails/2024-04-01-budget-approval.eml`, type `email`, summary `"Client approved a custom extension for dynamic budget enforcement"`.
+- Affected: `features/budget-enforcement.md` (update decision status), `gaps/budget-enforcement-gap.md` (mark gap as having resolution), possibly create `decisions/budget-custom-extension.md`.
+- Updates: feature gets "Decision Update" section, `decision: custom`, `updated` date refreshed; gap notes resolution + links to decision; new decision page sets `status: approved`, `decision: custom`, `sources: [/data/emails/2024-04-01-budget-approval.eml]`.
+- Log: "Email from client CTO approving custom-extension scope".
 
 ### PDF spec clarifying a feature
 

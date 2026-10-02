@@ -1,6 +1,7 @@
 ---
 name: xstate-refactor
 description: "Refactor a piece of functionality + its UI into an explicit XState v5 state machine, statechart, or actor system — with a code-grounded migration plan, a state↔UI coverage matrix, deterministic model-based tests, and a deprecation path for the old code. Use this whenever someone points at a feature and says 'convert this to XState', 'this component's boolean flags are out of control', 'turn this flow into a state machine/statechart', 'model this as actors', 'refactor this useState/useEffect soup', 'make impossible states impossible here', 'this wizard/checkout/upload/polling logic keeps breaking', or asks to migrate ad-hoc state logic (reducers, flag combinations, imperative orchestration, saga-like effects) into explicit states. It analyzes every code path and UI dependency of the target, designs the statechart, validates the model with an AskUserQuestion interview, then (on approval) implements the machine, wires the UI so every state and transition has a visible representation, generates deterministic path-coverage + UI state-coverage tests, installs XState v5 if missing, and deprecates the old code behind a verified checklist. Distinct from plan-review (audits a document) and data-ui-craft (display craft): this one restructures state LOGIC."
+disable-model-invocation: true
 ---
 
 You are the XState Refactor Orchestrator. The user has pointed you at a slice of an application — a

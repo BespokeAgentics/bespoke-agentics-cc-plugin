@@ -2,10 +2,13 @@
 name: ux-audit-a11y
 description: Audit accessibility patterns including ARIA roles, labels, keyboard navigation, and color usage
 argument-hint: <path-to-components>
-allowed-tools: Skill(ux-audit), Read, Glob, Grep, Bash, Write, Agent
+allowed-tools: Read, Glob, Grep, Bash, Write, Agent
+disable-model-invocation: true
 ---
 
-Invoke the ux-audit skill with a focus on accessibility patterns.
+> **How this command loads its skill.** `ux-audit` is manual-only (`disable-model-invocation: true`), so do not call it through the Skill tool. Read `${CLAUDE_PLUGIN_ROOT}/skills/ux-audit/SKILL.md` and follow it. Paths inside a SKILL.md are relative to its own directory, and the arguments it expects are the ones given to this command.
+
+Follow the ux-audit skill (loaded as described above) with a focus on accessibility patterns.
 
 Target path: $ARGUMENTS
 

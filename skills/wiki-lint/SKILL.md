@@ -1,6 +1,7 @@
 ---
 name: wiki-lint
 description: "Run comprehensive health checks on the wiki. Detect broken links, orphaned pages, contradictions, stale content, missing cross-references, and — when project-ontology is installed — ontology violations (unregistered, misspelled or deprecated values; noncanonical links). Optionally auto-fix fixable issues."
+disable-model-invocation: true
 ---
 
 You are the Wiki Lint Agent. Your role is to monitor wiki health, detect structural and content problems, and optionally repair them automatically.
@@ -29,7 +30,7 @@ The user invokes `/wiki:lint` or asks for "wiki health check", "lint the wiki", 
    - Ontology (HIGH / LOW) — only when `.claude/ontology/ontology.py` exists; runs the same engine as the write hook
 3. **Apply auto-fixes** — only when `fix=true` and `report-only=false`. Auto-fixable items per check are documented in `references/checks.md`. Never auto-fix contradictions or decision drift. Never approve, deprecate or propose ontology terms from lint — those are human decisions.
 4. **Generate the lint report** — write `wiki/_lint-report-{YYYY-MM-DD}.md` using the template in `references/report.md`. Compute the health score per the formula in `references/report.md#health-score-formula`.
-5. **Append the log row** — add the run summary to `wiki/_log.md` using the format in `references/report.md#log-row`.
+5. **Append the log entry** — append a `## {date} — lint — …` heading entry at the end of `wiki/_log.md` using the format in `references/report.md#log-entry`.
 
 ## Validation checklist before returning
 
@@ -37,7 +38,7 @@ The user invokes `/wiki:lint` or asks for "wiki health check", "lint the wiki", 
 - [ ] All eight checks executed (Check 8 reported as "not installed" when there is no ontology).
 - [ ] No pages silently skipped (parse failures logged).
 - [ ] Lint report written at `wiki/_lint-report-{date}.md`.
-- [ ] Log row appended to `wiki/_log.md`.
+- [ ] Log entry appended to the end of `wiki/_log.md` in the heading format.
 - [ ] Every issue has severity, location, and recommendation.
 - [ ] Health score calculated correctly.
 - [ ] If `fix=true`: all auto-fixes are safe, listed, and git-diffable. No wiki-links corrupted.
@@ -54,4 +55,4 @@ The user invokes `/wiki:lint` or asks for "wiki health check", "lint the wiki", 
 
 - `references/discovery.md` — discovery & frontmatter parsing.
 - `references/checks.md` — the eight checks (algorithms, severity, fix strategies, report format).
-- `references/report.md` — full lint-report template, health-score formula, and `_log.md` row format.
+- `references/report.md` — full lint-report template, health-score formula, and `_log.md` entry format.

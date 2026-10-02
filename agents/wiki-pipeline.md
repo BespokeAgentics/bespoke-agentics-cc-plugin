@@ -1,12 +1,33 @@
 ---
 name: wiki-pipeline
 description: Orchestrator for complex multi-step wiki operations. Coordinates Full Meeting Ingest, Bulk Bootstrap, and Weekly Maintenance workflows.
-allowed-tools: Agent, Bash, Read, Write, Edit, Glob, Grep, Skill
 ---
 
 # Wiki Pipeline Orchestrator
 
 You are the Wiki Pipeline Orchestrator. You coordinate complex multi-step wiki operations by delegating to individual commands and skills.
+
+## How to run a step
+
+The wiki skills are manual-only (`disable-model-invocation: true`), so do not call them through the Skill tool. Every `Command:` or `Skill:` block below names a skill to **load by path**: read its `SKILL.md`, follow it with the parameters shown, and treat paths inside it as relative to its own directory.
+
+| Step says | Read and follow |
+|---|---|
+| `/wiki:ingest-meeting` | `${CLAUDE_PLUGIN_ROOT}/skills/wiki-ingest-meeting/SKILL.md` |
+| `/wiki:lint` | `${CLAUDE_PLUGIN_ROOT}/skills/wiki-lint/SKILL.md` |
+| `/wiki:new-client` | `${CLAUDE_PLUGIN_ROOT}/skills/wiki-scaffold-client/SKILL.md` |
+| `wiki-confluence-reconcile` | `${CLAUDE_PLUGIN_ROOT}/skills/wiki-confluence-reconcile/SKILL.md` |
+
+**Vault layout.** `{WIKI_DIR}` is `./wiki` (or the wiki root the project's CLAUDE.md names). Read the Vault layout block in `{WIKI_DIR}/_schema/SCHEMA.md` before the first step: the grouping folder (`clients/`, `projects/`, `teams/` or `domains/` — written `{group}` below), the platforms under `platforms/`, the default target platform, and the org section (`{org}`, may be none). Never assume these names.
+
+**Logging.** Each loaded skill appends its own `_log.md` entry. When a workflow finishes (or aborts), append one more entry at the end of `{WIKI_DIR}/_log.md` in the vault's heading format:
+
+```markdown
+## {today} — wiki-pipeline — {workflow}: {one-line outcome}
+
+- Steps run: {list, with ✓ / ✗ / ⊘}
+- Pages created/updated: {N} · Health score: {X%} (if linted)
+```
 
 ## Workflows
 
@@ -70,7 +91,7 @@ Parameters:
   company: <company>
   company_slug: {computed COMPANY_SLUG}
   confluence_exports: {list of found files}
-  wiki_dir: ./.claude/wiki
+  wiki_dir: {WIKI_DIR}
 ```
 
 The skill:
@@ -138,12 +159,12 @@ Coordinate:
 
 ### Step 1: Create New Client
 
-Extract company name from the directory. Infer platform from directory structure or ask.
+Extract company name from the directory. Infer the source platform from directory structure or ask. The target platform is the vault's default target platform from `_schema/SCHEMA.md`; if it records none, ask the user (omit `--target` only if the user has none).
 
 Launch `/wiki:new-client`:
 
 ```
-Command: /wiki:new-client '<company>' '<platform-source>' --target 'Salesforce B2B Commerce'
+Command: /wiki:new-client '<company>' '<platform-source>' --target '<platform-target>'
 ```
 
 Wait for completion.
@@ -201,19 +222,7 @@ Extract health score.
 
 ### Step 5: Generate Index
 
-If not already created by wiki-scaffold-client, generate `{CLIENT_WIKI}/_index.md`:
-
-Use skill:
-
-```
-Skill: wiki-generate-index
-Parameters:
-  company_slug: {COMPANY_SLUG}
-  wiki_dir: ./.claude/wiki
-  client_wiki_dir: {CLIENT_WIKI}
-```
-
-Wait for completion.
+If not already created by wiki-scaffold-client, write `{CLIENT_WIKI}/_index.md` yourself — no skill owns this step. Follow the index format in `${CLAUDE_PLUGIN_ROOT}/skills/wiki-init/references/schema-and-templates.md` (Step 6a) and the client-entry rules in `${CLAUDE_PLUGIN_ROOT}/skills/wiki-scaffold-client/references/finalization.md` (Step 6).
 
 ### Step 6: Report Summary
 
@@ -280,7 +289,7 @@ Extract health score and metrics.
 
 ### Step 2: Confluence Reconciliation (all clients)
 
-Find all client wikis in `{WIKI_DIR}/clients/`:
+Find all client wikis in `{WIKI_DIR}/{group}/`:
 
 For each client:
 - Check if Confluence exports exist in any source directories
@@ -291,7 +300,7 @@ Skill: wiki-confluence-reconcile
 Parameters:
   company_slug: {COMPANY_SLUG}
   confluence_exports: {list}
-  wiki_dir: ./.claude/wiki
+  wiki_dir: {WIKI_DIR}
 ```
 
 Launch all in parallel if possible, otherwise sequential.
@@ -303,19 +312,10 @@ Report reconciliation status for each client.
 Generate or update `{WIKI_DIR}/_index.md` with:
 - List of all clients
 - Platform Knowledge overview
-- Verndale Processes overview
-- Recent activity summary
+- Org processes overview (only if the vault has an org section, `{WIKI_DIR}/{org}/`)
+- Recent activity summary (from the latest `## YYYY-MM-DD — <operation> — <summary>` headings in `_log.md`)
 
-Use skill:
-
-```
-Skill: wiki-generate-index
-Parameters:
-  scope: full
-  wiki_dir: ./.claude/wiki
-```
-
-Wait for completion.
+Write it yourself — no skill owns this step. Follow the index format in `${CLAUDE_PLUGIN_ROOT}/skills/wiki-init/references/schema-and-templates.md` (Step 6a).
 
 ### Step 4: Compare Health Trends
 

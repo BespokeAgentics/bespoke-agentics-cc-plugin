@@ -2,8 +2,11 @@
 name: "knowledge:init"
 description: "Set up the self-improving knowledge loop: scaffold the facts/hypotheses/rules store (inside the wiki vault), write the before/after-task mandate into CLAUDE.md, and install a SessionStart hook that surfaces active rules. Idempotent."
 argument-hint: "[--path <dir>] [--domains <a,b,c>]"
-allowed-tools: Skill(knowledge-loop), Agent, AskUserQuestion, Bash, Read, Write, Edit, Glob, Grep
+allowed-tools: Agent, AskUserQuestion, Bash, Read, Write, Edit, Glob, Grep
+disable-model-invocation: true
 ---
+
+> **How this command loads its skill.** `knowledge-loop` is manual-only (`disable-model-invocation: true`), so do not call it through the Skill tool. Read `${CLAUDE_PLUGIN_ROOT}/skills/knowledge-loop/SKILL.md` and follow it. Paths inside a SKILL.md are relative to its own directory, and the arguments it expects are the ones given to this command.
 
 # Knowledge Loop — Init
 
@@ -26,7 +29,7 @@ Parse from `$ARGUMENTS`:
 
 ## Process
 
-Invoke the `knowledge-loop` skill with `mode: init` and forward `$ARGUMENTS`. The skill:
+Follow the `knowledge-loop` skill (loaded as described above) with `mode: init` and forward `$ARGUMENTS`. The skill:
 
 1. **Locates the store** and, if a wiki exists, reads `wiki/_schema/SCHEMA.md` + `wiki/_index.md`
    so the store conforms and links in.

@@ -1,7 +1,7 @@
 # Phases 0 & 7 — Target detection and the standalone scaffold
 
-Two target modes. Monorepo mode delegates scaffolding to the repo's own
-`bun run new:microdot` and wiring rules — never rebuild those here. This file
+Two target modes. Monorepo mode delegates scaffolding to
+`microdots-new-micro`'s repository-extension mode — never rebuild it here. This file
 exists for **standalone mode**: bootstrapping a runnable MicroDots workspace in
 an arbitrary directory from the published `@bespokeagentics/microdots-*` npm packages.
 
@@ -159,7 +159,8 @@ from the installed `@bespokeagentics/microdots-host` source (and from the monore
 
 ## Verify (standalone done bar)
 
-The monorepo's verify skill is unavailable here; run its bar by hand:
+Run `microdots-verify` (read `${CLAUDE_PLUGIN_ROOT}/skills/microdots-verify/SKILL.md`
+and follow it); it resolves standalone layouts too. The bar is:
 
 1. `bun run check` green.
 2. `bun run build` — every bundle and the host build.

@@ -61,7 +61,7 @@ If `{PROJECT_DIR}/wiki/` exists, honor the wiki-first mandate:
 
 1. Ingest the review as a `report`-type page (or run `/wiki:ingest-document` on the written file).
 2. Cross-link it to the source artifact and any feature/decision pages the findings touch.
-3. Append a row to `wiki/_log.md` describing the review (artifact, readiness, finding counts).
+3. Append an entry to `wiki/_log.md` — `## YYYY-MM-DD — plan-review — <artifact>` with readiness and finding counts in the body.
 
 Defer the heavy lifting to the `/wiki:*` commands; don't reimplement them here.
 

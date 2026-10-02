@@ -10,6 +10,11 @@ The schema is the **constitution** of the wiki. Tailor it to THIS project (inter
    - THE SCHEMA (this file) — conventions, workflows, templates, lint rules.
 
 2. **Architecture** — three-layer diagram using the actual top-level folder names from this project.
+   Follow it with a **Vault layout** block that the other wiki skills read instead of assuming names:
+   - Grouping folder: `clients/` | `projects/` | `teams/` | `domains/` (the Q3 answer).
+   - Platforms: `platforms/` and the platform slugs created in Step 7 (or "none").
+   - Default target platform: the platform new workspaces migrate to / build on, if the user named one (or "none — ask per workspace").
+   - Org section: `{org-slug}/` from Q5 (or "none").
 
 3. **Design principles**:
    - Immutability of sources — raw outputs never modified.
@@ -22,17 +27,19 @@ The schema is the **constitution** of the wiki. Tailor it to THIS project (inter
 
    | Type | Purpose | Required fields |
    | ---- | ------- | --------------- |
-   | feature | Business capability or product feature | title, type, client, status, source, date, related |
-   | gap | Missing capability or limitation | title, type, client, severity, status, source, date, related |
-   | meeting | Meeting summary with decisions | title, type, client, meeting-date, attendees, source, date, related |
-   | decision | Design / scope / architecture decision | title, type, client, status-color, date, related |
-   | question | Open question needing resolution | title, type, client, status, priority, source, date, related |
-   | entity | System, person, org, or tool | title, type, client, entity-type, status, date, related |
-   | integration | External system data flow or API | title, type, client, systems, direction, status, date, related |
+   | feature | Business capability or product feature | title, type, client, status, decision, sources, created, updated, related |
+   | gap | Missing capability or limitation | title, type, client, severity, status, sources, created, updated, related |
+   | meeting | Meeting summary with decisions | title, type, client, meeting-date, attendees, sources, created, updated, related |
+   | decision | Design / scope / architecture decision | title, type, client, status, decision, sources, created, updated, related |
+   | question | Open question needing resolution | title, type, client, status, priority, sources, created, updated, related |
+   | entity | System, person, org, or tool | title, type, client, entity-type, status, created, updated, related |
+   | integration | External system data flow or API | title, type, client, systems, direction, status, created, updated, related |
 
    The `client` field generalizes to whatever the top-level grouping is (client, project, team, domain).
 
-5. **Decision status colors**:
+   **One frontmatter schema, every page type:** `created` (ISO date the page was first written — never changed), `updated` (ISO date of the last substantive edit — ingest, sync and lint fixes bump it; wiki-lint's stale check reads it), `sources` (a YAML list of source paths/URLs the page draws on, appended to on every ingest). `status` is the lifecycle value; `decision` holds the Decision Status Color below. Do not use `date`, `source` or `status-color` — they are not part of the schema.
+
+5. **Decision status colors** — the `decision` frontmatter key; the template comment is `decision: # ootb|config|custom|gap|tbd|third-party`, each value rendering as its color:
    - 🟢 OOTB — out of the box, no customization needed.
    - 🔵 Config — configurable, no custom code required.
    - 🟡 Custom Dev — requires custom development.
@@ -43,7 +50,7 @@ The schema is the **constitution** of the wiki. Tailor it to THIS project (inter
 6. **Naming conventions** — kebab-case slugs, `.md` extension, ISO 8601 dates.
 7. **Cross-reference rules** — `[[wiki-links]]`, `related:` frontmatter, bidirectional links.
 8. **Core operations** — Ingest, Query, Lint (described generically).
-9. **Wiki metadata files** — `_index.md`, `_log.md`, `_lint-report-{date}.md`.
+9. **Wiki metadata files** — `_index.md`, `_log.md` (append-only; one `## YYYY-MM-DD — <operation> — <summary>` heading section per entry — see Step 6b), `_lint-report-{date}.md`.
 10. **Quality standards** — valid frontmatter, back-references, no orphans, no broken links.
 
 ## Step 5b — Create all 7 page templates in `_schema/templates/`
@@ -57,13 +64,13 @@ it into the ontology (after which the comment is rewritten to name its binding:
 `severity: # gap.severity: critical|high|medium|low`). Do not restate the lists in SCHEMA.md — link to the
 templates (or to `_schema/ONTOLOGY.md` once the ontology exists).
 
-- `feature.md` — title, type, client, status, source, date, related + Overview, Current Implementation, Target Implementation, Decision Status, Open Questions, Source References.
-- `gap.md` — title, type, client, severity, status, source, date, related + Gap Description, Business Impact, Current Workaround, Proposed Resolution, Resolution Status, Source References.
-- `meeting.md` — title, type, client, meeting-date, attendees, source, date, related + Summary, Key Topics, Decisions Made, Action Items, Features/Gaps/Questions Mentioned, Source.
-- `decision.md` — title, type, client, status-color, date, related + Decision, Context, Options Considered, Rationale, Implications, Status, Source References.
-- `question.md` — title, type, client, status, priority, source, date, related + The Question, Context, Current Understanding, Proposed Answer, Related Features, Status, Source References.
-- `entity.md` — title, type, client, entity-type, status, date, related + Overview, Role in Project, Key Contacts, Related Systems, Notes.
-- `integration.md` — title, type, client, systems, direction, status, date, related + Overview, Current Data Flow, Data Elements table, Frequency & Trigger, Target Architecture, Source References.
+- `feature.md` — title, type, client, status, decision, sources, created, updated, related + Overview, Current Implementation, Target Implementation, Decision Status, Open Questions, Source References.
+- `gap.md` — title, type, client, severity, status, sources, created, updated, related + Gap Description, Business Impact, Current Workaround, Proposed Resolution, Resolution Status, Source References.
+- `meeting.md` — title, type, client, meeting-date, attendees, sources, created, updated, related + Summary, Key Topics, Decisions Made, Action Items, Features/Gaps/Questions Mentioned, Source.
+- `decision.md` — title, type, client, status, decision, sources, created, updated, related + Decision, Context, Options Considered, Rationale, Implications, Status, Source References.
+- `question.md` — title, type, client, status, priority, sources, created, updated, related + The Question, Context, Current Understanding, Proposed Answer, Related Features, Status, Source References.
+- `entity.md` — title, type, client, entity-type, status, created, updated, related + Overview, Role in Project, Key Contacts, Related Systems, Notes.
+- `integration.md` — title, type, client, systems, direction, status, created, updated, related + Overview, Current Data Flow, Data Elements table, Frequency & Trigger, Target Architecture, Source References.
 
 ## Step 6 — Global wiki files
 
@@ -110,12 +117,23 @@ _No entries yet. Use the appropriate wiki command to scaffold the first workspac
 ```markdown
 # Wiki Activity Log
 
-> Chronological record of all wiki operations. Each row records an ingest, lint, scaffold, or maintenance event.
+> Chronological record of all wiki operations (oldest first). Every entry is appended at the end of this file as a heading section: `## YYYY-MM-DD — <operation> — <summary>` followed by a short prose/bullet body.
 
-| Date | Operation | Scope | Details | Notes |
-|------|-----------|-------|---------|-------|
-| {today} | wiki-init | global | Vault initialized: .obsidian config, schema, 7 templates, global indexes{, N platform stubs}{, org processes} | First-time setup |
+## {today} — wiki-init — Vault initialized
+
+- Created: .obsidian config, `_schema/SCHEMA.md`, 7 templates, `_index.md`, `_log.md`{, N platform stubs}{, org processes}
+- First-time setup
 ```
+
+**Log entry format (every wiki skill writes exactly this):**
+
+```markdown
+## YYYY-MM-DD — <operation> — <one-line summary>
+
+<short prose or bullets: scope, pages created/updated, notes>
+```
+
+`<operation>` is the skill/command name (`wiki-init`, `scaffold-client`, `ingest-meeting`, `ingest-document`, `query`, `lint`, `confluence-reconcile`, `wiki-to-mcp`, …). Always append at the end of the file; never prepend, never use a table. Record this format in SCHEMA.md section 9.
 
 ## Step 7 — Platform stubs (only if Q4 selected platforms)
 
@@ -127,7 +145,9 @@ title: "{Platform Name}"
 type: entity
 entity-type: platform
 status: active
-date: {today}
+created: {today}
+updated: {today}
+sources: []
 related: []
 ---
 
@@ -152,7 +172,9 @@ Create `{org-slug}/processes/wiki-maintenance.md`:
 title: "Wiki Maintenance Procedures"
 type: process
 status: active
-date: {today}
+created: {today}
+updated: {today}
+sources: []
 related: []
 ---
 

@@ -2,8 +2,11 @@
 name: "bun:add"
 description: "Scaffold a new package into an existing Bun workspace: writes `package.json` with the workspace's scope, `tsconfig.json` extending the shared base, and a `src/index.ts` stub. Verifies the chosen path is covered by a workspace glob (prompts to add one if not). Runs `bun install` from the root."
 argument-hint: "<package-path> [--name <name>] [--kind library|app]"
-allowed-tools: Skill(bun-workspace), AskUserQuestion, Bash, Read, Write, Edit, Glob
+allowed-tools: AskUserQuestion, Bash, Read, Write, Edit, Glob
+disable-model-invocation: true
 ---
+
+> **How this command loads its skill.** `bun-workspace` is manual-only (`disable-model-invocation: true`), so do not call it through the Skill tool. Read `${CLAUDE_PLUGIN_ROOT}/skills/bun-workspace/SKILL.md` and follow it. Paths inside a SKILL.md are relative to its own directory, and the arguments it expects are the ones given to this command.
 
 # Bun Workspace — Add Package
 
@@ -25,7 +28,7 @@ If `<package-path>` is missing, the skill asks via `AskUserQuestion`.
 
 ## Process
 
-Invoke the `bun-workspace` skill with `mode: add` and forward `$ARGUMENTS`.
+Follow the `bun-workspace` skill (loaded as described above) with `mode: add` and forward `$ARGUMENTS`.
 
 The skill will:
 

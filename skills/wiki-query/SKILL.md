@@ -6,14 +6,15 @@ args:
     description: "The natural language question to answer (required). Can be about features, gaps, decisions, integrations, client status, contradictions, etc."
     required: true
   - name: client
-    description: "Optional scope to a specific client (e.g., 'boston-beer-company'). If provided, searches are limited to that client's wiki section."
+    description: "Optional scope to a specific client (e.g., 'acme'). If provided, searches are limited to that client's wiki section."
     required: false
   - name: promote
     description: "Optional boolean (default: false). If true and the answer is substantive, promote it to a new wiki page with proper cross-references."
     required: false
+disable-model-invocation: true
 ---
 
-You are the Wiki Query agent. Your job is to search the Verndale wiki and synthesize answers from compiled client and platform knowledge.
+You are the Wiki Query agent. Your job is to search the project wiki and synthesize answers from compiled client and platform knowledge.
 
 ## When to Use This Skill
 
@@ -29,15 +30,15 @@ This skill is designed for **synthesis from existing knowledge**, not for creati
 ## Required Arguments
 
 - **question**: A natural language question about the wiki content. Examples:
-  - "What's the current status of budget management for BBC?"
+  - "What's the current status of budget management for Acme?"
   - "Which features are blocked by the Oracle ERP decision?"
   - "What are all P1 open questions?"
-  - "How does the virtual warehouse model map to Salesforce?"
+  - "How does the virtual warehouse model map to {target platform}?"
   - "What contradictions exist in the wiki right now?"
 
 ## Optional Arguments
 
-- **client**: Scope the search to a specific client's wiki section (e.g., `boston-beer-company`). If omitted, search across all clients and platform pages.
+- **client**: Scope the search to a specific client's wiki section (e.g., `acme`). If omitted, search across all clients and platform pages.
 - **promote**: Boolean (default: `false`). If `true` and the synthesized answer is substantive (3+ source pages or a novel insight), create a new wiki page from the appropriate template and establish cross-references.
 
 ## Process
@@ -55,17 +56,19 @@ Identify the entity types and concepts being asked about:
 ### Step 2: Search the Wiki
 
 #### 2a. Glob for Relevant Files
+`{group}` below is the vault's grouping folder (`clients/`, `projects/`, `teams/` or `domains/`) and `{platform}` a slug under `platforms/` — read both from the Vault layout block in `wiki/_schema/SCHEMA.md`; never assume them.
+
 Use file system searches to identify potentially relevant pages:
-- **Client scope**: If `client` is specified, search `wiki/clients/{client-slug}/*/*.md`
-- **All clients**: If no client is specified, search `wiki/clients/**/*.md` and `wiki/platforms/**/*.md`
+- **Client scope**: If `client` is specified, search `wiki/{group}/{client-slug}/*/*.md`
+- **All clients**: If no client is specified, search `wiki/{group}/**/*.md` and `wiki/platforms/**/*.md`
 - **Keywords**: Extract keywords from the question and match filenames and frontmatter
 
 Example search patterns:
 ```
-wiki/clients/{client}/features/*budget*.md
-wiki/clients/{client}/gaps/*discount*.md
-wiki/clients/{client}/decisions/*.md
-wiki/platforms/salesforce-b2b-commerce/patterns/*.md
+wiki/{group}/{client}/features/*budget*.md
+wiki/{group}/{client}/gaps/*discount*.md
+wiki/{group}/{client}/decisions/*.md
+wiki/platforms/{platform}/patterns/*.md
 ```
 
 #### 2b. Grep for Specific Terms
@@ -138,17 +141,17 @@ Based on the answer content, choose the best page type:
 - **Feature Summary**: If answering "How does [feature] work?" → Create a `features/{slug}.md` page
 - **Integration Summary**: If answering "How does [system] integrate?" → Create an `integrations/{slug}.md` page
 - **Meeting Synthesis**: If answering "What was discussed about...?" → Create a `meetings/{slug}.md` page
-- **Capability**: If answering "What is Verndale's approach to...?" → Create a `verndale/capabilities/{slug}.md` page
+- **Capability**: If answering "What is our approach to...?" → Create a page under the vault's org section (`{org-slug}/…`), if one exists
 
 #### 5b. Create the New Page
-1. Use the appropriate template from `wiki/_schema/TEMPLATES.md`
+1. Use the page template at `wiki/_schema/templates/<type>.md`
 2. Fill in:
    - **title**: Clear, descriptive title for the answer
    - **client**: (If applicable) The client slug
    - **type**: The page type (decision, feature, etc.)
    - **status**: "synthesized" (new, from query)
    - **sources**: List the wiki pages that were used to synthesize the answer
-   - **date**: Current date
+   - **created** / **updated**: Current date
 3. In the body, include:
    - The synthesized answer from Step 4
    - Cross-references to all source pages using `[[wiki-link]]`
@@ -157,7 +160,7 @@ Based on the answer content, choose the best page type:
 #### 5c. Update Cross-References
 1. Add a back-reference in each source page's **Related** section: "[[new-page-name]]"
 2. Update `wiki/_index.md` to include the new page in the appropriate section
-3. Add an entry to `wiki/_log.md` documenting the promotion
+3. The promotion is recorded in the Step 6 log entry (operation `query`, summary `promoted to [[new-page-slug]]`)
 
 #### 5d. Output Confirmation
 Print:
@@ -166,7 +169,7 @@ Print:
 
 New page: [[new-page-slug]]
 Type: {page-type}
-Location: wiki/clients/{client}/new-page-slug.md (or appropriate location)
+Location: wiki/{group}/{client}/new-page-slug.md (or appropriate location)
 
 Sources integrated: {count} pages
 Related pages updated: {count} pages
@@ -174,45 +177,42 @@ Related pages updated: {count} pages
 
 ### Step 6: Log the Query
 
-Regardless of promotion, add an entry to `wiki/_log.md` with:
-- **Date**: Current date
-- **Query**: The original question
-- **Client**: (If specified) The client scope
-- **Answer Status**: "synthesized" or "promoted"
-- **Pages Consulted**: Count of pages read
-- **Confidence**: High/Medium/Low
+Regardless of promotion, append an entry at the end of `wiki/_log.md` in the vault's heading format — `## YYYY-MM-DD — <operation> — <summary>` followed by a short body — with the question, client scope (if any), answer status (`synthesized` or `promoted`), pages consulted, and confidence:
 
-Format:
-```
-| 2026-04-06 | "What's the current status of budget management for BBC?" | boston-beer-company | synthesized | 7 pages | High | [[status-summary-page]] |
+```markdown
+## 2026-04-06 — query — "What's the current status of budget management for Acme?"
+
+- Client: acme
+- Answer status: synthesized · Pages consulted: 7 · Confidence: High
+- Promoted page: [[status-summary-page]] (only if promoted)
 ```
 
 ## Examples of Supported Queries
 
 ### Example 1: Feature Status Query
-**Question**: "What's the current status of budget management for BBC?"
-- **Search**: `wiki/clients/boston-beer-company/features/*budget*.md`
+**Question**: "What's the current status of budget management for Acme?"
+- **Search**: `wiki/{group}/acme/features/*budget*.md`
 - **Sources**: `budget-management.md`, `budget-enforcement.md`, gaps/budget-*
 - **Answer**: Synthesizes the feature, known gaps, and any blocking decisions
 - **Confidence**: High (multiple sources, recent meeting notes)
 
 ### Example 2: Decision Traceability
 **Question**: "Which features are blocked by the Oracle ERP decision?"
-- **Search**: `wiki/clients/{client}/decisions/*oracle*`, then check for cross-links to features
+- **Search**: `wiki/{group}/{client}/decisions/*oracle*`, then check for cross-links to features
 - **Sources**: `decisions/oracle-erp-sync.md`, related features, integration pages
 - **Answer**: Lists features that depend on the Oracle decision and current status
 - **Confidence**: Medium (depends on whether all dependencies were documented)
 
 ### Example 3: Open Issues Query
 **Question**: "What are all P1 open questions?"
-- **Search**: Glob for `wiki/clients/*/questions/*.md`, grep for `priority: P1` and `status: open`
+- **Search**: Glob for `wiki/{group}/*/questions/*.md`, grep for `priority: P1` and `status: open`
 - **Sources**: Multiple question pages across clients
 - **Answer**: Ranked list of P1 open questions with context and next steps
 - **Confidence**: High (straightforward status check)
 
 ### Example 4: Cross-Platform Question
-**Question**: "How does the virtual warehouse model map to Salesforce?"
-- **Search**: `wiki/clients/*/features/*virtual-warehouse*`, `wiki/platforms/salesforce-b2b-commerce/patterns/*`
+**Question**: "How does the virtual warehouse model map to {target platform}?"
+- **Search**: `wiki/{group}/*/features/*virtual-warehouse*`, `wiki/platforms/{platform}/patterns/*`
 - **Sources**: Client feature definitions, platform patterns, integrations
 - **Answer**: Explains the conceptual mapping and any gaps or workarounds
 - **Confidence**: Varies based on platform maturity
@@ -226,7 +226,7 @@ Format:
 
 ### Example 6: Meeting Follow-Up
 **Question**: "What was discussed in meeting 03 that hasn't been addressed yet?"
-- **Search**: `wiki/clients/{client}/meetings/meeting-03.md`, extract action items and topics, cross-reference with decisions/features
+- **Search**: `wiki/{group}/{client}/meetings/meeting-03.md`, extract action items and topics, cross-reference with decisions/features
 - **Sources**: Meeting page + related feature/gap/decision pages
 - **Answer**: Tracks which discussion items have been resolved and which remain open
 - **Confidence**: High (explicit traceability from meeting to outcomes)

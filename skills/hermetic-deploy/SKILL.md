@@ -19,6 +19,7 @@ args:
   - name: instances
     description: "Optional target for the verification step — how many simultaneous instances to prove (default 2)."
     required: false
+disable-model-invocation: true
 ---
 
 <role>

@@ -9,7 +9,7 @@ read of the situation.
 
 Required env vars:
   CONSULT_PROVIDER     "openai" | "anthropic" | "gemini"
-  CONSULT_MODEL        e.g. "gpt-5", "claude-opus-4-6", "gemini-3-pro"
+  CONSULT_MODEL        e.g. "gpt-5", "claude-opus-5", "gemini-3-pro"
   CONSULT_API_KEY      provider API key
 
 Optional:
@@ -83,7 +83,8 @@ def call_openai(model: str, key: str, system: str, user: str, max_tokens: int) -
 def call_anthropic(model: str, key: str, system: str, user: str, max_tokens: int) -> str | None:
     payload = json.dumps({
         "model": model,
-        "max_tokens": max_tokens,
+        # Thinking counts toward max_tokens on current Claude models; leave room for it.
+        "max_tokens": max(max_tokens, 4000),
         "system": system,
         "messages": [{"role": "user", "content": user}],
     }).encode()
@@ -99,7 +100,10 @@ def call_anthropic(model: str, key: str, system: str, user: str, max_tokens: int
     try:
         with urllib.request.urlopen(req, timeout=30) as resp:
             data = json.loads(resp.read().decode())
-        return data["content"][0]["text"]
+        if data.get("stop_reason") == "refusal":
+            warn("anthropic call refused; skipping")
+            return None
+        return next((b["text"] for b in data.get("content", []) if b.get("type") == "text"), None)
     except Exception as e:  # noqa: BLE001
         warn(f"anthropic call failed: {e}")
         return None

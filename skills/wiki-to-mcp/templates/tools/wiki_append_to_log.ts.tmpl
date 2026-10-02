@@ -1,10 +1,12 @@
   server.tool(
     "wiki_append_to_log",
-    "Append a dated entry to the wiki's _log.md audit trail. Commits and pushes.",
+    "Append an entry to the end of the wiki's _log.md audit trail as a `## YYYY-MM-DD — <operation> — <summary>` heading section. Commits and pushes.",
     {
-      entry: z.string().describe("Markdown to append. A heading with today's ISO date is added automatically."),
+      operation: z.string().min(1).describe("Operation name for the heading, e.g. 'ingest-document', 'lint', 'mcp-update'."),
+      summary: z.string().min(1).describe("One-line summary for the heading."),
+      entry: z.string().optional().describe("Optional short prose/bullet body placed under the heading."),
     },
-    async ({ entry }) => {
+    async ({ operation, summary, entry }) => {
       const today = new Date().toISOString().slice(0, 10);
       let body = "";
       let frontmatter: Record<string, unknown> = {};
@@ -15,7 +17,8 @@
       } catch {
         // _log.md doesn't exist yet — initialize it.
       }
-      const block = `\n## ${today}\n\n${entry.trim()}\n`;
+      const heading = `## ${today} — ${operation.trim()} — ${summary.replace(/\s+/g, " ").trim()}`;
+      const block = entry?.trim() ? `\n${heading}\n\n${entry.trim()}\n` : `\n${heading}\n`;
       const nextBody = body.endsWith("\n") ? body + block : body + "\n" + block;
       const yaml = renderFrontmatter(frontmatter);
       const full = yaml ? `---\n${yaml}---\n\n${nextBody.trimEnd()}\n` : `${nextBody.trimEnd()}\n`;

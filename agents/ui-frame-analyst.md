@@ -8,7 +8,7 @@ description: >-
   statements and observed opportunity signals (kept separate from defects), and the on-screen text
   anchors a code search can later match. Launched in parallel batches by the ui-issue-to-plan skill —
   one frame-chunk per agent. Read-only; never interacts with the user; invents nothing.
-allowed-tools: Read, Bash, Glob, Grep
+tools: Read, Write, Bash, Glob, Grep
 ---
 
 # UI Frame Analyst

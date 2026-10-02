@@ -1,6 +1,7 @@
 ---
 name: microdots-verify
 description: Verify a change to a MicroDots workspace is actually done — typecheck, lint, test, build every MicroDot bundle, then boot the system and confirm in a browser that the dots render and poll their services. Use before reporting any change to a MicroDots workspace complete.
+disable-model-invocation: true
 ---
 
 Green static checks are not sufficient in a MicroDots workspace. `Runtime.embed`

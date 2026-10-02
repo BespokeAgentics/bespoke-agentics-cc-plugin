@@ -17,6 +17,7 @@ args:
   - name: scope
     description: "Optional: `local` (agent-side tooling + conventions only), `ci` (CI capture + storage only), or `both` (default)."
     required: false
+disable-model-invocation: true
 ---
 
 <role>
@@ -31,8 +32,7 @@ because a screenshot they take is feedback they can see.
 </role>
 
 <context>
-The user invokes this via `/agentnative:proof-of-work [mode] [scope]`, or implicitly when asking
-how agents can verify or demonstrate UI work.
+The user invokes this via `/agentnative:proof-of-work [mode] [scope]`.
 
 Tool mechanics live in `references/capture.md` (agent-browser, Playwright CLIs, the
 verify-loop); storage and publishing live in `references/storage.md` (artifact vs S3-presign

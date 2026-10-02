@@ -2,12 +2,15 @@
 name: "ontology:deprecate"
 description: "Retire an ontology term — a human gate. Names the replacement (same kind, same parent) and the reason; pages still using the term are flagged value-deprecated, and /ontology:apply rewrites them to the replacement. Also how a rejected proposal is recorded."
 argument-hint: "<id> [--replaced-by <id>] --reason '<why>'"
-allowed-tools: Skill(project-ontology), AskUserQuestion, Bash, Read
+allowed-tools: AskUserQuestion, Bash, Read
+disable-model-invocation: true
 ---
+
+> **How this command loads its skill.** `project-ontology` is manual-only (`disable-model-invocation: true`), so do not call it through the Skill tool. Read `${CLAUDE_PLUGIN_ROOT}/skills/project-ontology/SKILL.md` and follow it. Paths inside a SKILL.md are relative to its own directory, and the arguments it expects are the ones given to this command.
 
 # Project Ontology — Deprecate
 
-Invoke the `project-ontology` skill with `mode: deprecate` and forward:
+Follow the `project-ontology` skill (loaded as described above) with `mode: deprecate` and forward:
 
 ```
 $ARGUMENTS

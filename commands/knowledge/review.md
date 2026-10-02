@@ -2,8 +2,10 @@
 name: "knowledge:review"
 description: "Before starting a task: load the confirmed rules (which apply by default) and the testable hypotheses for the relevant domain, so the work that follows is informed and can confirm or contradict open hypotheses."
 argument-hint: "[<task description>] [--domain <slug>]"
-allowed-tools: Skill(knowledge-loop), Read, Glob, Grep, AskUserQuestion
+allowed-tools: Read, Glob, Grep, AskUserQuestion
 ---
+
+> **How this command loads its skill.** `knowledge-loop` is manual-only (`disable-model-invocation: true`), so do not call it through the Skill tool. Read `${CLAUDE_PLUGIN_ROOT}/skills/knowledge-loop/SKILL.md` and follow it. Paths inside a SKILL.md are relative to its own directory, and the arguments it expects are the ones given to this command.
 
 # Knowledge Loop — Review (before a task)
 
@@ -24,7 +26,7 @@ Parse from `$ARGUMENTS`:
 
 ## Process
 
-Invoke the `knowledge-loop` skill with `mode: review`. The skill:
+Follow the `knowledge-loop` skill (loaded as described above) with `mode: review`. The skill:
 
 1. Resolves the domain(s) from `--domain` or by inferring from the task and matching `INDEX.md`.
 2. Reads that domain's `rules.md` and `hypotheses.md` and prints two short lists:

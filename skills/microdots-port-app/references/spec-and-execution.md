@@ -38,7 +38,10 @@ stays the working copy; the wiki page is the record.
 
 ## Phase 6 — Elicit
 
-Invoke the `spec-elicitation` skill with the dossier's `spec.md` path, and let
+Load the `spec-elicitation` skill — read
+`${CLAUDE_PLUGIN_ROOT}/skills/spec-elicitation/SKILL.md` and follow it (the skill is manual-only, so do not call it through the
+Skill tool; paths inside it are relative to its own directory) —
+with the dossier's `spec.md` path as its argument, and let
 it run its own process. Do not duplicate its interview beforehand, do not
 answer register rows on the user's behalf, and do not trim its dimensions: a
 well-seeded spec shrinks the interview naturally.
@@ -66,10 +69,12 @@ One AskUserQuestion:
 
 ### Scaffold
 
-**Monorepo:** run `bun run new:microdot <name>` per dot, then the wiring steps
-the repo's `AGENTS.md` lists — tsconfig paths, vitest aliases, registry entry,
-`index.html` section + slot, `host-topology.json` route + slot declaration.
-The repo's topology tests fail on a mounted-but-undeclared or
+**Monorepo:** read `${CLAUDE_PLUGIN_ROOT}/skills/microdots-new-micro/SKILL.md`
+and follow its repository-extension mode once per dot (manual-only; do not
+call it through the Skill tool). It names the generator mode the workspace
+supports and completes the whole host seam — tsconfig paths, vitest aliases,
+registry entry, `index.html` section + slot, `host-topology.json` route + slot
+declaration, and deploy-discovery registration. The repo's topology tests fail on a mounted-but-undeclared or
 declared-but-missing slot; run them before calling the scaffold done. Never
 reimplement the generator or the wiring rules here.
 
@@ -110,9 +115,10 @@ threatens.
 
 ### Verify
 
-**Monorepo:** invoke the repo's `verify` skill and let its bar be the done
-bar. **Standalone:** run the equivalent sequence in
-`references/standalone-scaffold.md` § Verify. Either way: static checks green,
+In either mode, read `${CLAUDE_PLUGIN_ROOT}/skills/microdots-verify/SKILL.md`
+and follow it (manual-only; do not call it through the Skill tool); its bar
+is the done bar, and `references/standalone-scaffold.md` § Verify lists it
+for standalone layouts. Either way: static checks green,
 every bundle built, the system booted, and every dot confirmed **in a
 browser** — rendering real content, polling its service, reacting to its
 attributes, surviving unmount/remount. If the browser step could not be

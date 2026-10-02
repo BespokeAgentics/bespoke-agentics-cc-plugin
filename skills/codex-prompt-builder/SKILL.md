@@ -1,6 +1,7 @@
 ---
 name: codex-prompt-builder
 description: Use when a user asks to create, refine, convert, or hand off a Codex prompt from session context, rough requirements, bug reports, feature ideas, implementation plans, code review requests, or task notes.
+disable-model-invocation: true
 ---
 
 # Codex Prompt Builder
@@ -44,7 +45,7 @@ Return only the copy-ready prompt unless the user explicitly asks for rationale,
 
 ## Asking Questions
 
-Use AskQuestion/request_user_input when available. Ask 1-3 focused questions at a time, using concrete options when possible. If that tool is unavailable, ask concise plain-text questions.
+Use AskUserQuestion when available. Ask 1-3 focused questions at a time, using concrete options when possible. If that tool is unavailable, ask concise plain-text questions.
 
 Ask only for high-impact gaps:
 

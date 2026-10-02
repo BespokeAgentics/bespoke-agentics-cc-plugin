@@ -185,26 +185,16 @@ Example: 50 pages, 2 critical / 3 high / 5 medium / 10 low → deductions 55 →
 
 Target: >90% is healthy.
 
-## Log row
+## Log entry
 
-Append to `wiki/_log.md`:
+Append at the end of `wiki/_log.md` (the log is oldest-first), in the vault's heading format:
 
 ```markdown
-## Lint Run — {date}
+## {date} — lint — {scope}: health {X%}, {N} issues
 
-**Scope**: {full|client:{slug}|recent}
-**Pages scanned**: {N}
-**Health score**: {X%}
-**Issues found**:
-- Broken links: {N}
-- Orphaned pages: {N}
-- Contradictions: {N}
-- Stale pages: {N}
-- Missing cross-refs: {N}
-- Invalid frontmatter: {N}
-- Decision drift: {N}
-- Ontology violations: {N} (strict {S} · warn {W})
-**Auto-fixes applied**: {M}
-**Report**: wiki/_lint-report-{date}.md
-**Status**: ✓ Complete
+- Scope: {full|client:{slug}|recent} · Pages scanned: {N}
+- Issues: broken links {N} · orphans {N} · contradictions {N} · stale {N} · missing cross-refs {N} · invalid frontmatter {N} · decision drift {N} · ontology {N} (strict {S} · warn {W})
+- Auto-fixes applied: {M}
+- Report: wiki/_lint-report-{date}.md
+- Status: ✓ Complete
 ```

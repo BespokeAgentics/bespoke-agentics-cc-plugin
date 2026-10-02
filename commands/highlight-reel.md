@@ -2,12 +2,15 @@
 name: "highlight-reel"
 description: "Turn a long app-demo screencast into a short, narrated, subtitled highlight video. Extracts frames + narration, grounds every feature shown in this repo's real source (file:line) so the voiceover is technically accurate, proposes the highlight moments, runs an AskUserQuestion interview to confirm the cut / duration / voice / audio, writes a narration script + subtitles, synthesizes a voiceover with ElevenLabs TTS, and renders the reel with ffmpeg. The creation companion to video-to-deliverables (docs) — this outputs a new .mp4. For .mp4/.mov/.webm/.gif demos of the app open in this session."
 argument-hint: "'<video-path>' [reel-label] [interval] [--duration <sec>] [--voice <id>] [--audio duck|keep|mute] [--no-subs] [--no-ground] [--no-tts] [--out <dir>] [--skip-dedup] [--skip-transcribe] [--force]"
-allowed-tools: Skill(screencast-highlight-reel), Agent, AskUserQuestion, Bash, Read, Write, Edit, Glob, Grep
+allowed-tools: Agent, AskUserQuestion, Bash, Read, Write, Edit, Glob, Grep
+disable-model-invocation: true
 ---
+
+> **How this command loads its skill.** `screencast-highlight-reel` is manual-only (`disable-model-invocation: true`), so do not call it through the Skill tool. Read `${CLAUDE_PLUGIN_ROOT}/skills/screencast-highlight-reel/SKILL.md` and follow it. Paths inside a SKILL.md are relative to its own directory, and the arguments it expects are the ones given to this command.
 
 # Screencast → Highlight Reel
 
-Run the `screencast-highlight-reel` skill: read a long app-demo screencast, ground what it
+Follow the `screencast-highlight-reel` skill (loaded as described above): read a long app-demo screencast, ground what it
 shows in this repo's source, interview the user to lock the cut, then write a narration +
 render a short, narrated, subtitled highlight video.
 
@@ -33,7 +36,7 @@ Parse from `$ARGUMENTS`:
 
 ## Process
 
-Invoke the `screencast-highlight-reel` skill and forward `$ARGUMENTS`. The skill will:
+Follow the `screencast-highlight-reel` skill (loaded as described above) and forward `$ARGUMENTS`. The skill will:
 
 1. **Preprocess** — extract frames, dedup, transcribe the narration (word timestamps).
 2. **Moment analysis** — parallel frame agents read frames + transcript → a salience-scored

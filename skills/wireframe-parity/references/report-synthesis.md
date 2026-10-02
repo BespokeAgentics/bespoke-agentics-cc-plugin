@@ -48,7 +48,7 @@ Let the user choose.
 
 ## Wiki ingestion (if a vault exists)
 
-If `{PROJECT_DIR}/wiki/` exists, honor the wiki-first mandate: ingest the report as a `report`-type page (or run `/wiki:ingest-document`), cross-link it to the spec + the decision/feature pages it touches, and append a row to `wiki/_log.md` (spec, app URL, parity verdict, regression count). Defer the heavy lifting to `/wiki:*`.
+If `{PROJECT_DIR}/wiki/` exists, honor the wiki-first mandate: ingest the report as a `report`-type page (or run `/wiki:ingest-document`), cross-link it to the spec + the decision/feature pages it touches, and append an entry to `wiki/_log.md` (`## YYYY-MM-DD — wireframe-parity — <spec>`, with app URL, parity verdict and regression count in the body). Defer the heavy lifting to `/wiki:*`.
 
 ## Final step
 

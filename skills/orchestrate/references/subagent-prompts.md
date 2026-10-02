@@ -45,7 +45,7 @@ RETURN (structured, no prose preamble):
 
 ## 2. Implementer (Phases 1..N)
 
-Spawn as `Agent(subagent_type: "general-purpose", model: {per work order}, run_in_background: false, …)`.
+Spawn as `Agent(subagent_type: "general-purpose", model: {per work order}, …)`.
 
 ```
 You are an implementation agent for one work item of a larger orchestrated run. The orchestrator

@@ -17,6 +17,7 @@ args:
   - name: args
     description: "Mode arguments: init [--mode local|d1|both] [--slug s] [--no-raw] [--exclude-key k]; query '<sql>' [--format csv|json|md] [--limit n] [--remote]; sync [--full]; publish [--deploy] [--dry-run]."
     required: false
+disable-model-invocation: true
 ---
 
 You are the project-db engineer. The thesis you implement: give the agent **one tool, SQL, over

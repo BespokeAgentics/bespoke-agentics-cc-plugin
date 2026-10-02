@@ -1,6 +1,7 @@
 ---
 name: interactive-wireframe
 description: "Build a live, code-grounded HTML wireframe of a UI change, use it as the interview instrument, and emit a spec. Use this whenever someone says 'wireframe this', 'mock this up', 'sketch this screen', 'make a prototype/mockup of X', 'help me think through this UI/layout/header', 'show me what this would look like', 'try a few variants of this', or is going back and forth with themselves about a layout, sticky/scroll behaviour, what each role should see, where a control belongs, or how a screen should reorganise — even when they never say the word 'wireframe'. It detects the stack and lifts real design tokens, typography, enums/labels and roles from actual source (never inventing values), emits ONE self-contained HTML file (inline CSS + JS, no build step) carrying a control overlay generated from the axes that surface actually varies on — role switcher, entity states, permission toggles, thresholds, layout variants, zone guides, live state readout — serves it over local HTTP so it can be driven and measured in a browser, interviews in AskUserQuestion rounds with concrete ASCII previews while rebuilding the wireframe between rounds, verifies geometry/contrast/markup/behaviour with in-page assertions instead of eyeballing, and writes a spec grounded in real file paths. Prefer this over writing production UI code when the design is not settled, and over prose or ASCII mockups whenever the decision depends on real widths, real labels, real contrast, or real behaviour. Works on any stack with a UI. Not for auditing an existing interface (use a UX audit) and not for shipping the final component."
+disable-model-invocation: true
 ---
 
 # Interactive Wireframe
@@ -114,7 +115,9 @@ as derived.
 
 ## Phase 2 — Build the wireframe
 
-Copy the scaffold and edit its four marked regions:
+Copy the scaffold and edit its four marked regions. `$SKILL_DIR` here and in
+Phase 3 means this skill's base directory (shown when the skill loads; when
+the skill is loaded by path, the directory containing this SKILL.md):
 
 ```sh
 mkdir -p wireframes/<slug>

@@ -2,6 +2,7 @@
 name: screencast-highlight-reel
 description: "Turn a long app-demo screencast (+ the codebase it demos) into a short, narrated highlight video. Extracts frames + audio, grounds what's on screen in this repo's real source (file:line) so the narration is technically accurate, proposes the highlight moments, runs an AskUserQuestion interview to confirm which moments + duration + voice, writes a narration script and subtitles, synthesizes a voiceover (ElevenLabs TTS), and renders a subtitled highlight reel with ffmpeg. Use for '.mp4/.mov/.webm screencast -> highlight reel / sizzle reel / demo cut / narrated walkthrough / trailer'. Companion to video-to-deliverables (that produces docs; this produces a video)."
 argument-hint: "'<video-path>' [reel-label] [interval] [--duration <sec>] [--voice <id>] [--audio duck|keep|mute] [--no-subs] [--no-ground] [--no-tts] [--out <dir>] [--skip-dedup] [--skip-transcribe] [--force]"
+disable-model-invocation: true
 ---
 
 You are the Screencast → Highlight Reel Pipeline Orchestrator. You take one long
@@ -117,7 +118,7 @@ the story is *their* call, and rendering is expensive to redo.
    frame when a narration beat runs longer than its clip so nothing is cut off, concatenates, and
    burns the subtitles. Output: `{OUT_DIR}/{REEL_SLUG}.mp4` + `{REEL_SLUG}.srt`.
 
-9. **Summary.** Present the finished `.mp4` to the user (via `present_files`), report the length,
+9. **Summary.** Present the finished `.mp4` to the user (its absolute path; use `present_files` only when the surface provides it), report the length,
    the moments included, and where the intermediate artifacts live. If a wiki vault exists, log the
    run per the wiki-first mandate.
 

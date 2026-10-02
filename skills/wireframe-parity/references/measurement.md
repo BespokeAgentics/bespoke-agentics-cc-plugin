@@ -6,7 +6,7 @@ Read before Phase 2 (skipped under `--no-browser`). The job: measure the served 
 
 1. **Serve the wireframe** with `interactive-wireframe`'s script (do not reinvent it):
    ```sh
-   "$WIREFRAME_SKILL_DIR/scripts/serve-wireframe.sh" start wireframes/<slug>
+   "${CLAUDE_PLUGIN_ROOT}/skills/interactive-wireframe/scripts/serve-wireframe.sh" start wireframes/<slug>
    ```
    It prints a `http://127.0.0.1:PORT/` URL, sends `no-store`, and reuses a live server. `file://` fails under browser automation — always serve.
 2. **Confirm the app** at `APP_URL` loads (read-only; never submit forms or mutate data).

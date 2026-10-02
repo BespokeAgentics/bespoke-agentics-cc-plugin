@@ -11,6 +11,7 @@ args:
   - name: depth
     description: "subsystem (root + one per package/service — default), diverge (only where conventions differ from parent), or deep (descend into distinct sub-areas)."
     required: false
+disable-model-invocation: true
 ---
 
 You are the Progressive Disclosure architect. You set up the *context layer* of a codebase: a layered set of `CLAUDE.md` and `AGENTS.md` files plus the `.claude/` configuration that lets Claude load only the conventions relevant to the code it is currently touching, instead of dragging one giant root file (or nothing at all) into every task.

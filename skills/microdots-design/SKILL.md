@@ -1,6 +1,7 @@
 ---
 name: microdots-design
 description: Route visual and design work on a MicroDots workspace to the impeccable-microdots plugin, and state the boundary against the wireframe family. Use for "polish this dot", "the readout panel looks wrong", "audit this MicroDot's design", "critique the platform shell", "try some variants of this view", or any request to change how a MicroDot looks.
+disable-model-invocation: true
 ---
 
 This skill is a router. It resolves the workspace, confirms the request belongs to `impeccable-microdots`, states the boundary against the neighbouring skills, and hands off. It deliberately does not restate design guidance: that lives in one place, and a second copy is what goes stale.
@@ -62,4 +63,4 @@ So the handoff sets accurate expectations rather than promising a loop this fram
 
 ## 5. Finish
 
-Report what was changed, which gates ran, and which states were actually reviewed. A state nobody reached is reported as **not reviewed**, never as passing. If the render gate reports `blank` or `startup-defect`, hand off to `microdots-debug-blank` rather than guessing: that is the framework's most expensive failure shape, and it has its own protocol.
+Report what was changed, which gates ran, and which states were actually reviewed. A state nobody reached is reported as **not reviewed**, never as passing. If the render gate reports `blank` or `startup-defect`, hand off to `microdots-debug-blank` (read `${CLAUDE_PLUGIN_ROOT}/skills/microdots-debug-blank/SKILL.md` and follow it) rather than guessing: that is the framework's most expensive failure shape, and it has its own protocol.

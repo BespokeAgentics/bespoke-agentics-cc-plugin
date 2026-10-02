@@ -1,6 +1,7 @@
 ---
 name: architect-agents
 description: "Analyze a project and generate a full .claude/ agent + command architecture with _architecture.md. Use to set up, extend, or regenerate a project's agent team."
+disable-model-invocation: true
 ---
 
 <pipeline>
@@ -182,7 +183,7 @@ For each approved agent, generate a `.claude/agents/{name}.md` file.
    - `{OWNED_PATHS}` → packages/directories this agent owns
    - `{ROLE_DESCRIPTION}` → senior engineer persona specialized in this domain
    - `{SEARCH_PATHS}` → directories to check before creating new files
-   - `{ADDITIONAL_CONSTRAINTS}` → project-specific NEVER/ALWAYS rules from CLAUDE.md + domain-specific rules
+   - `{ADDITIONAL_CONSTRAINTS}` → project-specific rules (each with its reason) from CLAUDE.md + domain-specific rules
    - `{FILE_STRUCTURE}` → actual file tree from codebase exploration
    - `{PATTERNS_AND_CONVENTIONS}` → framework patterns, import conventions, state management approach
    - `{TEST_FRAMEWORK_AND_PATTERNS}` → test framework name, conventions, example from actual test file
@@ -193,7 +194,7 @@ For each approved agent, generate a `.claude/agents/{name}.md` file.
 3. Apply quality rules from `references/agent-file-format.md`:
    - Verify YAML frontmatter has all required fields
    - Verify all required XML sections are present
-   - Verify ≥5 constraints in NEVER/ALWAYS format
+   - Verify each constraint (3–7) is project-specific and carries its reason
    - Verify working directory is absolute path
    - Verify validation commands are real (from manifests)
    - Verify code examples use project's actual patterns

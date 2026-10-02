@@ -6,7 +6,7 @@ description: >-
   states, roles, ambiguities). Launched in parallel batches by the funcspec skill;
   one page per agent. Never interacts with the user — ambiguities are recorded for
   the orchestrator's Stage-2 interview, not asked.
-allowed-tools: Read, Glob, Grep
+tools: Read, Write, Glob, Grep
 ---
 
 # Page Functional Evaluator

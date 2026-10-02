@@ -2,10 +2,12 @@
 name: "wiki:ingest-document"
 description: "Ingest an individual document (email, PDF, spec, Slack export) into the wiki. Extracts structured insights and creates source references."
 argument-hint: '<company>' '<document-path>' '<type>' [--summary 'brief description']
-allowed-tools: Skill(wiki-ingest-document), Agent, Bash, Read, Write, Edit, Glob, Grep
+allowed-tools: Agent, Bash, Read, Write, Edit, Glob, Grep
 ---
 
-Invoke the `wiki-ingest-document` skill with the user's arguments:
+> **How this command loads its skill.** `wiki-ingest-document` is manual-only (`disable-model-invocation: true`), so do not call it through the Skill tool. Read `${CLAUDE_PLUGIN_ROOT}/skills/wiki-ingest-document/SKILL.md` and follow it. Paths inside a SKILL.md are relative to its own directory, and the arguments it expects are the ones given to this command.
+
+Follow the `wiki-ingest-document` skill (loaded as described above) with the user's arguments:
 
 ```
 $ARGUMENTS

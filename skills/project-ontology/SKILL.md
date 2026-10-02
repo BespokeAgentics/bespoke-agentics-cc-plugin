@@ -17,6 +17,7 @@ args:
   - name: args
     description: "Mode arguments, forwarded to scripts/ontology.py: init [--govern dir] [--no-install]; check [paths|--all|--changed-since ref]; propose <id> --label … --definition … [--value V] [--alias A] [--bind]; approve <id>… ; deprecate <id> [--replaced-by id] --reason …; apply [--dry-run] [paths]; status."
     required: false
+disable-model-invocation: true
 ---
 
 You are the project-ontology engineer. The thesis you implement: **an ontology is only worth having if
@@ -55,9 +56,12 @@ overridden at runtime.
 - **Global vocabularies, path-scoped entities.** `gap.severity.*` holds for every client;
   `client.<slug>.<type>.<slug>` keeps page ids unique across clients.
 - **Humans approve.** Agents may propose. Approving, deprecating, removing terms and changing policy are
-  human gates, enforced three ways: you confirm with `AskUserQuestion` first; the Bash guard turns
-  `approve` / `deprecate` / `init --write` into a permission prompt; the write guard rejects an agent
-  edit of `ontology.yaml` that approves, deprecates, removes, re-spells or loosens anything.
+  human gates, run by a human: approval and deprecation start only from `/ontology:approve` /
+  `/ontology:deprecate`, which are manual-only, so a person has to type them. Outside those commands
+  you never run `approve` / `deprecate` — not even after the user says yes; you ask them to run the
+  command. Enforcement on top: inside the command you confirm with `AskUserQuestion` first; the Bash
+  guard turns `approve` / `deprecate` / `init --write` into a permission prompt; the write guard rejects
+  an agent edit of `ontology.yaml` that approves, deprecates, removes, re-spells or loosens anything.
 
 ## What init installs
 
@@ -129,9 +133,16 @@ ranking (`critical|high|medium|low`): place a new value with `--before <sibling-
 
 ### `approve` / `deprecate` — human gates
 
-Never on your own initiative. List what is pending (`status`, `ls --status proposed`), ask the user with
+Run by a human. These modes run only inside a `/ontology:approve` or `/ontology:deprecate` the user
+started themselves. Anywhere else — a proposed value you just used, a deprecation that looks right, a
+user who says "yes, approve it" in conversation — do not run the engine: ask the user to run
+`/ontology:approve <id>` or `/ontology:deprecate <id> --replaced-by <id>`, and stop there.
+
+Inside the command: list what is pending (`status`, `ls --status proposed`), ask the user with
 `AskUserQuestion` (one question per term group, the definition and page count in each option), then run
-`approve <id>… --by "<their name>"` or `deprecate <id> --replaced-by <id> --reason "…" --by "<name>"`.
+the command's own action: `approve <id>… --by "<their name>"` in `/ontology:approve`, `deprecate <id>
+--replaced-by <id> --reason "…" --by "<name>"` in `/ontology:deprecate`. A deprecation chosen during
+`/ontology:approve` goes back to the user as `/ontology:deprecate <id> --replaced-by <id>`.
 The Bash guard shows a permission prompt as a second check; if the session's permission mode suppresses
 prompts, the `AskUserQuestion` answer is the gate. A rejected proposal is a deprecation (with the value
 to use instead when there is one), so pages that already used it are flagged and `apply` can rewrite them.

@@ -2,12 +2,14 @@
 name: "ontology:propose"
 description: "Register a new ontology term (status: proposed) — a vocabulary value (<type>.<field>.<value>), entity (<namespace>.<slug>), tag (tag.<path>), relation (rel.<name>) or type (type.<name>) — or propose aliases for an existing term. A definition is required. Proposed terms are usable immediately and flagged until a human approves them."
 argument-hint: "<id> --label '<label>' --definition '<meaning>' [--value <exact spelling>] [--alias <spelling>]... [--before <id>|--after <id>] [--bind] [--source <page>]"
-allowed-tools: Skill(project-ontology), Bash, Read
+allowed-tools: Bash, Read
 ---
+
+> **How this command loads its skill.** `project-ontology` is manual-only (`disable-model-invocation: true`), so do not call it through the Skill tool. Read `${CLAUDE_PLUGIN_ROOT}/skills/project-ontology/SKILL.md` and follow it. Paths inside a SKILL.md are relative to its own directory, and the arguments it expects are the ones given to this command.
 
 # Project Ontology — Propose
 
-Invoke the `project-ontology` skill with `mode: propose` and forward:
+Follow the `project-ontology` skill (loaded as described above) with `mode: propose` and forward:
 
 ```
 $ARGUMENTS

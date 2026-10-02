@@ -1,6 +1,7 @@
 ---
 name: setup-plugin
 description: "Scaffold, optimize, and package a Claude Code plugin. Triggers: 'new plugin', 'package plugin', 'plugin scaffold', or convert a .claude/ dir into a distributable plugin."
+disable-model-invocation: true
 ---
 
 # Setup Plugin
@@ -111,7 +112,7 @@ plugin-root/
 ### Restructuring Rules
 
 1. **Skills**: Move from `.claude/skills/<name>/` → `skills/<name>/`. Preserve internal structure (references/, templates/, scripts/).
-2. **Commands**: Flatten from `.claude/commands/<namespace>/` → `commands/`. Remove subdirectory nesting. Rename files to drop namespace prefix from filename since it will be in the frontmatter `name` field.
+2. **Commands**: Move from `.claude/commands/` → `commands/`, keeping `<group>/` subdirectories (each becomes a `<group>:` namespace).
 3. **Agents**: Move from `.claude/agents/` → `agents/`.
 4. **Hooks**: Convert `.claude/settings.json` hook entries or `.claude/hooks.json` → `hooks/hooks.json` using the plugin hooks format.
 5. **Scripts**: Move from `.claude/scripts/` → `scripts/`. Update any references in hooks or skills.
@@ -127,7 +128,7 @@ Audit and optimize each component type against best practices. Read `references/
 
 For each command file:
 
-1. **Add `name` field** — Must be `<namespace>:<command-name>` (e.g., `verndale:migration-pipeline`). The namespace is the plugin name or a short prefix agreed with the user.
+1. **Set the `name` field** — `commands/<leaf>.md` gets `name: <leaf>`; `commands/<group>/<leaf>.md` gets `name: <group>:<leaf>`. Never put the plugin name in `name`; Claude Code adds it.
 2. **Description must start with a verb** — "Audit...", "Analyze...", "Run...", "Transform...", "Generate...". Not "End-to-end..." or "Quick...".
 3. **Fix YAML frontmatter** — No blank lines inside `---` fences. All required fields present: `description`, `argument-hint`.
 4. **Validate `allowed-tools`** — Only include if restricting beyond the agent's own tool set. Simple dispatch commands that only call `Skill()` should restrict to just that skill.
@@ -158,7 +159,7 @@ For `hooks/hooks.json`:
 
 1. **Structure** — Must follow the plugin hooks format with `hooks` → `<HookType>` → array of matchers.
 2. **Script references** — Must use `${CLAUDE_PLUGIN_ROOT}/scripts/` prefix for portability.
-3. **Timeouts** — Every command hook should have a reasonable `timeout` (default 10000ms).
+3. **Timeouts** — Every command hook sets `timeout` in seconds (typically 10–30).
 
 ## Phase 4: Generate Metadata Files
 
@@ -242,7 +243,7 @@ Derive the content from the actual components — do not invent capabilities. Li
 
 After all changes:
 
-1. **Grep all command files** for `name: <namespace>:` to confirm naming.
+1. **Grep all command files** for `name:` to confirm naming (leaf, or `<group>:<leaf>` for grouped files; no plugin-name prefix).
 2. **Check no blank lines** inside YAML frontmatter fences.
 3. **Verify all referenced skills/agents exist** — every `Skill()` or agent dispatch in commands must point to a real file.
 4. **Verify all hook script paths exist** — every script referenced in hooks.json must be present.
@@ -251,7 +252,6 @@ After all changes:
 
 ## Important Notes
 
-- Always ask the user for the namespace prefix before optimizing commands. Different plugins use different prefixes.
 - Preserve all existing functionality — this is a restructuring and optimization pass, not a rewrite.
 - If a `.claude/` directory existed alongside the new plugin structure, remind the user they can safely remove it after verifying the migration.
 - When optimizing descriptions, keep the original intent — just improve the phrasing to follow best practices (verb-first, concise, specific).

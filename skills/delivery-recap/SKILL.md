@@ -18,6 +18,7 @@ description: >
   by confidence and anything whose user-visible effect cannot be confirmed is listed as unverified
   rather than given an invented rationale. Read-only: it never modifies application code, never
   commits, and never pushes.
+disable-model-invocation: true
 ---
 
 # Delivery Recap
@@ -211,9 +212,10 @@ to the PM as a link.
 **For the Artifact: load the `artifact-design` skill before writing the HTML** — it calibrates the
 design investment and covers the theming and structure requirements. The section contract below is
 the *content*; the design skill governs the *presentation*. Title the Artifact as a name, not a
-summary ("Billing Recap · Sep 1", not "Delivery recap of what shipped today"), and give it a stable
-favicon. When updating an earlier recap rather than writing a new one, redeploy to the same file
-path so the link the PM already has keeps working.
+summary ("Billing Recap · Sep 1", not "Delivery recap of what shipped today"), and give it a one-word
+`icon` on first publish. When updating an earlier recap rather than writing a new one, republish to
+the same artifact (same file path within this session, or pass its `url` from an earlier one) so
+the link the PM already has keeps working.
 
 Use `references/report-structure.md` for the full section-by-section contract, the status legend,
 and a worked example. Read it before writing — it is what keeps two runs of this skill producing

@@ -15,35 +15,40 @@ conventions (Phase 0) — never paste verbatim over existing style. The canonica
 ## TypeScript — canonical loop (fixes EL1, EL2, SR1, SR2, SR3)
 
 ```ts
+// Sends are POSTs to the session; the stream (SSE) only receives.
+const send = (events: SessionEvent[]) =>
+  client.beta.sessions.events.send(sessionId, { events });
+
 // 1–2. Listener first, payload second — never in parallel (EL1).
-const stream = await client.sessions.connect(sessionId);   // resolves when listener is OPEN
-await stream.ready;                                        // explicit open confirmation
-await stream.send({ type: "user.message", content: task }); // payload only after confirmation
+const stream = await client.beta.sessions.events.stream(sessionId); // open BEFORE sending
+await send([{ type: "user.message", content: [{ type: "text", text: task }] }]);
 
 // 3. Consume — the stream is the control surface; never fire-and-forget (EL2).
 for await (const event of stream) {
   switch (eventFamily(event)) {                            // OB1: decode by family
     case "agent":   onAgentEvent(event); break;            // reasoning, tool calls → debug layer
     case "session": {
-      if (event.type === "session.status.idle") {
+      if (event.type === "session.status_idle") {
         // 4. Idle ≠ done (SR1). The stop reason decides (SR2/SR3).
-        switch (event.stop_reason?.kind) {
-          case "completed":
-            return finalize(event);
+        switch (event.stop_reason?.type) {
+          case "end_turn":
+            return finalize(event);   // an interrupted turn also ends here — track interrupts you sent
           case "requires_action":
-            // Client responsibility: answer every pending tool call, or the
-            // server-side process deadlocks indefinitely (SR2 / EL3).
-            for (const toolCallId of event.stop_reason.pending_tool_call_ids) {
-              await stream.send(approveOrDecline(toolCallId));
-            }
+            // Client responsibility: answer every pending event, or the
+            // server-side process waits indefinitely (SR2 / EL3). Each ID is an
+            // agent.tool_use / agent.mcp_tool_use (→ user.tool_confirmation) or
+            // agent.custom_tool_use (→ user.custom_tool_result) event.
+            await send(event.stop_reason.event_ids.map(answerPendingEvent));
             break; // agent resumes; keep looping
+          case "budget_reached":
+            return pausedAtBudget(event); // only settle events accepted until the budget changes
           default:
-            await steer(stream); // interrupt & redirect, or keep waiting
+            await steer(); // interrupt & redirect, or keep waiting
         }
       }
       break;
     }
-    case "fan": recordMetrics(event); break;               // OB4: timing/tokens
+    case "span": recordMetrics(event); break;              // OB4: span.model_request_end.model_usage
   }
 }
 ```
@@ -75,15 +80,18 @@ async function runWithResilience(task: Task) {
 ```ts
 // Steering: halt mid-execution and redirect IN THE SAME SESSION — no teardown,
 // context preserved. Server stops, acknowledges, resumes on the new task.
-await stream.send({ type: "user.interrupt" });
-await stream.send({ type: "user.message", content: newInstruction });
+await send([
+  { type: "user.interrupt" },
+  { type: "user.message", content: [{ type: "text", text: newInstruction }] },
+]);
 
 // Teardown: never disconnect with pending required actions (EL3).
-async function safeClose(stream: AgentStream) {
-  for (const id of stream.pendingToolCallIds()) {
-    await stream.send(decline(id, "client shutting down"));
-  }
-  await stream.close();
+// pendingEventIds = the event_ids from the last requires_action idle.
+// Call this before leaving the `for await` loop over the stream; breaking out
+// of the loop is what closes it.
+async function answerPendingBeforeClose(pendingEventIds: string[]) {
+  await send(pendingEventIds.map((id) =>
+    decline(id, "client shutting down"))); // user.tool_confirmation {result: "deny"} or a custom_tool_result error
 }
 ```
 
@@ -103,28 +111,33 @@ async function executeToolCall(call: ToolCall) {
 ## Python (asyncio) — canonical loop
 
 ```python
-async def run_task(client, session_id: str, task: str):
-    # 1–2. Listener first (EL1): connect resolves only when the stream is open.
-    stream = await client.sessions.connect(session_id)
-    await stream.wait_ready()
-    await stream.send(type="user.message", content=task)
+async def run_task(client, session_id: str, task: str):   # client = AsyncAnthropic()
+    async def send(events):                               # sends are POSTs; the stream only receives
+        await client.beta.sessions.events.send(session_id=session_id, events=events)
 
-    # 3. Consume (EL2).
-    async for event in stream:
-        family = event_family(event)                      # OB1
-        if family == "agent":
-            on_agent_event(event)
-        elif family == "session" and event.type == "session.status.idle":
-            reason = event.stop_reason                    # SR1: idle ≠ done
-            if reason.kind == "completed":
-                return finalize(event)
-            if reason.kind == "requires_action":          # SR2: client must answer
-                for call_id in reason.pending_tool_call_ids:
-                    await stream.send(approve_or_decline(call_id))
-                continue                                  # agent resumes
-            await steer(stream)                           # interrupt & redirect
-        elif family == "fan":
-            record_metrics(event)                         # OB4
+    # 1–2. Listener first (EL1): open the stream, then send.
+    async with client.beta.sessions.events.stream(session_id=session_id) as stream:
+        await send([{"type": "user.message", "content": [{"type": "text", "text": task}]}])
+
+        # 3. Consume (EL2).
+        async for event in stream:
+            family = event_family(event)                  # OB1
+            if family == "agent":
+                on_agent_event(event)
+            elif event.type == "session.status_idle":
+                reason = event.stop_reason                # SR1: idle ≠ done
+                if reason.type == "end_turn":             # also what an interrupted turn reports
+                    return finalize(event)
+                if reason.type == "requires_action":      # SR2: client must answer
+                    # agent.tool_use / agent.mcp_tool_use → user.tool_confirmation;
+                    # agent.custom_tool_use → user.custom_tool_result
+                    await send([answer_pending_event(eid) for eid in reason.event_ids])
+                    continue                              # agent resumes
+                if reason.type == "budget_reached":
+                    return paused_at_budget(event)        # only settle events accepted
+                await steer(send)                         # interrupt & redirect
+            elif family == "span":
+                record_metrics(event)                     # OB4: span.model_request_end.model_usage
 ```
 
 ## Python — resilience wrapper
@@ -147,13 +160,14 @@ async def run_with_resilience(task):
 
 ```python
 # RS2 — same session, no teardown:
-await stream.send(type="user.interrupt")
-await stream.send(type="user.message", content=new_instruction)
+await send([
+    {"type": "user.interrupt"},
+    {"type": "user.message", "content": [{"type": "text", "text": new_instruction}]},
+])
 
-# EL3 — answer pending calls before closing:
-async def safe_close(stream):
-    for call_id in stream.pending_tool_call_ids():
-        await stream.send(decline(call_id, reason="client shutting down"))
+# EL3 — answer pending events (event_ids from the last requires_action idle) before closing:
+async def safe_close(stream, pending_event_ids):
+    await send([decline(eid, reason="client shutting down") for eid in pending_event_ids])
     await stream.close()
 ```
 
@@ -179,7 +193,7 @@ sendTask(payload);                    // ← fired first
 const es = new EventSource(url);      // ← initial events already gone
 
 // SR1 — idle treated as done:
-if (event.type === "session.status.idle") { resolve(result); } // no stop_reason check
+if (event.type === "session.status_idle") { resolve(result); } // no stop_reason check
 
 // RS1 — conflated errors:
 try { await loop(); } catch { /* retry forever */ }

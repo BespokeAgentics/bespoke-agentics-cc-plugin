@@ -19,6 +19,7 @@ description: >
   committed. Distinct from microdots-port-feature (extracts ONE feature into the older micros
   workspace): this ports a WHOLE app into the MicroDots framework, anywhere.
 argument-hint: "<app-path> [--target <path>] [--app <url>] [--mode full|scaffold|spec] [--dossier-only] [--no-browser] [--slug <name>] [--out <dir>]"
+disable-model-invocation: true
 ---
 
 Port an entire application into the MicroDots framework.
@@ -75,7 +76,11 @@ Parse `$ARGUMENTS`. Then resolve, in order:
    dossier directory and defaults the MicroDot name(s).
 5. **Dossier home** — `<target>/docs/ports/<slug>/` (override `--out`). If it
    already exists, re-verify its anchors instead of re-tracing blind, and say
-   so in the report.
+   so in the report. If it holds a `dossier-manifest.json` (written by
+   `microdots-port-prototype`), read it first: skip the phases listed in
+   `phases_satisfied`, re-verify each artifact per its `reverify` field, and
+   use `seams.md` and `synthesis.json` as the Seams-lane and entity evidence
+   for Phase 4.
 6. **App URL** — `--app <url>`, else discovery per
    `references/visual-inventory.md` (probe common dev ports; offer to start
    the app's dev command, asking first; never simulate a walk from source).
@@ -163,7 +168,10 @@ after the interview settles the spec, file it as a `decision` page in
 
 ## Phase 6 — Elicit (spec-elicitation)
 
-Invoke the `spec-elicitation` skill with the dossier's `spec.md` path. It
+Load the `spec-elicitation` skill — read
+`${CLAUDE_PLUGIN_ROOT}/skills/spec-elicitation/SKILL.md` and follow it (the skill is manual-only, so do not call it through the
+Skill tool; paths inside it are relative to its own directory) —
+with the dossier's `spec.md` path as its argument. It
 reads, assesses, and interviews until every dimension is settled — do not
 duplicate its interview, and do not settle register rows on the user's behalf.
 When it finishes, flip the settled rows to `decided` in the port map so the
@@ -178,14 +186,19 @@ One AskUserQuestion: confirm the MicroDot name(s) (lower-kebab) and how far to
 go — full implementation, scaffold only, or stop at the spec. For a port the
 dossier shows to be large, offer the orchestrate handoff as an alternative to
 building inline — the spec plus the port maps is exactly the plan it consumes.
+On a yes, read `${CLAUDE_PLUGIN_ROOT}/skills/orchestrate/SKILL.md` and follow it (it is manual-only,
+so do not call it through the Skill tool).
 
 On a yes (details in `references/spec-and-execution.md`):
 
 1. **Scaffold.**
-   - Monorepo: `bun run new:microdot <name>` per MicroDot, then the wiring
-     steps `AGENTS.md` lists (tsconfig paths, vitest aliases, registry,
-     `index.html` section + slot, `host-topology.json` route + slot). The
-     topology tests are the wiring's own check.
+   - Monorepo: read `${CLAUDE_PLUGIN_ROOT}/skills/microdots-new-micro/SKILL.md`
+     and follow its repository-extension mode once per MicroDot (manual-only;
+     do not call it through the Skill tool). It names the generator mode the
+     workspace supports and completes the whole host seam — tsconfig paths,
+     vitest aliases, registry, `index.html` section + slot,
+     `host-topology.json` route + slot, and deploy-discovery registration.
+     The topology tests are the wiring's own check.
    - Standalone: build the workspace per `references/standalone-scaffold.md`
      — Bun workspace, `@bespokeagentics/microdots-*` from npm with effect pinned to the exact
      peer version, one directory per MicroDot in the confirmed composition,
@@ -197,9 +210,10 @@ On a yes (details in `references/spec-and-execution.md`):
    sensible) → element + styles + host wiring. The disposition table is the
    worklist; a disposition that proves wrong mid-wave is corrected in the port
    map, not silently diverged from.
-3. **Verify.** Monorepo: invoke the repo's `verify` skill — its browser bar is
-   the done bar. Standalone: the equivalent sequence by hand — check green,
-   all bundles build, boot the dev script, and confirm in a browser that every
+3. **Verify.** Read `${CLAUDE_PLUGIN_ROOT}/skills/microdots-verify/SKILL.md`
+   and follow it in either mode (manual-only; do not call it through the
+   Skill tool) — its browser bar is the done bar: check green, all bundles
+   build, boot the dev script, and confirm in a browser that every
    MicroDot renders real content and polls its service. Green static checks
    alone are not done: `Runtime.embed` forks the runtime and swallows startup
    defects.
@@ -239,8 +253,8 @@ actually observed; traps hit; memory rows added or reinforced; what remains
   only writes until Phase 7 says go.
 - **Unverified claims are labeled** — "not visually verified", `assumed` —
   never dressed up as findings.
-- **Compose by invocation** — spec-elicitation, the monorepo's new:microdot
-  and verify, orchestrate — invoked, never reimplemented.
+- **Compose by loading** — spec-elicitation, microdots-new-micro,
+  microdots-verify, orchestrate — loaded by path, never reimplemented.
 - **Deploy is never run. Nothing is committed** — in the target, the source,
   or the plugin repo.
 

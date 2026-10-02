@@ -6,7 +6,7 @@ description: >-
   (ultracode mode) — one agent per item, full fan-out within a dependency wave. Follows
   the orchestrator's conventions contract and golden reference verbatim; surfaces
   disagreements in its report instead of improvising.
-allowed-tools: Read, Write, Edit, Glob, Grep, Bash
+tools: Read, Write, Edit, Glob, Grep, Bash
 ---
 
 # Component Porter

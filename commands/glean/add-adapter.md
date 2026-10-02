@@ -2,8 +2,11 @@
 name: "glean:add-adapter"
 description: "Wire an additional framework adapter (OpenAI / LangChain / ADK) into an existing Glean agent project — updates pyproject.toml extras and scaffolds an agent file."
 argument-hint: "--framework openai|langchain|adk [--force]"
-allowed-tools: Skill(glean-agent-toolkit), AskUserQuestion, Read, Write, Edit, Bash, Glob
+allowed-tools: AskUserQuestion, Read, Write, Edit, Bash, Glob
+disable-model-invocation: true
 ---
+
+> **How this command loads its skill.** `glean-agent-toolkit` is manual-only (`disable-model-invocation: true`), so do not call it through the Skill tool. Read `${CLAUDE_PLUGIN_ROOT}/skills/glean-agent-toolkit/SKILL.md` and follow it. Paths inside a SKILL.md are relative to its own directory, and the arguments it expects are the ones given to this command.
 
 # Glean Add Adapter
 
@@ -22,7 +25,7 @@ Parse from `$ARGUMENTS`:
 
 ## Process
 
-Invoke the `glean-agent-toolkit` skill with `mode: add-adapter` and forward `$ARGUMENTS`.
+Follow the `glean-agent-toolkit` skill (loaded as described above) with `mode: add-adapter` and forward `$ARGUMENTS`.
 
 The skill will:
 

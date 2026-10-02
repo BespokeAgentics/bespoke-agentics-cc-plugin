@@ -8,6 +8,7 @@ args:
   - name: language
     description: "`bun` or `go`. If omitted, detect from the cwd (package.json/bun.lock vs go.mod) and ask only if ambiguous or empty."
     required: false
+disable-model-invocation: true
 ---
 
 You are an MCP-server architect. Your job is to produce HTTPS MCP servers that are safe by construction — not because the code is clever, but because the **request pipeline, tool taxonomy, mutation gating, auth model, and observability** are wired up correctly before the first line of business logic is written.
@@ -92,7 +93,7 @@ Walk the generated tree and confirm every item:
 - [ ] Startup log line includes: auth mode, mutation gate state, tool count, rate-limit ceilings, port. Logged to stderr.
 - [ ] AI-search tool path goes through the rate limiter; the read-search tool does not (it's already bounded by filters + max-results cap).
 - [ ] `MAX_RESULTS_CAP` is enforced inside validation, not just documented in the tool description.
-- [ ] One example test per tool exists — including a negative test for the mutation gate that asserts the backend client is never called when the gate is closed.
+- [ ] The template tests are present (search normalization, the mutation-gate negative test that asserts the backend client is never called when the gate is closed, and — for Bun — no-stdout-writes), and every other generated tool has at least one test modelled on the search test.
 - [ ] README documents the inspector workflow (npx @modelcontextprotocol/inspector for Bun, equivalent for Go).
 - [ ] No `console.log` / `fmt.Println` writes to stdout. All telemetry goes to stderr. Stdout is reserved for the JSON-RPC protocol when stdio transport is enabled.
 
@@ -123,7 +124,7 @@ Used when a scaffold from this skill (or one that follows the same conventions) 
 
 ### Generation
 
-Copy the matching template file (`templates/<lang>/src/tools/<kind>.*` for Bun; `internal/tools/<kind>.go` for Go), rename it, substitute placeholders, and register it in the tool registry. Add a matching unit test based on the test template — including the negative cases.
+Copy the matching template file — Bun `templates/bun/src/tools/` (read-search → `search-companies.ts.tmpl`, read-get → `get-company.ts.tmpl`, mutation → `create-ticket.ts.tmpl`, ai-search → `ai-search-companies.ts.tmpl`); Go `templates/go/internal/tools/` (the snake_case equivalents, e.g. `search_companies.go.tmpl`) — rename it, substitute placeholders, and register it in the tool registry. Add a matching unit test based on the test template — including the negative cases.
 
 Then re-run the post-generation checklist for the affected files.
 

@@ -2,8 +2,11 @@
 name: "disclosure:map"
 description: "Scan a project or monorepo with parallel subagents and set up its progressive-disclosure context layer: a layered CLAUDE.md + AGENTS.md hierarchy (root + one per package/subsystem) plus the supporting .claude/ config (Read deny rules, additionalDirectories, claudeMdExcludes, a SessionStart hook, and code-intelligence recommendations). Plans first with diffs, then applies on approval. Reviews any wiki for context."
 argument-hint: "[<root>] [--depth subsystem|diverge|deep] [--no-wiki] [--scope <path>]"
-allowed-tools: Skill(progressive-disclosure), Agent, AskUserQuestion, Bash, Read, Write, Edit, Glob, Grep
+allowed-tools: Agent, AskUserQuestion, Bash, Read, Write, Edit, Glob, Grep
+disable-model-invocation: true
 ---
+
+> **How this command loads its skill.** `progressive-disclosure` is manual-only (`disable-model-invocation: true`), so do not call it through the Skill tool. Read `${CLAUDE_PLUGIN_ROOT}/skills/progressive-disclosure/SKILL.md` and follow it. Paths inside a SKILL.md are relative to its own directory, and the arguments it expects are the ones given to this command.
 
 # Progressive Disclosure — Map
 
@@ -29,7 +32,7 @@ Parse from `$ARGUMENTS`:
 
 ## Process
 
-Invoke the `progressive-disclosure` skill with `mode: map` and forward `$ARGUMENTS`. The skill:
+Follow the `progressive-disclosure` skill (loaded as described above) with `mode: map` and forward `$ARGUMENTS`. The skill:
 
 1. **Preflight & inventory** — resolve root, detect workspace type (npm/pnpm/yarn/turbo/nx/lerna/Cargo/go.work…), build the subsystem list, and note existing CLAUDE.md/AGENTS.md/settings/wiki.
 2. **Parallel scan** — one `Explore` subagent per subsystem (plus a root agent and, if present, a wiki agent), dispatched concurrently, each returning a structured Directory Profile.

@@ -80,7 +80,7 @@ Avoid native `alert/confirm/prompt` dialogs as always.
 **Dead time is real.** Unlike the gif engine (where each screenshot *is* a frame), the screen engine
 records continuously — so your own think-time *between* tool calls lands in the video as pauses. A
 ~30s demo can produce a multi-minute raw file. Mitigate by **batching actions** (`browser_batch`) so
-consecutive clicks/waits happen in one round-trip, and **don't narrate to yourself between calls**.
+consecutive clicks/waits happen in one round-trip.
 Either way, hand the raw MP4 to `screencast-highlight-reel` — trimming that dead time down to the real
 moments is exactly what it does. Also consider fullscreening the app (Ctrl+Cmd+F) before recording so
 the browser chrome + menu bar stay out of frame.

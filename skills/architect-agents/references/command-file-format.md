@@ -54,20 +54,20 @@ Use model: "{model}".
 
 ### Orchestration Command (multi-agent coordination)
 
-For commands that dispatch an orchestrator which then dispatches sub-agents:
+For commands that coordinate several agents. The command body runs in the main session, which
+holds the Agent tool; the orchestrator agent returns a dispatch plan, because a subagent cannot
+dispatch other agents:
 
 ```markdown
 {Brief task context}: $ARGUMENTS
 
-Use the Agent tool to dispatch the `{orchestrator-name}` agent with this orchestration task:
+Phase/agent mapping: {table}
 
-"{Detailed prompt including:
-- Phase/agent mapping
-- Execution protocol (prerequisites → implementation → validation)
-- Model assignments for sub-agents
-- Result synthesis instructions}"
-
-Use subagent_type: "{orchestrator-name}" and model: "opus".
+1. Use the Agent tool to dispatch the `{orchestrator-name}` agent (subagent_type:
+   "{orchestrator-name}", model: "opus") to check prerequisites and return a dispatch plan.
+2. Dispatch the implementation agents in the plan (parallel where independent), with their
+   model assignments.
+3. Dispatch the validators, then synthesize results and report status + next steps.
 ```
 
 ## Naming Conventions

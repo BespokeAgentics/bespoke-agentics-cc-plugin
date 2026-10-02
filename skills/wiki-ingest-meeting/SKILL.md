@@ -1,6 +1,7 @@
 ---
 name: wiki-ingest-meeting
 description: "Ingest a new meeting (transcript or analysis pipeline output) into the wiki. Creates or updates feature, gap, question, and decision pages based on meeting analysis files. Links all entities to the new meeting summary page."
+disable-model-invocation: true
 ---
 
 You are the Wiki Ingest Agent for the Karpathy-style LLM Wiki. Your role is to systematically ingest meeting outputs into the wiki, ensuring all discovered entities are created or updated and cross-linked appropriately.
@@ -13,9 +14,16 @@ Consume a complete meeting analysis (from the client meeting analysis pipeline) 
 
 You will receive three required arguments:
 
-- **company** (string, required): Company slug, lowercase-hyphenated (e.g., "boston-beer-company")
-- **meeting-dir** (string, required): Absolute path to the meeting folder containing analysis outputs, typically like `/path/to/BostonBeerCompany/meetings/2024-03-15-discovery/analysis/`
+- **company** (string, required): Company slug, lowercase-hyphenated (e.g., "acme")
+- **meeting-dir** (string, required): Absolute path to the meeting folder containing analysis outputs, typically like `/path/to/Acme/meetings/2024-03-15-discovery/analysis/`
 - **meeting-label** (string, required): Human-readable meeting identifier (e.g., "2024-03-15-discovery" or "2024-03-15-kickoff")
+
+## Vault layout — resolve it first
+
+Read the **Vault layout** block in `wiki/_schema/SCHEMA.md`: `{group}` is the grouping folder
+(`clients/`, `projects/`, `teams/` or `domains/`), the target platform is the SCHEMA's default target
+platform (or the one the client README names; if neither exists, ask the user), and the org section is
+`{org}` (may be none). Paths below write `wiki/{group}/{company}/…`; never assume any of these names.
 
 ## Controlled vocabulary — resolve it before writing any frontmatter
 
@@ -46,7 +54,7 @@ find {meeting-dir} -type f -name "*.md" | sort
 You should find files like:
 - `gap-analysis-*.md` (one or more)
 - `feature-inventory-*.md`
-- `sfcc-assessment-*.md`
+- `{platform}-assessment-*.md` (target-platform fit assessment)
 - `integration-assessment-*.md`
 - `client-elicitation-*.md`
 - Any other analysis output
@@ -60,18 +68,18 @@ For each analysis file, extract features. A "feature" is any distinct business c
 - Explicit mentions: "Feature: [name]" or "### [Feature Name]"
 - Workflow descriptions that imply features
 - System capabilities currently in use
-- OOTB Salesforce capabilities mentioned as candidates
+- OOTB target-platform capabilities mentioned as candidates
 
 For each feature found:
 
 1. **Normalize the feature slug**: Convert to lowercase-hyphenated (e.g., "Budget Management" → "budget-management")
-2. **Check if it exists**: Read `wiki/clients/{company}/features/{feature-slug}.md`
+2. **Check if it exists**: Read `wiki/{group}/{company}/features/{feature-slug}.md`
 3. **If exists**: Run Step 3a (Update)
 4. **If new**: Run Step 3b (Create)
 
 ### Step 3a: Update Existing Feature Page
 
-Read the current page at `wiki/clients/{company}/features/{feature-slug}.md`
+Read the current page at `wiki/{group}/{company}/features/{feature-slug}.md`
 
 Using the Edit tool, add or merge:
 
@@ -96,7 +104,7 @@ Using the Edit tool, add or merge:
 
 ### Step 3b: Create New Feature Page
 
-For each new feature, create `wiki/clients/{company}/features/{feature-slug}.md` using the template at `wiki/_schema/templates/feature.md`.
+For each new feature, create `wiki/{group}/{company}/features/{feature-slug}.md` using the template at `wiki/_schema/templates/feature.md`.
 
 Populate:
 
@@ -116,7 +124,7 @@ Populate:
 - **Content sections** (using template as guide):
   - **Description**: From the analysis, describe the business capability in 2-3 sentences
   - **Current Implementation**: What the analysis says about how this works today
-  - **Target Implementation**: What the analysis says about Salesforce mapping (if mentioned)
+  - **Target Implementation**: What the analysis says about mapping to the target platform (if mentioned)
   - **Gaps & Risks**: Any gaps mentioned for this feature (link to gap pages once created)
   - **Evidence**: Reference the meeting and analysis file
 
@@ -125,7 +133,7 @@ Populate:
 For each gap identified in any analysis file:
 
 1. **Normalize slug**: "Dynamic Discounting" → "dynamic-discounting-gap"
-2. **Check existence**: `wiki/clients/{company}/gaps/{gap-slug}.md`
+2. **Check existence**: `wiki/{group}/{company}/gaps/{gap-slug}.md`
 3. **If exists**: Update with new evidence, update `updated` date, add source files
 4. **If new**: Create from `wiki/_schema/templates/gap.md`
 
@@ -144,7 +152,7 @@ When creating a new gap page:
 - **Content**:
   - **Description**: What's missing or different vs. target platform
   - **Impact**: How this affects the client's business
-  - **Resolution Options**: From analysis (e.g., "Custom LWC", "AppExchange X", "Process change")
+  - **Resolution Options**: From analysis (e.g., "Custom extension", "Third-party app X", "Process change")
   - **Recommendation**: Which option and why (if analysis provides opinion)
   - **Related Features**: Link back to the features affected by this gap (using `[[feature-slug|Feature Name]]` wiki-link syntax)
 
@@ -153,7 +161,7 @@ When creating a new gap page:
 For each question or uncertainty mentioned in the analysis:
 
 1. **Normalize slug**: "How do we handle payment tokenization?" → "payment-tokenization-q"
-2. **Check existence**: `wiki/clients/{company}/questions/{question-slug}.md`
+2. **Check existence**: `wiki/{group}/{company}/questions/{question-slug}.md`
 3. **If exists**: Update status if resolved, add new evidence
 4. **If new**: Create from `wiki/_schema/templates/question.md`
 
@@ -172,13 +180,13 @@ When creating a new question:
 - **Content**:
   - **Question**: The exact question in clear terms
   - **Why It Matters**: Business and technical impact if unresolved
-  - **Who Needs to Answer**: Role or team responsible (e.g., "Client IT", "Verndale Architecture", "Salesforce")
+  - **Who Needs to Answer**: Role or team responsible (e.g., "Client IT", "{org} Architecture", "Platform vendor")
   - **Impact if Unresolved**: What can't proceed until this is answered
   - **Related Items**: Link to features, gaps, or decisions this affects
 
 ### Step 6: Create the Meeting Summary Page
 
-Create `wiki/clients/{company}/meetings/{meeting-label}.md` using `wiki/_schema/templates/meeting.md`.
+Create `wiki/{group}/{company}/meetings/{meeting-label}.md` using `wiki/_schema/templates/meeting.md`.
 
 Populate:
 
@@ -200,7 +208,7 @@ Populate:
   - **Key Topics Covered**: Bulleted list of major topics
   - **Features Discovered / Updated**: List all features with links `[[feature-slug|Feature Name]]`
   - **Gaps Identified**: List all gaps with links `[[gap-slug|Gap Name]]`
-  - **Decisions Made**: If any decisions were made (e.g., "Approved custom LWC for dynamic discounts")
+  - **Decisions Made**: If any decisions were made (e.g., "Approved a custom extension for dynamic discounts")
   - **Open Questions**: List all questions with links
   - **Action Items**: If any action items were assigned (owner and deadline)
   - **Raw Artifacts**: Reference original files (analysis outputs, transcripts, etc.)
@@ -212,9 +220,9 @@ Populate:
 This file maintains a searchable catalog of all wiki pages. It should have sections like:
 
 ```markdown
-## Clients
+## {Group Section Name}
 
-### boston-beer-company
+### acme
 - Features: budget-management, catalog-filtering, ...
 - Gaps: dynamic-discounting-gap, ...
 - Meetings: 2024-03-15-discovery, ...
@@ -229,23 +237,17 @@ Add all NEW pages created in this ingest to their respective sections. Use this 
 
 #### Update `wiki/_log.md`:
 
-Append an entry at the top (newest first):
+Append an entry at the end of the file (the log is oldest-first), in the vault's heading format:
 
 ```markdown
-## {meeting-label} — {today}
+## {today} — ingest-meeting — {company}: {meeting-label}
 
-**Operation**: wiki-ingest-meeting
-**Company**: {company}
-**Source**: {meeting-dir}
-**Scope**: {X} features, {Y} gaps, {Z} questions, 1 meeting summary page
-
-**Pages Created**: [{feature-slug}, {gap-slug}, {question-slug}, meetings/{meeting-label}]
-**Pages Updated**: [{feature-slug-2}, ...]
-
-**Contradictions Found**:
-- {feature-slug}: Conflicting info on decision status between {old-meeting} and {meeting-label}
-
-**Status**: ✓ Complete
+- Source: {meeting-dir}
+- Scope: {X} features, {Y} gaps, {Z} questions, 1 meeting summary page
+- Pages created: [{feature-slug}, {gap-slug}, {question-slug}, meetings/{meeting-label}]
+- Pages updated: [{feature-slug-2}, ...]
+- Contradictions: {feature-slug}: conflicting decision status between {old-meeting} and {meeting-label} (or "none")
+- Status: ✓ Complete
 ```
 
 ## Key Rules & Guardrails
@@ -308,12 +310,12 @@ If any critical error occurs:
 
 ```
 Input:
-  company: boston-beer-company
-  meeting-dir: /data/BostonBeerCompany/meetings/2024-03-15-discovery/analysis/
+  company: acme
+  meeting-dir: /data/Acme/meetings/2024-03-15-discovery/analysis/
   meeting-label: 2024-03-15-discovery
 
 Processing:
-  1. Found 3 analysis files: gap-analysis.md, feature-inventory.md, sfcc-assessment.md
+  1. Found 3 analysis files: gap-analysis.md, feature-inventory.md, platform-assessment.md
   2. Extracted 12 features → created 8 new, updated 4 existing
   3. Extracted 5 gaps → created 3 new, updated 2 existing
   4. Extracted 7 questions → created 5 new, updated 2 existing

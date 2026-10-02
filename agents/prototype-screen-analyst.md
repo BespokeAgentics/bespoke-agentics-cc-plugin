@@ -7,7 +7,7 @@ description: >-
   mimed (fake latency, hardcoded results, no-op handlers). Launched in parallel by the
   microdots-port-prototype skill; one module per agent. Read-only; never interacts with the
   user — ambiguities are recorded for the orchestrator's Stage-2 interview, not asked.
-allowed-tools: Read, Glob, Grep
+tools: Read, Write, Glob, Grep
 ---
 
 # Prototype Screen Analyst

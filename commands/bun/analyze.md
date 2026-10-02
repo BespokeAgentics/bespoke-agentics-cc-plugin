@@ -2,8 +2,11 @@
 name: "bun:analyze"
 description: "Read-only scan of a directory containing multiple sibling projects and produce a Bun workspace migration plan. Lists packages, proposes layout and scoped names, identifies hoist candidates and version conflicts, and surfaces git-posture options per child repo. No files are written."
 argument-hint: "[<target-dir>]"
-allowed-tools: Skill(bun-workspace), Bash, Read, Glob, Grep
+allowed-tools: Bash, Read, Glob, Grep
+disable-model-invocation: true
 ---
+
+> **How this command loads its skill.** `bun-workspace` is manual-only (`disable-model-invocation: true`), so do not call it through the Skill tool. Read `${CLAUDE_PLUGIN_ROOT}/skills/bun-workspace/SKILL.md` and follow it. Paths inside a SKILL.md are relative to its own directory, and the arguments it expects are the ones given to this command.
 
 # Bun Workspace — Analyze
 
@@ -21,7 +24,7 @@ Parse from `$ARGUMENTS`:
 
 ## Process
 
-Invoke the `bun-workspace` skill with `mode: analyze` and forward `$ARGUMENTS`.
+Follow the `bun-workspace` skill (loaded as described above) with `mode: analyze` and forward `$ARGUMENTS`.
 
 The skill will:
 

@@ -1,6 +1,7 @@
 ---
 name: microdots-debug-blank
 description: Diagnose a MicroDot that renders nothing, renders stale, or never reaches its service — the framework's most expensive failure shape, because every signal you would normally trust says the system is healthy. Use when a MicroDot is blank, when the console is clean but nothing appears, when a dot stops polling, or when "Could not reach the service" comes from a page that plainly exists.
+disable-model-invocation: true
 ---
 
 A blank MicroDot is the one failure in this framework that defeats every normal
@@ -157,6 +158,8 @@ the component responsible. Every claim cites `file.ts:line`. Then append to
 No wiki in the workspace: record the trap wherever that project keeps durable
 knowledge, and say where you put it.
 
-Finish with `microdots-verify` — a blank MicroDot is exactly the defect that
+Finish with `microdots-verify` — read
+`${CLAUDE_PLUGIN_ROOT}/skills/microdots-verify/SKILL.md` and follow it
+(manual-only; do not call it through the Skill tool) — because a blank MicroDot is exactly the defect that
 green static checks do not catch, so the browser step is the only proof the fix
 worked.

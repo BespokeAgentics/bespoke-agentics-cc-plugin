@@ -2,12 +2,15 @@
 name: "agentnative:chore-crons"
 description: "Set up scheduled agents for the maintenance work developers skip: inventories the repo's neglected tail with git/grep evidence (untested critical paths, SDK coverage gaps vs upstream spec, stale skills/prompts, dep/docs/changelog drift), then — after an interview picks chores, runners, and budgets — generates cron runners (GitHub Actions schedule + claude-code-action v1, Claude Code Routines, or Cowork scheduled tasks) each with a self-verification step, a single rolling tracking issue/PR so output accumulates instead of spamming, idempotency guards, turn budgets, and cost telemetry."
 argument-hint: "[mode: plan|implement] [chores: 'regression-backfill,dep-updates']"
-allowed-tools: Skill(chore-crons), Agent, AskUserQuestion, Bash, Read, Write, Edit, Glob, Grep
+allowed-tools: Agent, AskUserQuestion, Bash, Read, Write, Edit, Glob, Grep
+disable-model-invocation: true
 ---
+
+> **How this command loads its skill.** `chore-crons` is manual-only (`disable-model-invocation: true`), so do not call it through the Skill tool. Read `${CLAUDE_PLUGIN_ROOT}/skills/chore-crons/SKILL.md` and follow it. Paths inside a SKILL.md are relative to its own directory, and the arguments it expects are the ones given to this command.
 
 # Chore Crons
 
-Run the `chore-crons` skill: find what this repo neglects, then put trustworthy scheduled agents
+Follow the `chore-crons` skill (loaded as described above): find what this repo neglects, then put trustworthy scheduled agents
 on it.
 
 ## Arguments
@@ -26,7 +29,7 @@ Parse from `$ARGUMENTS`:
 
 ## Process
 
-Invoke the `chore-crons` skill and forward `$ARGUMENTS`. The skill will:
+Follow the `chore-crons` skill (loaded as described above) and forward `$ARGUMENTS`. The skill will:
 
 1. Inventory the neglected tail with evidence (change-frequency × incident hotspots without
    tests, upstream-spec diffs, doc examples that no longer compile) plus an interview for the

@@ -23,6 +23,7 @@ Your capabilities include:
 - Deduplicate findings across analysis chunks before synthesis
 - All output files must use consistent PROJECT_SLUG naming
 - Respect the deliverable profile — only produce what was requested
+- For workflow profiles: every automation recommendation names a specific implementation approach, not just "use AI"
 </constraints>
 
 <validation>

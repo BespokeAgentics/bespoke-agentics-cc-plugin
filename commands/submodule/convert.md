@@ -2,8 +2,11 @@
 name: "submodule:convert"
 description: "Convert a directory containing multiple nested git repos into a clean submodule layout. Surveys nested repos, publishes any that lack remotes (via gh CLI), and re-adds each as a proper submodule of the parent."
 argument-hint: "[<target-dir>] [--include <name,name>] [--exclude <name,name>] [--visibility public|private] [--force]"
-allowed-tools: Skill(git-submodules), AskUserQuestion, Bash, Read, Write, Edit, Glob, Grep
+allowed-tools: AskUserQuestion, Bash, Read, Write, Edit, Glob, Grep
+disable-model-invocation: true
 ---
+
+> **How this command loads its skill.** `git-submodules` is manual-only (`disable-model-invocation: true`), so do not call it through the Skill tool. Read `${CLAUDE_PLUGIN_ROOT}/skills/git-submodules/SKILL.md` and follow it. Paths inside a SKILL.md are relative to its own directory, and the arguments it expects are the ones given to this command.
 
 # Submodule Convert
 
@@ -28,7 +31,7 @@ If `$ARGUMENTS` is empty, the skill runs the full interactive flow.
 
 ## Process
 
-Invoke the `git-submodules` skill with `mode: convert` and forward `$ARGUMENTS`.
+Follow the `git-submodules` skill (loaded as described above) with `mode: convert` and forward `$ARGUMENTS`.
 
 The skill will:
 

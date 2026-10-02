@@ -16,7 +16,7 @@ Cite every finding as `file:line` with a one-line quote.
 | P1-A | critical | An SDK call site uses the blocking call shape (no streaming iterator, no async-iterator consumption). Look for `await query(...)` without iteration, or `messages.create` instead of `messages.stream`. |
 | P1-B | critical | Streaming iterator is consumed but only the final assistant text is rendered; tool_use / tool_result blocks are never surfaced. |
 | P1-C | blocking | Tool inputs are logged server-side but the client UI shows only "Calling tool…" with no name or arguments. |
-| P1-D | blocking | Thinking/reasoning blocks (extended thinking enabled) are dropped instead of rendered in a collapsed peripheral panel. |
+| P1-D | blocking | Thinking blocks are dropped, or summarized thinking display is not requested so they arrive empty, instead of rendering in a collapsed peripheral panel. |
 | P1-E | warning | Stream consumption runs on the main thread without `requestAnimationFrame` throttling — layout thrash at high token rates. |
 | P1-F | warning | UI logic branches off the raw SDK event shape (e.g. `if (event.type === 'content_block_delta')` in a component) instead of a normalized `AgentEvent`. |
 | P1-G | nit | Step counter is absent or hard-coded ("Step 1 of 1"). |

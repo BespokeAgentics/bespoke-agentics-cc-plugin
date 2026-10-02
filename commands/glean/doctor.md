@@ -2,8 +2,11 @@
 name: "glean:doctor"
 description: "Triage a Glean agent project — checks Python version, installed extras, env vars, project structure, and framework consistency. Reports only; never auto-installs."
 argument-hint: "[--probe]"
-allowed-tools: Skill(glean-agent-toolkit), Bash, Read, Grep, Glob
+allowed-tools: Bash, Read, Grep, Glob
+disable-model-invocation: true
 ---
+
+> **How this command loads its skill.** `glean-agent-toolkit` is manual-only (`disable-model-invocation: true`), so do not call it through the Skill tool. Read `${CLAUDE_PLUGIN_ROOT}/skills/glean-agent-toolkit/SKILL.md` and follow it. Paths inside a SKILL.md are relative to its own directory, and the arguments it expects are the ones given to this command.
 
 # Glean Doctor
 
@@ -21,7 +24,7 @@ Parse from `$ARGUMENTS`:
 
 ## Process
 
-Invoke the `glean-agent-toolkit` skill with `mode: doctor` and forward `$ARGUMENTS`.
+Follow the `glean-agent-toolkit` skill (loaded as described above) with `mode: doctor` and forward `$ARGUMENTS`.
 
 The skill will check, in order:
 

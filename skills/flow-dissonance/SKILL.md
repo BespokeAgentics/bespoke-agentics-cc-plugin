@@ -1,6 +1,7 @@
 ---
 name: flow-dissonance
 description: "Live cognitive-dissonance audit of an app flow: drive the running app in Chrome as a user with a stated intent, pre-register an expectation before every step, and record where the experience diverges — label-vs-behavior mismatches, silent successes, momentum breaks, dead ends, promise-vs-delivery gaps. Classifies each gap against the GE*/GV*/MB*/PV* dissonance catalog, grounds findings in this repo's source (file:line) when the app is local, validates them in an interview, and writes a severity-rated read-only report to ./reviews/. Use whenever someone asks for a 'cognitive dissonance analysis', says 'walk the flow like a user', 'try the signup/checkout/onboarding flow and tell me what's confusing', 'does this flow make sense', 'friction audit', 'intent vs experience', 'use the app and critique it', or wants the app actually ATTEMPTED live rather than its code or screenshots reviewed. Distinct from ux-audit (heuristics over artifacts): this skill performs the flow and measures expectation vs. reality at each step."
+disable-model-invocation: true
 ---
 
 # Flow Dissonance — live intent-vs-experience audit

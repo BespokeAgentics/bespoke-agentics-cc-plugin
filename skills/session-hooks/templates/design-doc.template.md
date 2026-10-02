@@ -83,5 +83,5 @@ The skill will detect existing hooks and offer to add, replace, or remove.
 ## Audit trail
 
 Every hook run that produces a side-effect (writes to the wiki, posts to
-Slack, updates Confluence) appends a row to `wiki/_log.md`. Review that
+Slack, updates Confluence) appends an entry to `wiki/_log.md`. Review that
 file to see what the hooks have done.

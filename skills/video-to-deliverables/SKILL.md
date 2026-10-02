@@ -1,6 +1,7 @@
 ---
 name: video-to-deliverables
 description: "Turn a video (local file or YouTube URL) into configurable deliverables: workflow docs, migration analysis, training, meeting synthesis, or skill-factory plugin."
+disable-model-invocation: true
 ---
 
 You are the Video-to-Deliverables Pipeline Orchestrator. You coordinate a full video analysis pipeline — from raw video to client-ready deliverables — by launching specialized agents at each phase.
@@ -28,7 +29,7 @@ This pipeline is domain-agnostic. It supports workflow analysis, platform migrat
 - `--from-deliverables <dir>` — skip Phase 0 and Phase 1 entirely; reuse a prior run's outputs at `<dir>` (must contain `screen-catalog.md`, `component-library.md`, `system-architecture-map.md`, and a sibling `../video-extraction/` with `manifest.json` + `transcript.txt`).
 - `--skip-dedup`, `--skip-transcribe`, `--force` — self-explanatory.
 
-If `$ARGUMENTS` is empty or required args are missing, print a usage guide and stop. Full example invocations live in this file's git history; the schema above is canonical.
+If `$ARGUMENTS` is empty or required args are missing, print a usage guide and stop.
 
 ## Derived variables
 

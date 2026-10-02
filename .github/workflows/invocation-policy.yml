@@ -1,0 +1,50 @@
+name: invocation-policy
+
+# The plugin's standing context cost grew to ~71k characters one skill at a time,
+# and nothing noticed, because a description that auto-triggers breaks no build.
+# The plugin is now manual-only; this keeps it that way, and catches the failure
+# the policy makes possible: a command that still dispatches a flagged skill
+# through the Skill tool is refused by the harness, and only a user finds out.
+on:
+  push:
+    paths:
+      - 'hooks/**'
+      - 'hooks.json'
+      - 'scripts/check-hook-timeouts.py'
+      - 'skills/**'
+      - 'commands/**'
+      - 'agents/**'
+      - 'scripts/check-invocation-policy.py'
+      - 'scripts/test-check-invocation-policy.py'
+      - 'scripts/invocation-policy.json'
+      - '.github/workflows/invocation-policy.yml'
+  pull_request:
+    paths:
+      - 'hooks/**'
+      - 'hooks.json'
+      - 'scripts/check-hook-timeouts.py'
+      - 'skills/**'
+      - 'commands/**'
+      - 'agents/**'
+      - 'scripts/check-invocation-policy.py'
+      - 'scripts/test-check-invocation-policy.py'
+      - 'scripts/invocation-policy.json'
+  workflow_dispatch:
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Everything is manual-only except the allowlist, and no dispatch is dead
+        run: python3 scripts/check-invocation-policy.py
+
+      - name: Prove the check still rejects known regressions
+        run: python3 scripts/test-check-invocation-policy.py
+
+      - name: Hook timeouts are seconds, not milliseconds
+        run: python3 scripts/check-hook-timeouts.py
+
+      - name: Prove the timeout check still rejects millisecond values
+        run: python3 scripts/check-hook-timeouts.py --self-test

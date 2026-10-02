@@ -42,7 +42,7 @@ Phase 2 — skill-factory Deliverables
   ✓ {DOCS_DIR}/external-references.md
   ✓ {DOCS_DIR}/interview-answers.json
   ✓ {DOCS_DIR}/skill-factory-validation.md
-  ✓ {PLUGIN_DIR}/plugin.json                  ← primary deliverable
+  ✓ {PLUGIN_DIR}/.claude-plugin/plugin.json  ← primary deliverable
   ✓ {PLUGIN_DIR}/README.md
   ✓ {PLUGIN_DIR}/skills/{name}/SKILL.md       (×N)
   ✓ {PLUGIN_DIR}/skills/{name}/scripts/       (×N when artifacts were promoted)

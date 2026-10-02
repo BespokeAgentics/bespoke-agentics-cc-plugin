@@ -1,6 +1,7 @@
 ---
 name: ai-transparency
 description: Audit and fix AI operations that lack proper UI state coverage — no loading states, no streaming indicators, no activity logs, no error handling. Enforces the "No Black Boxes" policy.
+disable-model-invocation: true
 ---
 
 <role>

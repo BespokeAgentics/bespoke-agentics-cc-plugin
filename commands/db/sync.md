@@ -2,12 +2,14 @@
 name: "db:sync"
 description: "Refresh the project database from its sources — incremental by content hash (only changed pages reload), regenerates typed views, re-applies views.sql, rebuilds full-text search, rewrites SCHEMA.md. Use --full to drop and rebuild; --verify to run the health checks after."
 argument-hint: "[--full] [--verify] [--status]"
-allowed-tools: Skill(project-db), Bash, Read
+allowed-tools: Bash, Read
 ---
+
+> **How this command loads its skill.** `project-db` is manual-only (`disable-model-invocation: true`), so do not call it through the Skill tool. Read `${CLAUDE_PLUGIN_ROOT}/skills/project-db/SKILL.md` and follow it. Paths inside a SKILL.md are relative to its own directory, and the arguments it expects are the ones given to this command.
 
 # Project DB — Sync
 
-Invoke the `project-db` skill with `mode: sync` and forward:
+Follow the `project-db` skill (loaded as described above) with `mode: sync` and forward:
 
 ```
 $ARGUMENTS

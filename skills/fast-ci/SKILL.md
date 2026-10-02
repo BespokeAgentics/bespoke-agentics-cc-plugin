@@ -17,6 +17,7 @@ args:
   - name: path
     description: "Optional scope — a workflow file, package, or monorepo subtree. Defaults to the whole repo's CI + toolchain."
     required: false
+disable-model-invocation: true
 ---
 
 <role>
@@ -112,9 +113,11 @@ Smallest-reversible-diff first; each step leaves CI green:
 
 1. **TC swaps** one tool at a time: install, migrate config with the official migrator
    (`oxfmt --migrate prettier`, `npx @oxlint/migrate`, `uvx migrate-to-uv`), update
-   `package.json` scripts and CI steps, run the new tool over the repo, commit the reformat
-   separately from the config change (keep `git blame` useful — add the reformat commit to
-   `.git-blame-ignore-revs`).
+   `package.json` scripts and CI steps, run the new tool over the repo. Never commit
+   unprompted: stage nothing, then tell the user to commit the reformat alone (suggested
+   message, e.g. `style: reformat with oxfmt`), separately from the config change, then add
+   its SHA to `.git-blame-ignore-revs` (keeps `git blame` useful) — and offer to do those
+   commits; commit only on their explicit yes.
 2. **Caching**: `astral-sh/setup-uv@v8` with `enable-cache`, lockfile-keyed node caches,
    Turborepo/Nx remote cache if a monorepo.
 3. **Lane split** per `references/pipeline-split.md`: fast lane on `pull_request` +
@@ -167,7 +170,8 @@ When a wiki vault exists: ingest the report via the document-ingest flow, log th
 <quality_bar>
 - Zero swaps without a baseline measurement to beat.
 - Zero findings without `file:line`.
-- Reformat commits separated from logic commits, `.git-blame-ignore-revs` updated.
+- Reformat kept separable from logic changes and the user told to commit it alone, then add its
+  SHA to `.git-blame-ignore-revs` — never committed without their explicit yes.
 - The report states what each swap *loses*, not just its speedup.
 - An already-fast repo gets a short 🟢 report — do not invent work.
 </quality_bar>

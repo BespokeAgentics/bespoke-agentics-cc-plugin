@@ -2,6 +2,7 @@
 name: screencast-capture
 description: "Drive a live Claude-in-Chrome session to record a browser flow you describe, produce an MP4, and (optionally) hand off to screencast-highlight-reel. Two capture engines: the default gif_creator path (zero-setup, records the tab) or a higher-fidelity OS screen-recording engine (--engine screen) that captures a chosen monitor at native resolution + configurable bitrate via ffmpeg. The agent opens a fresh tab, lets you log in first so credentials stay out of the footage, records the described steps, and asks whether to turn it into a narrated highlight reel. Use for 'record my app / browser / a demo as a gif or video', 'capture a screencast of this flow in the browser', 'record the browser and make a highlight reel', 'screen-record this web app at higher quality / bitrate / on a specific monitor', 'make a demo gif of these steps'. The capture companion to screencast-highlight-reel — that skill polishes a recording; this one produces one agentically."
 argument-hint: "['<start-url-or-flow>'] [capture-label] [--engine chrome-gif|screen] [--url <url>] [--out <dir>] [--fps <n>] [--overlays clean|clicks|full] [--display <idx>] [--crf <n>] [--crop auto|off|<W:H:X:Y>] [--reel] [--no-reel] [--interval <sec>] [--download-dir <dir>] [--tab <id>] [--force]"
+disable-model-invocation: true
 ---
 
 You are the Screencast Capture Pipeline Orchestrator. You take a browser flow the user describes —
@@ -91,7 +92,7 @@ Phase 1    Record             chrome-gif: gif_creator start -> screenshot -> flo
                               screen:     screen_record.sh start -> drive the flow -> stop      (writes MP4 directly)
 Phase 2    Export + relocate  [chrome-gif only] gif_creator export {download:true}; find_download.sh -> {GIF_PATH}
 Phase 3    Convert to MP4      [chrome-gif only] gif_to_mp4.sh -> {MP4_PATH} (real duration, CFR, yuv420p)
-Phase 4    Hand off (ask)      present {MP4_PATH}; if HANDOFF -> invoke screencast-highlight-reel on it
+Phase 4    Hand off (ask)      present {MP4_PATH}; if HANDOFF -> load screencast-highlight-reel on it
 Summary + (wiki log if a vault exists)
 ```
 
@@ -119,9 +120,9 @@ what narration) is the reel's job and the user's call — do not editorialize th
    `{OUT_DIR}/capture-plan.md` as the shot list you'll execute. Set `CAPTURE_SLUG` now.
 
 3. **Load the browser tools.** In **one** `ToolSearch` call:
-   `select:mcp__claude-in-chrome__tabs_context_mcp,mcp__claude-in-chrome__tabs_create_mcp,mcp__claude-in-chrome__navigate,mcp__claude-in-chrome__computer,mcp__claude-in-chrome__read_page,mcp__claude-in-chrome__resize_window,mcp__claude-in-chrome__javascript_tool,mcp__claude-in-chrome__gif_creator`
+   `select:mcp__claude-in-chrome__tabs_context_mcp,mcp__claude-in-chrome__tabs_create_mcp,mcp__claude-in-chrome__navigate,mcp__claude-in-chrome__computer,mcp__claude-in-chrome__read_page,mcp__claude-in-chrome__resize_window,mcp__claude-in-chrome__javascript_tool,mcp__claude-in-chrome__gif_creator,mcp__claude-in-chrome__browser_batch`
    (`gif_creator` is used only by `chrome-gif`; `resize_window` + `javascript_tool` size the window and
-   compute the `screen`-engine crop rect.) Then call `tabs_context_mcp{createIfEmpty:true}` — required
+   compute the `screen`-engine crop rect; `browser_batch` groups consecutive `screen`-engine actions.) Then call `tabs_context_mcp{createIfEmpty:true}` — required
    before any other browser tool — to get the tab group and its tab IDs.
 
 4. **Phase 0.5 — Manual setup gate.** Create a fresh tab (`tabs_create_mcp`) unless `--tab` was given;
@@ -167,12 +168,13 @@ what narration) is the reel's job and the user's call — do not editorialize th
    from `screen_record.sh stop`): it drives the reel interval,
    `INTERVAL = --interval value, else max(2, min(4, round(duration / 8)))`.
 
-8. **Phase 4 — Hand off (or stop).** Present `{MP4_PATH}` to the user (via `present_files`), and report
+8. **Phase 4 — Hand off (or stop).** Present `{MP4_PATH}` to the user (its absolute path; use `present_files` only when the surface provides it), and report
    the duration, what was recorded, and where the GIF + MP4 live. Then, per `HANDOFF`:
    - `never` (`--no-reel`) → stop here; the MP4 is the deliverable.
    - `always` (`--reel`) or `ask` → if `ask`, use **AskUserQuestion** ("Turn this recording into a
-     narrated highlight reel now?"). On yes, **hand off: invoke the `screencast-highlight-reel` skill**
-     with a `$ARGUMENTS` string whose first token is the absolute MP4 path, per
+     narrated highlight reel now?"). On yes, **hand off: load the `screencast-highlight-reel` skill**
+     (read `${CLAUDE_PLUGIN_ROOT}/skills/screencast-highlight-reel/SKILL.md` and follow it — it is
+     manual-only, so do not call it through the Skill tool) with an arguments string whose first token is the absolute MP4 path, per
      `references/convert-and-handoff.md`:
      ```
      '{MP4_PATH}' {CAPTURE_SLUG} {INTERVAL} [--no-tts] [--no-ground] --out {OUT_DIR}/reel

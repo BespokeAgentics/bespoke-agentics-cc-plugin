@@ -2,8 +2,11 @@
 name: "glean:init"
 description: "Bootstrap a new Glean agent project (Python) — interviews for framework choice, generates pyproject.toml, .env, agent file, and optional custom tool."
 argument-hint: "[--dir <path>] [--framework openai|langchain|adk|all] [--force]"
-allowed-tools: Skill(glean-agent-toolkit), AskUserQuestion, Bash, Read, Write, Edit, Glob, Grep
+allowed-tools: AskUserQuestion, Bash, Read, Write, Edit, Glob, Grep
+disable-model-invocation: true
 ---
+
+> **How this command loads its skill.** `glean-agent-toolkit` is manual-only (`disable-model-invocation: true`), so do not call it through the Skill tool. Read `${CLAUDE_PLUGIN_ROOT}/skills/glean-agent-toolkit/SKILL.md` and follow it. Paths inside a SKILL.md are relative to its own directory, and the arguments it expects are the ones given to this command.
 
 # Glean Init
 
@@ -25,7 +28,7 @@ If `$ARGUMENTS` is empty, the skill runs the full 5-question interview.
 
 ## Process
 
-Invoke the `glean-agent-toolkit` skill with `mode: init` and forward `$ARGUMENTS`.
+Follow the `glean-agent-toolkit` skill (loaded as described above) with `mode: init` and forward `$ARGUMENTS`.
 
 The skill will:
 
