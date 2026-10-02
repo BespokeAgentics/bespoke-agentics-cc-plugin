@@ -2,8 +2,11 @@
 name: "glean:add-tool"
 description: "Scaffold a new @tool_spec custom tool in tools/custom_tools.py with Pydantic schema and GleanContext boilerplate."
 argument-hint: "<tool-name> [--description '<text>'] [--params name:type,name:type]"
-allowed-tools: Skill(glean-agent-toolkit), AskUserQuestion, Read, Write, Edit, Grep, Glob
+allowed-tools: AskUserQuestion, Read, Write, Edit, Grep, Glob
+disable-model-invocation: true
 ---
+
+> **How this command loads its skill.** `glean-agent-toolkit` is manual-only (`disable-model-invocation: true`), so do not call it through the Skill tool. Read `${CLAUDE_PLUGIN_ROOT}/skills/glean-agent-toolkit/SKILL.md` and follow it. Paths inside a SKILL.md are relative to its own directory, and the arguments it expects are the ones given to this command.
 
 # Glean Add Tool
 
@@ -23,7 +26,7 @@ Parse from `$ARGUMENTS`:
 
 ## Process
 
-Invoke the `glean-agent-toolkit` skill with `mode: add-tool` and forward `$ARGUMENTS`.
+Follow the `glean-agent-toolkit` skill (loaded as described above) with `mode: add-tool` and forward `$ARGUMENTS`.
 
 The skill will:
 

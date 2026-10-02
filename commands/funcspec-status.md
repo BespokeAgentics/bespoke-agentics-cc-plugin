@@ -3,6 +3,7 @@ name: "funcspec-status"
 description: "Show the state of a funcspec run: pages inventoried vs. profiled vs. visually verified, open/resolved/deferred ambiguities (blocking flagged), synthesis freshness, and which deliverables exist. Read-only."
 argument-hint: "[<workspace>] [--out <dir>]"
 allowed-tools: Bash, Read, Glob, Grep
+disable-model-invocation: true
 ---
 
 # Funcspec — Status

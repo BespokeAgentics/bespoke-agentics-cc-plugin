@@ -1,6 +1,7 @@
 ---
 name: pi-assistant
 description: "Customize the pi.dev coding agent harness — settings, AGENTS.md, skills, extensions, Pi Packages. Use for Pi (`@mariozechner/pi-coding-agent`) setup, debugging, or package install."
+disable-model-invocation: true
 ---
 
 # Pi Assistant
@@ -15,7 +16,7 @@ Use this skill to work with Pi through its supported customization surfaces inst
 - Read [references/pi-extensions.md](references/pi-extensions.md) when the task involves custom slash commands, custom tools, lifecycle hooks, UI, event interception, or `pi.registerCommand(...)`.
 - Read [references/pi-skills.md](references/pi-skills.md) when the task involves Pi skills, skill discovery, `/skill:name`, Agent Skills frontmatter, or reusing Claude/Codex skills inside Pi.
 - Read [references/pi-packages.md](references/pi-packages.md) when the task involves package discovery, package structure, install/remove/update flows, `pi install`, package manifests, or resources shared through npm, git, or local paths.
-- Run `python3 skills/pi-assistant/scripts/search_pi_packages.py "<query>"` when the user wants to discover packages. Prefer this over manually trawling the gallery; browse official docs or package pages only when you need README-level detail or verification.
+- Run `python3 ${CLAUDE_PLUGIN_ROOT}/skills/pi-assistant/scripts/search_pi_packages.py "<query>"` when the user wants to discover packages. Prefer this over manually trawling the gallery; browse official docs or package pages only when you need README-level detail or verification.
 
 ## Workflow
 
@@ -66,7 +67,7 @@ Use this skill to work with Pi through its supported customization surfaces inst
 ## Pi Packages
 
 - Package discovery:
-  - `python3 skills/pi-assistant/scripts/search_pi_packages.py "<query>"` for quick search
+  - `python3 ${CLAUDE_PLUGIN_ROOT}/skills/pi-assistant/scripts/search_pi_packages.py "<query>"` for quick search
   - `pi.dev/packages` for gallery browsing
   - npm search by the `pi-package` keyword for verification
 - Install sources:
@@ -99,7 +100,7 @@ Use this skill to work with Pi through its supported customization surfaces inst
 
 ```bash
 # Search Pi packages by npm keyword
-python3 skills/pi-assistant/scripts/search_pi_packages.py "browser automation"
+python3 ${CLAUDE_PLUGIN_ROOT}/skills/pi-assistant/scripts/search_pi_packages.py "browser automation"
 
 # Install globally
 pi install npm:some-pi-package

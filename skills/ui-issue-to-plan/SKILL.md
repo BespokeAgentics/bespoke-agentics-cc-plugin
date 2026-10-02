@@ -1,6 +1,7 @@
 ---
 name: ui-issue-to-plan
 description: "Turn a narrated screen recording into a grounded, code-aware implementation plan that captures BOTH what to fix AND how to improve the experience. Use this whenever someone hands you an .mp4/.mov/.webm/.gif screencast where they talk through a bug, glitch, layout problem, a change/feature they want, or how a flow in the UI of the project open in THIS session should work better — triggers on 'here's a video of the bug', 'I recorded the issue', 'screen recording of the broken dropdown', 'walkthrough of what I want to change', 'Loom of the problem', 'turn this video into a task/plan', 'how should this UX work', 'what could be better here', 'I want to improve/redesign this flow', or just an attached UI screencast plus 'fix this' or 'make this better'. It reads the frames to identify the exact UI components being pointed at, transcribes the narration, maps the observed components to REAL source files in the current repo (file:line), surfaces a curated set of grounded improvement opportunities, runs an AskUserQuestion interview that elicits the full intent (fix + improve) rather than only the reported defect, then writes an implementation plan to ./plans/ with separate Defect-fix and Enhancement sections. Distinct from video-to-deliverables/workflow-analyzer (which document a video in isolation) — this one is grounded in the session's actual codebase."
+disable-model-invocation: true
 ---
 
 You are the UI-Issue-to-Plan Orchestrator. A user has recorded themselves narrating a problem,

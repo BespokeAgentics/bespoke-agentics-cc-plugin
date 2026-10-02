@@ -150,7 +150,14 @@ Purpose: publish latest wiki decisions to Confluence.
    - Add change note: `Updated {date} from wiki`.
 2. Generate the updated Confluence table(s).
 3. Save to `{confluence-dir}/{company}-updated-{date}.confluence`.
-4. Log: `Synced {N} features, {M} gaps, {K} decisions to Confluence`.
+4. Append to the end of `wiki/_log.md`:
+
+```markdown
+## {date} — confluence-reconcile — {company}: synced wiki → Confluence
+
+- Synced {N} features, {M} gaps, {K} decisions
+- Output: {confluence-dir}/{company}-updated-{date}.confluence
+```
 
 Validation: every wiki decision status reflected; no information lost; all contradictions resolved before sync.
 
@@ -159,13 +166,13 @@ Validation: every wiki decision status reflected; no information lost; all contr
 Purpose: integrate Confluence updates back into wiki.
 
 1. For each Confluence entity not yet in wiki: create a stub via `wiki-ingest-document` semantics, or update an existing page with the new information.
-2. For each changed decision/status in Confluence: update the corresponding wiki page; add a "Confluence update" section with date + source; update `updated:` and `sources:` frontmatter.
-3. Log to `wiki/_log.md`:
+2. For each changed decision/status in Confluence: update the corresponding wiki page; add a "Confluence update" section with date + source; set `updated:` to today and append the export path to the `sources:` list (new stub pages also get `created:`; never write `date:` or `source:`).
+3. Append to the end of `wiki/_log.md`:
 
 ```markdown
-## Confluence Sync — {date}
+## {date} — confluence-reconcile — {company}: synced Confluence → wiki
 
-Integrated updates from Confluence export {file}
+- Integrated updates from Confluence export {file}
 - Updated: {N} pages
 - Created: {M} pages
 - Contradictions resolved: {K}
@@ -189,7 +196,7 @@ Validation: no unresolved contradictions; every Confluence change traced to sour
 | 🟡 | Custom Development | `decision: custom` |
 | 🔴 | Gap / Not Possible | `decision: gap` |
 | ⚪ | To Be Determined | `decision: tbd` |
-| 🟣 | Third-Party / AppExchange | `decision: third-party` |
+| 🟣 | Third-Party | `decision: third-party` |
 
 When parsing Confluence convert badges → wiki notation. When generating Confluence convert wiki statuses → badges.
 
@@ -201,7 +208,7 @@ When parsing Confluence convert badges → wiki notation. When generating Conflu
 **Scope**: 3 Confluence documents, 47 wiki pages compared
 **Status**: 🟡 Minor Drift (38 in sync, 6 wiki-ahead, 2 confluence-ahead, 1 contradiction)
 
-**Report**: wiki/_reconciliation-boston-beer-company-2024-04-06.md
+**Report**: wiki/_reconciliation-acme-2024-04-06.md
 
 **Contradictions Found**: 1
 - Budget Management: Wiki says custom (6 weeks), Confluence says OOTB (approved)
@@ -209,5 +216,5 @@ When parsing Confluence convert badges → wiki notation. When generating Conflu
 
 **Recommended Sync**: wiki-to-confluence (6 wiki updates not yet in Confluence)
 
-**Changes**: {if sync executed} Synced 8 items, generated /confluence/boston-beer-company-updated-2024-04-06.confluence
+**Changes**: {if sync executed} Synced 8 items, generated /confluence/acme-updated-2024-04-06.confluence
 ```

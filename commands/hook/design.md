@@ -2,8 +2,11 @@
 name: "hook:design"
 description: "Interview-driven designer for Claude Code SessionStart / SessionEnd / Stop hooks. Produces both a design doc and the working settings.json + executable scripts."
 argument-hint: "[--scope project|local|user] [--language bash|python|both]"
-allowed-tools: Skill(session-hooks), AskUserQuestion, Bash, Read, Write, Edit, Glob, Grep
+allowed-tools: AskUserQuestion, Bash, Read, Write, Edit, Glob, Grep
+disable-model-invocation: true
 ---
+
+> **How this command loads its skill.** `session-hooks` is manual-only (`disable-model-invocation: true`), so do not call it through the Skill tool. Read `${CLAUDE_PLUGIN_ROOT}/skills/session-hooks/SKILL.md` and follow it. Paths inside a SKILL.md are relative to its own directory, and the arguments it expects are the ones given to this command.
 
 # Hook Design
 
@@ -24,7 +27,7 @@ If `$ARGUMENTS` is empty, the skill runs the full interview from scratch.
 
 ## Process
 
-Invoke the `session-hooks` skill with `mode: design` and forward `$ARGUMENTS`.
+Follow the `session-hooks` skill (loaded as described above) with `mode: design` and forward `$ARGUMENTS`.
 
 The skill will:
 

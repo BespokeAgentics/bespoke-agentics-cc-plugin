@@ -2,12 +2,15 @@
 name: "ontology:status"
 description: "Ontology health at a glance: terms by kind and status, policy and overrides, open violations by rule (strict vs warn), proposed terms and aliases awaiting human approval, whether the write hook is installed, and any errors in ontology.yaml."
 argument-hint: "[--banner]"
-allowed-tools: Skill(project-ontology), Bash, Read
+allowed-tools: Bash, Read
+disable-model-invocation: true
 ---
+
+> **How this command loads its skill.** `project-ontology` is manual-only (`disable-model-invocation: true`), so do not call it through the Skill tool. Read `${CLAUDE_PLUGIN_ROOT}/skills/project-ontology/SKILL.md` and follow it. Paths inside a SKILL.md are relative to its own directory, and the arguments it expects are the ones given to this command.
 
 # Project Ontology — Status
 
-Invoke the `project-ontology` skill with `mode: status` and forward:
+Follow the `project-ontology` skill (loaded as described above) with `mode: status` and forward:
 
 ```
 $ARGUMENTS

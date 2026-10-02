@@ -1,0 +1,123 @@
+diff --color -ruN a/skills/delivery-recap/SKILL.md b/skills/delivery-recap/SKILL.md
+--- a/skills/delivery-recap/SKILL.md	2026-09-28 11:27:44
++++ b/skills/delivery-recap/SKILL.md	2026-09-28 11:28:33
+@@ -212,9 +212,10 @@
+ **For the Artifact: load the `artifact-design` skill before writing the HTML** — it calibrates the
+ design investment and covers the theming and structure requirements. The section contract below is
+ the *content*; the design skill governs the *presentation*. Title the Artifact as a name, not a
+-summary ("Billing Recap · Sep 1", not "Delivery recap of what shipped today"), and give it a stable
+-favicon. When updating an earlier recap rather than writing a new one, redeploy to the same file
+-path so the link the PM already has keeps working.
++summary ("Billing Recap · Sep 1", not "Delivery recap of what shipped today"), and give it a one-word
++`icon` on first publish. When updating an earlier recap rather than writing a new one, republish to
++the same artifact (same file path within this session, or pass its `url` from an earlier one) so
++the link the PM already has keeps working.
+ 
+ Use `references/report-structure.md` for the full section-by-section contract, the status legend,
+ and a worked example. Read it before writing — it is what keeps two runs of this skill producing
+diff --color -ruN a/skills/glean-agent-toolkit/SKILL.md b/skills/glean-agent-toolkit/SKILL.md
+--- a/skills/glean-agent-toolkit/SKILL.md	2026-09-28 11:27:44
++++ b/skills/glean-agent-toolkit/SKILL.md	2026-09-28 11:28:10
+@@ -198,7 +198,7 @@
+ |---|-------|------|-------------|
+ | 1 | `python3 --version` ≥ 3.10 | `python3 -c "import sys; print(sys.version_info)"` | Install Python ≥3.10 (e.g. `brew install python@3.12`). |
+ | 2 | `glean-agent-toolkit` installed | `python3 -c "import glean.agent_toolkit; print(glean.agent_toolkit.__version__)"` (or `pip show glean-agent-toolkit`) | `pip install "glean-agent-toolkit[{framework}]"` |
+-| 3 | Framework extras importable | Probe each: `python3 -c "import openai_agents"` / `import langchain_core` / `import google.adk` | Install the missing extra. |
++| 3 | Framework extras importable | Probe each: `python3 -c "import agents"` (OpenAI Agents SDK) / `import langchain_core` / `import google.adk` | Install the missing extra. |
+ | 4 | `GLEAN_API_TOKEN` set | `[ -n "$GLEAN_API_TOKEN" ]` | Set in `.env`; export before running. |
+ | 5 | `GLEAN_SERVER_URL` or `GLEAN_INSTANCE` set | `[ -n "$GLEAN_SERVER_URL" ] \|\| [ -n "$GLEAN_INSTANCE" ]` | Set in `.env`. Prefer `GLEAN_SERVER_URL` (full URL). |
+ | 6 | `pyproject.toml` exists | `[ -f pyproject.toml ]` | Run `/glean:init`. |
+diff --color -ruN a/skills/glean-agent-toolkit/references/troubleshooting.md b/skills/glean-agent-toolkit/references/troubleshooting.md
+--- a/skills/glean-agent-toolkit/references/troubleshooting.md	2026-09-28 11:27:44
++++ b/skills/glean-agent-toolkit/references/troubleshooting.md	2026-09-28 11:28:11
+@@ -150,7 +150,7 @@
+ | Symptom | Recipe |
+ |---------|--------|
+ | `GLEAN_API_TOKEN must be set` at startup | Populate `.env`, `set -a; source .env; set +a` |
+-| `import openai_agents` fails | `pip install "glean-agent-toolkit[openai]"` |
++| `import agents` fails (OpenAI Agents SDK) | `pip install "glean-agent-toolkit[openai]"` |
+ | LLM passes `ctx` and gets a 400 | Make `ctx` optional with `None` default |
+ | Tool returns `[]` consistently | Verify connector enabled in Glean admin |
+ | 401 on every request | Wrong `GLEAN_SERVER_URL` host (use `*-be.glean.com`, not the public-facing UI URL) |
+diff --color -ruN a/skills/interactive-wireframe/SKILL.md b/skills/interactive-wireframe/SKILL.md
+--- a/skills/interactive-wireframe/SKILL.md	2026-09-28 11:27:44
++++ b/skills/interactive-wireframe/SKILL.md	2026-09-28 11:28:26
+@@ -115,7 +115,9 @@
+ 
+ ## Phase 2 — Build the wireframe
+ 
+-Copy the scaffold and edit its four marked regions:
++Copy the scaffold and edit its four marked regions. `$SKILL_DIR` here and in
++Phase 3 means this skill's base directory (shown when the skill loads; when
++the skill is loaded by path, the directory containing this SKILL.md):
+ 
+ ```sh
+ mkdir -p wireframes/<slug>
+diff --color -ruN a/skills/knowledge-loop/SKILL.md b/skills/knowledge-loop/SKILL.md
+--- a/skills/knowledge-loop/SKILL.md	2026-09-28 11:27:44
++++ b/skills/knowledge-loop/SKILL.md	2026-09-28 11:28:19
+@@ -32,7 +32,7 @@
+ 
+ - **Hybrid wiki integration.** Capture fast in the lightweight store, but confirmed **rules are promoted into proper wiki pages** so the wiki stays the single source of truth for validated knowledge (per the repo's Wiki-First Mandate). The store is the working layer; the wiki is the durable layer.
+ - **Store lives inside the wiki vault** at `wiki/knowledge/` (falls back to `./knowledge/` only if no `wiki/` exists). This means `/wiki:query`, `/wiki:lint`, and `/wiki:status` already see it and its cross-references resolve.
+-- **The loop persists via CLAUDE.md + a SessionStart hook.** `init` writes the loop mandate into the project `CLAUDE.md` (inside managed sentinels) and installs a SessionStart hook that surfaces the active rules for the launch domain — so "before/after every task" actually fires without the user invoking anything.
++- **The loop persists via CLAUDE.md + a SessionStart hook.** `init` writes the loop mandate into the project `CLAUDE.md` (inside managed sentinels) and installs a SessionStart hook that surfaces the active rule headlines across domains — so "before/after every task" actually fires without the user invoking anything.
+ - **A subcommand suite, not one command.** `/knowledge:init | :review | :extract | :promote | :audit`, mirroring the `/wiki`, `/bun`, and `/disclosure` suites.
+ - **Evidence or it doesn't count.** Every confirmation and contradiction must cite a *distinct*, dated, linkable source (a meeting page, a commit, a task, a transcript). The same source can never increment a counter twice. This is what makes "apply by default" safe.
+ - **Ontology-aware.** When the vault has an ontology (`wiki/_schema/ontology.yaml`, from `/ontology:init`), facts, hypotheses and rules use its registered values, and a rule names the terms it governs in a `terms:` field (`terms: gap.severity.critical, rel.related-feature`) so `review` can surface it whenever a task touches those terms and a deprecation of a term flags the rules that cite it. The store's own pages (`type: knowledge`) are governed like any other page — propose `type.knowledge` and its `layer` values if the ontology does not declare them yet.
+@@ -72,7 +72,7 @@
+ 2. **Discover domains.** Don't hardcode. Propose an initial domain set from the repo and wiki (e.g., existing `wiki/clients/*`, `wiki/platforms/*`, README topics) and confirm with the user via `AskUserQuestion`. Seeding zero domains is fine — the store grows on first `extract`.
+ 3. **Scaffold.** Create `INDEX.md` and `_schema.md` from `templates/`, then a folder per confirmed domain, each with `knowledge.md`, `hypotheses.md`, `rules.md` from templates (empty entry sections, valid frontmatter).
+ 4. **Install the mandate.** Merge the loop mandate into the project `CLAUDE.md` between `<!-- knowledge-loop:managed -->` sentinels — the before/after-task rules, the 3+ promotion / contradiction-demotion rules, and the command table. Preserve all existing content. If the repo already has a Wiki-First Mandate, place the loop as a subsection that *reinforces* it (rules point at wiki pages).
+-5. **Install the SessionStart hook.** Write `templates/sessionstart-knowledge-hook.sh` to `.claude/hooks/knowledge-context.sh`, make it executable, fill its domain→rules map, and register it in `.claude/settings.json` under `hooks.SessionStart` (merge, don't overwrite). The hook prints the active rules for the launch domain so the agent reviews them before the first prompt.
++5. **Install the SessionStart hook.** Write `templates/sessionstart-knowledge-hook.sh` to `.claude/hooks/knowledge-context.sh`, make it executable, set its `STORE_REL` to the resolved store path, and register it in `.claude/settings.json` under `hooks.SessionStart` (merge, don't overwrite). The hook prints the rule headlines across all domains (capped at 20) plus the review/extract reminder, so the agent sees them before the first prompt.
+ 6. **Register with the wiki.** Append a creation entry to `wiki/_log.md` and add a "Knowledge Loop" section to `wiki/_index.md` pointing at `knowledge/INDEX.md`.
+ 7. **Report.** Counts created, mandate + hook installed, and the next commands to run.
+ 
+@@ -98,7 +98,7 @@
+ ### Mode: `promote` — *the wiki bridge*
+ 
+ 1. **Find candidates.** List rules in `rules.md` not yet linked to a wiki page (`wiki-page:` empty), plus any the user named explicitly. Also accept manual `--demote <id>` to push a rule back to hypothesis.
+-2. **Promote to the wiki.** For each rule, create/update a proper wiki page. Default mapping: an **ADR-style `type: decision` page** (status `approved`, `decision-status` set appropriately) because a confirmed rule is a standing "always do X" decision and `decision` is a lint-valid type. Choose the location by domain (a client → that client's `decisions/`; otherwise `wiki/verndale/playbooks/`). Confirm location/type with `AskUserQuestion` on the first promotion of a run.
++2. **Promote to the wiki.** For each rule, create/update a proper wiki page. Default mapping: an **ADR-style `type: decision` page** (status `approved`, `decision-status` set appropriately) because a confirmed rule is a standing "always do X" decision and `decision` is a lint-valid type. Choose the location by domain (a client → that client's `decisions/`; otherwise the vault's shared playbooks/decisions location as `wiki/_schema/SCHEMA.md` defines it). Confirm location/type with `AskUserQuestion` on the first promotion of a run.
+ 3. **Cross-link.** Set the rule's `wiki-page:` to the new page and add the rule entry to the wiki page's `related:`. Bidirectional, per the repo's cross-reference rule.
+ 4. **Log + index.** Append to `wiki/_log.md`; add the new page to `wiki/_index.md`.
+ 
+diff --color -ruN a/skills/mcp-server-scaffold/SKILL.md b/skills/mcp-server-scaffold/SKILL.md
+--- a/skills/mcp-server-scaffold/SKILL.md	2026-09-28 11:27:44
++++ b/skills/mcp-server-scaffold/SKILL.md	2026-09-28 11:28:24
+@@ -93,7 +93,7 @@
+ - [ ] Startup log line includes: auth mode, mutation gate state, tool count, rate-limit ceilings, port. Logged to stderr.
+ - [ ] AI-search tool path goes through the rate limiter; the read-search tool does not (it's already bounded by filters + max-results cap).
+ - [ ] `MAX_RESULTS_CAP` is enforced inside validation, not just documented in the tool description.
+-- [ ] One example test per tool exists — including a negative test for the mutation gate that asserts the backend client is never called when the gate is closed.
++- [ ] The template tests are present (search normalization, the mutation-gate negative test that asserts the backend client is never called when the gate is closed, and — for Bun — no-stdout-writes), and every other generated tool has at least one test modelled on the search test.
+ - [ ] README documents the inspector workflow (npx @modelcontextprotocol/inspector for Bun, equivalent for Go).
+ - [ ] No `console.log` / `fmt.Println` writes to stdout. All telemetry goes to stderr. Stdout is reserved for the JSON-RPC protocol when stdio transport is enabled.
+ 
+@@ -124,7 +124,7 @@
+ 
+ ### Generation
+ 
+-Copy the matching template file (`templates/<lang>/src/tools/<kind>.*` for Bun; `internal/tools/<kind>.go` for Go), rename it, substitute placeholders, and register it in the tool registry. Add a matching unit test based on the test template — including the negative cases.
++Copy the matching template file — Bun `templates/bun/src/tools/` (read-search → `search-companies.ts.tmpl`, read-get → `get-company.ts.tmpl`, mutation → `create-ticket.ts.tmpl`, ai-search → `ai-search-companies.ts.tmpl`); Go `templates/go/internal/tools/` (the snake_case equivalents, e.g. `search_companies.go.tmpl`) — rename it, substitute placeholders, and register it in the tool registry. Add a matching unit test based on the test template — including the negative cases.
+ 
+ Then re-run the post-generation checklist for the affected files.
+ 
+diff --color -ruN a/skills/mcp-server-scaffold/templates/bun/src/tools/ai-search-companies.ts.tmpl b/skills/mcp-server-scaffold/templates/bun/src/tools/ai-search-companies.ts.tmpl
+--- a/skills/mcp-server-scaffold/templates/bun/src/tools/ai-search-companies.ts.tmpl	2026-09-28 11:27:44
++++ b/skills/mcp-server-scaffold/templates/bun/src/tools/ai-search-companies.ts.tmpl	2026-09-28 11:28:30
+@@ -25,8 +25,11 @@
+ export const aiSearchCompanies: Tool<In, Out> = {
+   name: "ai_search_companies",
+   description:
+-    "Natural-language company search. Subject to a per-user rate limit (configurable via MCP_RATE_LIMIT_AI_SEARCH_PER_MIN). " +
+-    "Prefer search_companies with explicit filters when you know what you want.",
++    "Natural-language company search for requests that can't be expressed as filters. " +
++    "Input: q, a free-text description of the companies wanted (3–280 chars). " +
++    "Returns flat company records {id, name, country, segment, employeeCount}. " +
++    "Rate-limited per user (MCP_RATE_LIMIT_AI_SEARCH_PER_MIN); over the limit it returns a rate-limit error. " +
++    "Prefer search_companies when a country, segment, or keyword is known.",
+   inputSchema: Input,
+   outputSchema: Output,
+   mutates: false,

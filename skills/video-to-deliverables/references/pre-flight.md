@@ -74,7 +74,7 @@ Before each phase, check if its outputs already exist. If they do (and `--force`
 
 ### Phase 2
 
-- Check: the primary deliverable for the selected profile exists (the per-profile reference file names this). For `skill-factory`, this is `{PLUGIN_DIR}/plugin.json` — but `PLUGIN_SLUG` isn't known until Phase 2 runs, so the check is "any directory matching `{PROJECT_DIR}/generated-plugin-*/plugin.json`". If one exists, describe it and ask the user whether to reuse or rebuild before auto-skipping.
+- Check: the primary deliverable for the selected profile exists (the per-profile reference file names this). For `skill-factory`, this is `{PLUGIN_DIR}/.claude-plugin/plugin.json` — but `PLUGIN_SLUG` isn't known until Phase 2 runs, so the check is "any directory matching `{PROJECT_DIR}/generated-plugin-*/.claude-plugin/plugin.json`". If one exists, describe it and ask the user whether to reuse or rebuild before auto-skipping.
 - Skip message: `Phase 2: Skipping — {profile} deliverables already exist`.
 
 ### Reuse mode (`--from-deliverables`)

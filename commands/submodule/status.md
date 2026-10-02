@@ -2,8 +2,11 @@
 name: "submodule:status"
 description: "Health-check every Git submodule in the current repo. Read-only — reports detached HEAD, drift, dirty state, unreachable remotes, and pinned-vs-HEAD mismatches with copy-paste remediation commands."
 argument-hint: "[--path <submodule-path>] [--no-fetch]"
-allowed-tools: Skill(git-submodules), Bash, Read, Glob, Grep
+allowed-tools: Bash, Read, Glob, Grep
+disable-model-invocation: true
 ---
+
+> **How this command loads its skill.** `git-submodules` is manual-only (`disable-model-invocation: true`), so do not call it through the Skill tool. Read `${CLAUDE_PLUGIN_ROOT}/skills/git-submodules/SKILL.md` and follow it. Paths inside a SKILL.md are relative to its own directory, and the arguments it expects are the ones given to this command.
 
 # Submodule Status
 
@@ -22,7 +25,7 @@ Parse from `$ARGUMENTS`:
 
 ## Process
 
-Invoke the `git-submodules` skill with `mode: status` and forward `$ARGUMENTS`.
+Follow the `git-submodules` skill (loaded as described above) with `mode: status` and forward `$ARGUMENTS`.
 
 The skill will:
 

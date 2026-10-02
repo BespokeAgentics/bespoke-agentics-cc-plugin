@@ -2,8 +2,11 @@
 name: "disclosure:audit"
 description: "Read-only health check of an existing CLAUDE.md / AGENTS.md / .claude/settings.json context layer. Flags missing per-subsystem files, stale commands, broken AGENTS.md pointers, drifted or missing managed sentinels, settings gaps (deny rules, additionalDirectories), and uninstalled code-intelligence recommendations. Writes nothing; recommends /disclosure:map to fix."
 argument-hint: "[<root>] [--depth subsystem|diverge|deep]"
-allowed-tools: Skill(progressive-disclosure), Agent, Bash, Read, Glob, Grep
+allowed-tools: Agent, Bash, Read, Glob, Grep
+disable-model-invocation: true
 ---
+
+> **How this command loads its skill.** `progressive-disclosure` is manual-only (`disable-model-invocation: true`), so do not call it through the Skill tool. Read `${CLAUDE_PLUGIN_ROOT}/skills/progressive-disclosure/SKILL.md` and follow it. Paths inside a SKILL.md are relative to its own directory, and the arguments it expects are the ones given to this command.
 
 # Progressive Disclosure — Audit
 
@@ -22,7 +25,7 @@ memory files.
 
 ## Process
 
-Invoke the `progressive-disclosure` skill with `mode: audit` and forward `$ARGUMENTS`. The
+Follow the `progressive-disclosure` skill (loaded as described above) with `mode: audit` and forward `$ARGUMENTS`. The
 skill runs Phases 0–2 only (inventory + parallel scan + synthesis) and then reports instead
 of planning writes. It checks:
 

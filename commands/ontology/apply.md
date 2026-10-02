@@ -2,12 +2,15 @@
 name: "ontology:apply"
 description: "Rewrite the mechanical ontology violations to canonical form — aliases and spelling variants to the canonical value, deprecated values to their replacement, title/label/folder links to the canonical [[link]] keeping the visible text. Frontmatter tokens and link text only; every other byte preserved. Always dry-run first and confirm."
 argument-hint: "[--dry-run] [<path>...]"
-allowed-tools: Skill(project-ontology), AskUserQuestion, Bash, Read
+allowed-tools: AskUserQuestion, Bash, Read
+disable-model-invocation: true
 ---
+
+> **How this command loads its skill.** `project-ontology` is manual-only (`disable-model-invocation: true`), so do not call it through the Skill tool. Read `${CLAUDE_PLUGIN_ROOT}/skills/project-ontology/SKILL.md` and follow it. Paths inside a SKILL.md are relative to its own directory, and the arguments it expects are the ones given to this command.
 
 # Project Ontology — Apply
 
-Invoke the `project-ontology` skill with `mode: apply` and forward:
+Follow the `project-ontology` skill (loaded as described above) with `mode: apply` and forward:
 
 ```
 $ARGUMENTS

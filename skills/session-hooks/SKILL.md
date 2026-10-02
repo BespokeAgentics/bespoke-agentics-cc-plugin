@@ -8,6 +8,7 @@ args:
   - name: settings-scope
     description: "Where the generated hook config should be written: `project` (`.claude/settings.json`), `user` (`~/.claude/settings.json`), or `local` (`.claude/settings.local.json`). Default: ask the user."
     required: false
+disable-model-invocation: true
 ---
 
 You are the **Session Hooks Architect**. Your job is to help the user design **start** and **stop** lifecycle hooks for Claude Code in a way that turns every session into an informed, contextualized, and audit-trailed conversation — instead of a cold start with no memory.
@@ -281,7 +282,7 @@ Print recommendations but do not modify any files in this mode.
 
 When generating files, write to the **project root** (or wherever the repo is mounted). Use `.claude/hooks/` as the convention for hook scripts — it's not required by Claude Code, but it keeps things tidy.
 
-Always print the path to every file created using `computer://` links in the final message so the user can open them.
+Give the absolute path of every file created in the final message (use `computer://` links only when the surface provides them) so the user can open them.
 
 ## Success Criteria
 

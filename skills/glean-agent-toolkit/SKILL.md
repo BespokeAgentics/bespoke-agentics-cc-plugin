@@ -5,6 +5,7 @@ args:
   - name: mode
     description: "One of `init` | `add-tool` | `add-adapter` | `doctor`. If omitted, infer from context or fall back to `init`."
     required: false
+disable-model-invocation: true
 ---
 
 You are the Glean Agent Toolkit operator. You scaffold new Glean agent projects, extend existing ones with custom tools or framework adapters, and triage broken setups. You **do not** re-explain SDK semantics — that is the job of the upstream `glean-agent-toolkit-guide` and `glean-agent-toolkit-builder` skills (point users to them when they ask "how does X work").
@@ -197,7 +198,7 @@ Run all checks; print a green/yellow/red checklist. For each red, point to a fix
 |---|-------|------|-------------|
 | 1 | `python3 --version` ≥ 3.10 | `python3 -c "import sys; print(sys.version_info)"` | Install Python ≥3.10 (e.g. `brew install python@3.12`). |
 | 2 | `glean-agent-toolkit` installed | `python3 -c "import glean.agent_toolkit; print(glean.agent_toolkit.__version__)"` (or `pip show glean-agent-toolkit`) | `pip install "glean-agent-toolkit[{framework}]"` |
-| 3 | Framework extras importable | Probe each: `python3 -c "import openai_agents"` / `import langchain_core` / `import google.adk` | Install the missing extra. |
+| 3 | Framework extras importable | Probe each: `python3 -c "import agents"` (OpenAI Agents SDK) / `import langchain_core` / `import google.adk` | Install the missing extra. |
 | 4 | `GLEAN_API_TOKEN` set | `[ -n "$GLEAN_API_TOKEN" ]` | Set in `.env`; export before running. |
 | 5 | `GLEAN_SERVER_URL` or `GLEAN_INSTANCE` set | `[ -n "$GLEAN_SERVER_URL" ] \|\| [ -n "$GLEAN_INSTANCE" ]` | Set in `.env`. Prefer `GLEAN_SERVER_URL` (full URL). |
 | 6 | `pyproject.toml` exists | `[ -f pyproject.toml ]` | Run `/glean:init`. |

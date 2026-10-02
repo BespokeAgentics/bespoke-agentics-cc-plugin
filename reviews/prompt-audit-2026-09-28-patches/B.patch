@@ -1,0 +1,148 @@
+diff --color -ruN a/commands/codex-prompt.md b/commands/codex-prompt.md
+--- a/commands/codex-prompt.md	2026-09-28 11:27:36
++++ b/commands/codex-prompt.md	2026-09-28 11:28:15
+@@ -8,7 +8,7 @@
+ 
+ > **How this command loads its skill.** `codex-prompt-builder` is manual-only (`disable-model-invocation: true`), so do not call it through the Skill tool. Read `${CLAUDE_PLUGIN_ROOT}/skills/codex-prompt-builder/SKILL.md` and follow it. Paths inside a SKILL.md are relative to its own directory, and the arguments it expects are the ones given to this command.
+ 
+-Use the codex-prompt-builder skill to turn this into a copy-ready Codex prompt:
++Follow the codex-prompt-builder skill (loaded as described above) to turn this into a copy-ready Codex prompt:
+ 
+ $ARGUMENTS
+ 
+diff --color -ruN a/commands/db/publish.md b/commands/db/publish.md
+--- a/commands/db/publish.md	2026-09-28 11:27:36
++++ b/commands/db/publish.md	2026-09-28 11:28:03
+@@ -1,7 +1,7 @@
+ ---
+ name: "db:publish"
+ description: "Publish the project database to Cloudflare D1 and deploy the read-only MCP Worker (modes d1 / both): sync, export a D1-safe import.sql, dry-run on local D1, then create/execute/deploy remotely with wrangler, smoke-test, and log. Confirms before the first create, deploy or secret write."
+-argument-hint: "[--dry-run] [--deploy] [--no-deploy]"
++argument-hint: "[--dry-run] [--deploy]"
+ allowed-tools: AskUserQuestion, Bash, Read, Write, Edit
+ disable-model-invocation: true
+ ---
+@@ -16,13 +16,14 @@
+ $ARGUMENTS
+ ```
+ 
+-Read `skills/project-db/references/d1-publish.md` first. The sequence: `db.py sync` →
++Read `${CLAUDE_PLUGIN_ROOT}/skills/project-db/references/d1-publish.md` first. The sequence: `db.py sync` →
+ `db.py export-d1` → scaffold `.claude/db/worker/` from `templates/d1/` if missing → **local D1 dry
+ run** (`wrangler d1 execute <name> --local --file=../d1/import.sql --yes`) → `wrangler whoami` →
+-`wrangler d1 create` once (store `database_id` in `wrangler.toml` and `config.json`) →
++`wrangler d1 create` once (store `database_id` in `wrangler.toml`) →
+ `--remote --file` → `wrangler deploy` (first time, or `--deploy`) → `secret put MCP_BEARER_TOKENS`
+-(first time) → smoke test `/health` and one `tools/call` → append a `wiki/_log.md` entry with counts
+-and the Worker URL.
++(first time) → smoke test `/health` and one `tools/call` → `db.py publish-record --database <name>
++--database-id <id> --url <worker-url>` (stamps `last_publish`, stores the D1 settings in `config.json`,
++appends the `wiki/_log.md` entry).
+ 
+ - `--dry-run` stops after the local D1 import and reports.
+ - The project must be `mode: d1` or `both` (`/db:init --force --mode both` to switch).
+diff --color -ruN a/commands/hook/add-stop.md b/commands/hook/add-stop.md
+--- a/commands/hook/add-stop.md	2026-09-28 11:27:36
++++ b/commands/hook/add-stop.md	2026-09-28 11:28:05
+@@ -29,7 +29,7 @@
+ 
+ 1. Detect existing Stop / SessionEnd hooks to avoid duplicates.
+ 2. Ask which pattern to add (skipping if `--pattern` was provided).
+-3. Ask about settings scope and idempotency strategy.
++3. Ask about settings scope, script language, and failure mode.
+ 4. Scaffold the script under `.claude/hooks/` and append to `settings.json`.
+ 5. If `wiki/` exists and the chosen pattern writes to it, append a `wiki/_log.md` row.
+ 
+diff --color -ruN a/commands/knowledge/promote.md b/commands/knowledge/promote.md
+--- a/commands/knowledge/promote.md	2026-09-28 11:27:35
++++ b/commands/knowledge/promote.md	2026-09-28 11:27:49
+@@ -34,7 +34,8 @@
+ 1. **Finds candidates** — rules with an empty `wiki-page:` (plus any named via `--rule`).
+ 2. **Creates/updates the wiki page** — default mapping is an **ADR-style `type: decision`** page
+    (`status: approved`), located by domain (a client → that client's `decisions/`; otherwise
+-   `wiki/verndale/playbooks/`). It confirms the location/type via `AskUserQuestion` on the first
++   `wiki/{org}/playbooks/`, where `{org}` is the internal-section folder chosen at `/wiki:init` —
++   ask if the vault has none). It confirms the location/type via `AskUserQuestion` on the first
+    promotion of a run.
+ 3. **Cross-links** — sets the rule's `wiki-page:` to the new page and adds the rule to the page's
+    `related:` (bidirectional).
+diff --color -ruN a/commands/repo-audit.md b/commands/repo-audit.md
+--- a/commands/repo-audit.md	2026-09-28 11:27:36
++++ b/commands/repo-audit.md	2026-09-28 11:28:15
+@@ -105,7 +105,7 @@
+ 
+ Produce a **single document** with exactly these sections, in this order:
+ 
+-1. **Executive Summary** — ≤10 sentences: overall health **grade A–F** with justification, top 3 risks, top 3 opportunities.
++1. **Executive Summary** — a short, skimmable opening: overall health **grade A–F** with justification, top 3 risks, top 3 opportunities.
+ 2. **Repo Map** (Phase 1)
+ 3. **Audit Report** (Phase 2 — findings by dimension, sorted by severity, + Strengths)
+ 4. **Improvement Strategy** (Phase 3)
+diff --color -ruN a/commands/ux-audit-a11y.md b/commands/ux-audit-a11y.md
+--- a/commands/ux-audit-a11y.md	2026-09-28 11:27:36
++++ b/commands/ux-audit-a11y.md	2026-09-28 11:28:15
+@@ -8,7 +8,7 @@
+ 
+ > **How this command loads its skill.** `ux-audit` is manual-only (`disable-model-invocation: true`), so do not call it through the Skill tool. Read `${CLAUDE_PLUGIN_ROOT}/skills/ux-audit/SKILL.md` and follow it. Paths inside a SKILL.md are relative to its own directory, and the arguments it expects are the ones given to this command.
+ 
+-Invoke the ux-audit skill with a focus on accessibility patterns.
++Follow the ux-audit skill (loaded as described above) with a focus on accessibility patterns.
+ 
+ Target path: $ARGUMENTS
+ 
+diff --color -ruN a/commands/ux-audit-code.md b/commands/ux-audit-code.md
+--- a/commands/ux-audit-code.md	2026-09-28 11:27:36
++++ b/commands/ux-audit-code.md	2026-09-28 11:28:15
+@@ -8,7 +8,7 @@
+ 
+ > **How this command loads its skill.** `ux-audit` is manual-only (`disable-model-invocation: true`), so do not call it through the Skill tool. Read `${CLAUDE_PLUGIN_ROOT}/skills/ux-audit/SKILL.md` and follow it. Paths inside a SKILL.md are relative to its own directory, and the arguments it expects are the ones given to this command.
+ 
+-Invoke the ux-audit skill, but ONLY run the Code Analysis route (Steps 1a-1c).
++Follow the ux-audit skill (loaded as described above), running only the Code Analysis route (Steps 1a-1c).
+ 
+ Target path: $ARGUMENTS
+ 
+diff --color -ruN a/commands/ux-audit-quick.md b/commands/ux-audit-quick.md
+--- a/commands/ux-audit-quick.md	2026-09-28 11:27:36
++++ b/commands/ux-audit-quick.md	2026-09-28 11:28:15
+@@ -8,7 +8,7 @@
+ 
+ > **How this command loads its skill.** `ux-audit` is manual-only (`disable-model-invocation: true`), so do not call it through the Skill tool. Read `${CLAUDE_PLUGIN_ROOT}/skills/ux-audit/SKILL.md` and follow it. Paths inside a SKILL.md are relative to its own directory, and the arguments it expects are the ones given to this command.
+ 
+-Invoke the ux-audit skill for a quick spot-check.
++Follow the ux-audit skill (loaded as described above) for a quick spot-check.
+ 
+ Target: $ARGUMENTS
+ 
+diff --color -ruN a/commands/ux-audit-visual.md b/commands/ux-audit-visual.md
+--- a/commands/ux-audit-visual.md	2026-09-28 11:27:36
++++ b/commands/ux-audit-visual.md	2026-09-28 11:28:15
+@@ -8,7 +8,7 @@
+ 
+ > **How this command loads its skill.** `ux-audit` is manual-only (`disable-model-invocation: true`), so do not call it through the Skill tool. Read `${CLAUDE_PLUGIN_ROOT}/skills/ux-audit/SKILL.md` and follow it. Paths inside a SKILL.md are relative to its own directory, and the arguments it expects are the ones given to this command.
+ 
+-Invoke the ux-audit skill, but ONLY run the Visual Analysis route (Step 2).
++Follow the ux-audit skill (loaded as described above), running only the Visual Analysis route (Step 2).
+ 
+ Target: $ARGUMENTS
+ 
+diff --color -ruN a/commands/wiki-lint.md b/commands/wiki-lint.md
+--- a/commands/wiki-lint.md	2026-09-28 11:27:35
++++ b/commands/wiki-lint.md	2026-09-28 11:27:55
+@@ -14,6 +14,6 @@
+ $ARGUMENTS
+ ```
+ 
+-The skill parses `[--scope full|client:<slug>|recent] [--fix]`. If no arguments are given, default to `--scope full` (no auto-fix). After the skill runs, print the health-score summary it produced and the path of the saved lint report.
++The skill parses `[--scope full|client:<slug>|recent] [--fix]`. `--fix` means `fix=true, report-only=false` — the user asked for fixes. If no arguments are given, run `--scope full` report-only (no auto-fix). After the skill runs, print the health-score summary it produced and the path of the saved lint report.
+ 
+ See `skills/wiki-lint/SKILL.md` for the full lint pipeline — eight checks: broken links, orphans, contradictions, stale pages, missing cross-references, frontmatter validation (against the vault's own vocabulary), decision drift, and the ontology dimension when project-ontology is installed — and the report schema.
+diff --color -ruN a/commands/wiki-new-client.md b/commands/wiki-new-client.md
+--- a/commands/wiki-new-client.md	2026-09-28 11:27:35
++++ b/commands/wiki-new-client.md	2026-09-28 11:27:52
+@@ -16,4 +16,4 @@
+ 
+ Expected positional args: `<company> <platform-source>`. Optional: `--target <platform-target>` to set a migration target, `--context <document-path>` to ingest an initial source document (RFP, kickoff brief, etc.).
+ 
+-The skill creates the client folder tree, instantiates entity templates, runs an intake interview, and (if `--context` was given) ingests the initial document so the client wiki starts with real content. See `skills/wiki-scaffold-client/SKILL.md` for workspace layout and entity templates.
++The skill derives and validates the client slug, creates the client folder tree and initial entity pages, ingests the initial document if `--context` was given (so the client wiki starts with real content), writes the client README, and updates `wiki/_index.md` and `wiki/_log.md`. See `skills/wiki-scaffold-client/SKILL.md` for workspace layout and entity templates.

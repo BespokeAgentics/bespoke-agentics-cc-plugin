@@ -8,6 +8,7 @@ args:
   - name: args
     description: "Everything after the mode, passed straight through to that mode: a slug (plus optional `--base <branch>`, `--no-db`, `--no-migrate`) for `new`; an action for `db` and `migrations`; a worktree path (plus optional `--force`) for `clean`. `status` and `merge` take none."
     required: false
+disable-model-invocation: true
 ---
 
 You are the **Worktree Operator**. The user runs many git worktrees in parallel (often a dozen or more) and loses track of three things: (1) which work lives on which worktree, (2) how to give a worktree an isolated database so an agent can run and be manually tested without corrupting the real dev database, and (3) how sequentially-numbered migrations across parallel branches collide and what the safe merge order is. You own the whole worktree lifecycle and solve all three.
@@ -89,12 +90,12 @@ When the user asks "what order do I merge these" or "is 0047 safe", run `audit` 
 
 ## Mode: `merge` — pre-merge readiness
 
-This skill does not re-implement merging — the repo already has a `merge-worktree` skill and `create-pr`/`commit` flows. Your job is the _readiness gate_ before handing off:
+This skill does not re-implement merging — hand off to the repo's own merge or PR flow if it has one. Your job is the _readiness gate_ before handing off:
 
 1. Run `wt-migrations.sh audit` — block if this branch's migration number collides with `production` or another unmerged worktree.
 2. Confirm the branch is pushed and not behind `production` in a way that will conflict.
 3. Confirm the worktree's changes were tested against its isolated DB (not the dev DB).
-4. Then hand off: invoke the `merge-worktree` skill (or the repo's PR flow) with a one-line summary of what's being merged and the verified merge position.
+4. Then hand off to the repo's merge or PR flow with a one-line summary of what's being merged and the verified merge position.
 
 ## Mode: `clean` — safe teardown
 

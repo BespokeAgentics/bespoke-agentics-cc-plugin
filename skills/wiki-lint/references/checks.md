@@ -73,7 +73,7 @@ Never auto-fix contradictions.
 
 ## Check 4 — Stale pages (LOW)
 
-Find the most recent meeting date across all `wiki/clients/*/meetings/`. Pages with `updated < (most-recent-meeting - 14 days)` are stale.
+Find the most recent meeting date across all `wiki/{top-level}/*/meetings/`, where `{top-level}` is the vault's grouping folder (`clients/`, `projects/`, `teams/` or `domains/`, per `_schema/SCHEMA.md`). Pages with `updated < (most-recent-meeting - 14 days)` are stale. Staleness reads `updated` only (fall back to `created` when `updated` is absent — Check 6 flags the missing key); never file mtime or a legacy `date:` key.
 
 - Very stale (>90 days): may contain outdated info.
 - Moderately stale (30–90 days): review if project is active.
@@ -119,17 +119,17 @@ Fix strategy:
 **Required keys come from the vault's templates, not from this file.** A typed page must carry every key
 its template `wiki/_schema/templates/<type>.md` declares (an empty value is allowed unless the key has a
 vocabulary and the vault expects a value). Every page needs `type`. A type with no template has no
-required keys beyond `type`. (An earlier hard-coded list required `sources`, `category` and `decision`
-on vaults whose templates never defined them.) Formats: keys named like `*date*`, `created`, `updated`
+required keys beyond `type`. (The templates are the single declaration, so lint and ingest read the
+same keys.) Formats: keys named like `*date*`, `created`, `updated`
 must be ISO `YYYY-MM-DD`; keys the template writes as lists (`sources`, `tags`, `attendees`) must be lists.
+The schema's date/source keys are `created`, `updated`, `sources` (and `decision` for the Decision Status
+Color): a page carrying a legacy `date:`, `source:` or `status-color:` key gets it listed in its record.
 Untyped pages (README, index pages without `type`) are not frontmatter-checked.
 
 **Count one INVALID_FRONTMATTER issue per page**, listing every missing key and bad value on that page in
 its record — the health score weighs pages, not fields.
 
-**Allowed values come from the vault, never from this file.** (A hard-coded list here once said feature
-statuses were `identified|in-design|in-dev|delivered|deprecated` while the vault's templates and schema
-said otherwise — lint and ingest then disagreed about every page.) Resolve the vocabulary in order:
+**Allowed values come from the vault, never from this file.** Resolve the vocabulary in order:
 
 1. **Ontology installed** (`.claude/ontology/ontology.py` + the ontology file) → value checks belong to
    Check 8. Check 6 validates presence and format only.
@@ -147,6 +147,8 @@ INVALID_FRONTMATTER | MEDIUM |
 Fix strategy (when `fix=true`):
 - Add missing required fields with placeholder values only when the vocabulary has one (e.g. `decision: tbd`).
 - Repair date format issues.
+- Rename legacy keys: `date:` → `created:` (and `updated:` if absent), `source: x` → `sources: [x]`,
+  `status-color:` → `decision:` (mapping the emoji to the vocabulary value). Never drop a value.
 - Never guess a value where logic isn't obvious.
 
 ## Check 7 — Decision drift (HIGH)

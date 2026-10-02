@@ -24,29 +24,19 @@ For every page you updated:
 
 ## Step 6 — Append ingest log entry
 
-Prepend to `wiki/_log.md`:
+Append at the end of `wiki/_log.md` (the log is oldest-first), in the vault's heading format:
 
 ```markdown
-## Lightweight Ingest — {document-type} — {today}
+## {today} — ingest-document — {company}: {one-sentence key takeaway}
 
-**Document**: {document-path}
-**Company**: {company}
-**Type**: {email|pdf|spec|slack|other}
-
-**Classification**: {Decision|Clarification|Scope Change|Risk Alert|Evidence|Question|Approval}
-
-**Pages Updated**:
-- [[feature-slug|Feature Name]]: {brief change summary}
-- [[gap-slug|Gap Name]]: {brief change summary}
-- [[decision-slug|Decision Name]]: {brief change summary}
-
-**Pages Created**: {none|list if any}
-
-**Contradictions Found**: {none|list}
-
-**Key Takeaway**: {One-sentence summary of what this document added to our knowledge}
-
-**Status**: ✓ Complete
+- Document: {document-path} ({email|pdf|spec|slack|other})
+- Classification: {Decision|Clarification|Scope Change|Risk Alert|Evidence|Question|Approval}
+- Pages updated:
+  - [[feature-slug|Feature Name]]: {brief change summary}
+  - [[decision-slug|Decision Name]]: {brief change summary}
+- Pages created: {none|list}
+- Contradictions: {none|list}
+- Status: ✓ Complete
 ```
 
 Also update `wiki/_index.md` if any NEW pages were created (same format as the meeting-ingest entries).

@@ -1,10 +1,10 @@
 ## Project Database (project-db) — source of truth
 
-This project keeps its knowledge in a queryable SQLite database at `.claude/db/project.sqlite` (slug `{{SLUG}}`, mode `{{MODE}}`), built from the source collections declared in `.claude/db/config.json` and rebuilt incrementally by a SessionStart hook. Every agent operating in this repository MUST use it as the primary knowledge layer.
+This project keeps its knowledge in a queryable SQLite database at `.claude/db/project.sqlite` (slug `{{SLUG}}`, mode `{{MODE}}`), built from the source collections declared in `.claude/db/config.json` and rebuilt incrementally by a SessionStart hook. Use it as the primary knowledge layer for project questions.
 
 ### Rules
 
-1. **Query the database before answering any project question.** Decisions, entities, status, data, history: if a table or view exists for it, do not rely on memory or general knowledge. Run `python3 .claude/db/db.py query "SELECT …"` first; open the source file at `pages.path` for the full text.
+1. **Query the database before answering questions it covers.** Decisions, entities, status, data, history: when a table or view exists for it, run `python3 .claude/db/db.py query "SELECT …"` first rather than relying on memory; open the source file at `pages.path` for the full text.
 2. **Read `.claude/db/SCHEMA.md` before writing SQL.** Prefer the typed views (one per page type) and the curated views over raw tables.
 3. **Update the sources after every content-producing operation, then sync.** New decisions, analyses, findings or data belong in the configured collections (markdown with frontmatter, or the tabular files) — not only in chat. Then `/db:sync`. Knowledge that exists only in a conversation is lost knowledge.
 4. **Never modify raw sources; never write to the database by hand.** Sources are the record; the database is derived and rebuildable. Correct a source by editing it (or, for immutable inputs, by adding a page that records the correction and links back).

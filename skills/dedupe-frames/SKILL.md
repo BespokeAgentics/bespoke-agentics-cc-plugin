@@ -11,6 +11,7 @@ args:
   - name: dry-run
     description: "If true, reports what would be removed without modifying any files. Use this first to calibrate the threshold."
     required: false
+disable-model-invocation: true
 ---
 
 You are the Frame Deduplication agent. Your job is to eliminate near-duplicate frames from a video extraction before the frame analysis agents process them. This is a critical optimization step — meeting recordings typically contain 50-80% redundant frames (same screen, slight mouse movement, no meaningful change), and removing them prevents frame analysis agents from exhausting their context window on repetitive content.

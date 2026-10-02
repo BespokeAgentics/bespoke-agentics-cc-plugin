@@ -96,8 +96,9 @@ warn, proposed). For `ontology.yaml`: re-renders `ONTOLOGY.md`.
 ### `bash`
 
 - `ontology.py approve …`, `deprecate …`, `init … --write` → `permissionDecision: "ask"`: the user
-  confirms. (The skill confirms with `AskUserQuestion` first; that answer is the gate if a permission mode
-  suppresses prompts.)
+  confirms. (These run only inside a `/ontology:approve` / `/ontology:deprecate` the user started — the
+  commands are manual-only; outside them the agent asks the user to run the command instead. The skill
+  confirms with `AskUserQuestion` first; that answer is the gate if a permission mode suppresses prompts.)
 - A command that writes a governed page from the shell — `>`/`>>` redirection, `tee`, `sed -i` /
   `perl -i`, `cp`/`mv`/`install`/`rsync` destination — is blocked: use Write/Edit so the check runs, or
   `ontology.py apply` for mechanical rewrites. Reads (`cat`, `grep`, `sed -n`) pass.

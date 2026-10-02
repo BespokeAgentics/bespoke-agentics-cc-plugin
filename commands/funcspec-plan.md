@@ -2,8 +2,11 @@
 name: "funcspec-plan"
 description: "Validate funcspec findings with the user and generate the implementation plan. Runs the Stage-2 validation interview (confirm features, resolve ambiguities, set priorities), then writes the functional spec, implementation plan, backlog-ready epics/stories, gap register, and traceability matrix. Ingests into the wiki when present and offers Jira/Confluence/Linear push when MCPs are connected. Runs funcspec-evaluate first if no profiles exist."
 argument-hint: "[<workspace>] [--out <dir>] [--push ask|none]"
-allowed-tools: Skill(funcspec), Agent, AskUserQuestion, Bash, Read, Write, Edit, Glob, Grep
+allowed-tools: Agent, AskUserQuestion, Bash, Read, Write, Edit, Glob, Grep
+disable-model-invocation: true
 ---
+
+> **How this command loads its skill.** `funcspec` is manual-only (`disable-model-invocation: true`), so do not call it through the Skill tool. Read `${CLAUDE_PLUGIN_ROOT}/skills/funcspec/SKILL.md` and follow it. Paths inside a SKILL.md are relative to its own directory, and the arguments it expects are the ones given to this command.
 
 # Funcspec — Plan
 
@@ -26,7 +29,7 @@ Parse from `$ARGUMENTS`:
 
 ## Process
 
-Invoke the `funcspec` skill in **plan** mode and forward `$ARGUMENTS`.
+Follow the `funcspec` skill (loaded as described above) in **plan** mode and forward `$ARGUMENTS`.
 
 The skill will:
 

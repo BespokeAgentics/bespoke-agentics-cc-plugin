@@ -1,0 +1,475 @@
+diff --color -ruN a/skills/ui-issue-to-plan/references/plan-synthesis.md b/skills/ui-issue-to-plan/references/plan-synthesis.md
+--- a/skills/ui-issue-to-plan/references/plan-synthesis.md	2026-09-28 11:27:57
++++ b/skills/ui-issue-to-plan/references/plan-synthesis.md	2026-09-28 11:28:24
+@@ -50,7 +50,7 @@
+ ## Wiki integration (only if a `wiki/` vault exists)
+ 
+ Per the project's wiki-first mandate:
+-1. Ingest the plan: `/wiki:ingest-document '<plan-path>' spec` (or read `wiki/_schema/SCHEMA.md` and
++1. Ingest the plan: `/wiki:ingest-document '<client-slug>' '<plan-path>' spec` (or read `wiki/_schema/SCHEMA.md` and
+    create a spec/task page that links to the plan and the source video).
+ 2. Add cross-references to any related feature/gap pages.
+ 3. Append an entry to `wiki/_log.md` recording the ingest.
+diff --color -ruN a/skills/ux-audit/SKILL.md b/skills/ux-audit/SKILL.md
+--- a/skills/ux-audit/SKILL.md	2026-09-28 11:27:58
++++ b/skills/ux-audit/SKILL.md	2026-09-28 11:29:48
+@@ -35,7 +35,7 @@
+ 
+ ### 1a. Collect files
+ 
+-- Ask for or scan uploaded files. Look in `/mnt/user-data/uploads/` for any uploaded content.
++- Read the files or directories the user names; if none are named, ask which part of the repo to audit.
+ - For large codebases, prioritize: form components, modal/dialog components, error handling,
+   navigation, loading states, and any component named with words like: `form`, `modal`,
+   `dialog`, `error`, `loading`, `submit`, `confirm`, `alert`, `toast`, `nav`, `wizard`, `step`.
+@@ -73,20 +73,12 @@
+ 
+ ### For MP4 / MOV / WEBM files
+ 
+-Extract frames using ffmpeg before analysis:
++Extract frames with the plugin's shared frame extractor before analysis (requires ffmpeg — if
++`which ffmpeg` fails: `brew install ffmpeg`):
+ 
+ ```bash
+-# Install if needed
+-which ffmpeg || apt-get install -y ffmpeg 2>/dev/null
+-
+-# Extract 1 frame per second (adjust rate for longer videos)
+-ffmpeg -i /mnt/user-data/uploads/YOUR_FILE.mp4 \
+-  -vf "fps=1" \
+-  /home/claude/frames/frame_%04d.png \
+-  -hide_banner -loglevel error
+-
+-# For longer videos, use fps=0.5 (one frame every 2 seconds)
+-# For short demos (<30s), use fps=2 for more detail
++# 1 = seconds between frames; use 2 for longer videos
++${CLAUDE_PLUGIN_ROOT}/skills/extract-video-frames/scripts/extract-frames.sh "<video-path>" 1 "./ux-audit-frames"
+ ```
+ 
+ After extraction, read the frames sequentially and analyze as a user flow.
+@@ -138,7 +130,7 @@
+ Read `references/report-format.md` before generating the report.
+ 
+ The report must be output as an HTML file (not markdown) for readability and shareability.
+-Save to `/mnt/user-data/outputs/ux-audit-report.html`.
++Save to `./ux-audit-report.html` (or the path the user gives).
+ 
+ The report structure:
+ 
+diff --color -ruN a/skills/ux-audit/references/report-format.md b/skills/ux-audit/references/report-format.md
+--- a/skills/ux-audit/references/report-format.md	2026-09-28 11:27:58
++++ b/skills/ux-audit/references/report-format.md	2026-09-28 11:29:50
+@@ -1,7 +1,7 @@
+ # Report Format Reference
+ 
+ Generate a self-contained HTML report. All styles are inline — no external dependencies.
+-Save to `/mnt/user-data/outputs/ux-audit-report.html`.
++Save to `./ux-audit-report.html` (or the path the user gives).
+ 
+ ---
+ 
+diff --color -ruN a/skills/video-to-deliverables/SKILL.md b/skills/video-to-deliverables/SKILL.md
+--- a/skills/video-to-deliverables/SKILL.md	2026-09-28 11:27:58
++++ b/skills/video-to-deliverables/SKILL.md	2026-09-28 11:29:06
+@@ -29,7 +29,7 @@
+ - `--from-deliverables <dir>` — skip Phase 0 and Phase 1 entirely; reuse a prior run's outputs at `<dir>` (must contain `screen-catalog.md`, `component-library.md`, `system-architecture-map.md`, and a sibling `../video-extraction/` with `manifest.json` + `transcript.txt`).
+ - `--skip-dedup`, `--skip-transcribe`, `--force` — self-explanatory.
+ 
+-If `$ARGUMENTS` is empty or required args are missing, print a usage guide and stop. Full example invocations live in this file's git history; the schema above is canonical.
++If `$ARGUMENTS` is empty or required args are missing, print a usage guide and stop.
+ 
+ ## Derived variables
+ 
+diff --color -ruN a/skills/video-to-deliverables/references/pipeline-summary.md b/skills/video-to-deliverables/references/pipeline-summary.md
+--- a/skills/video-to-deliverables/references/pipeline-summary.md	2026-09-28 11:27:58
++++ b/skills/video-to-deliverables/references/pipeline-summary.md	2026-09-28 11:28:56
+@@ -42,7 +42,7 @@
+   ✓ {DOCS_DIR}/external-references.md
+   ✓ {DOCS_DIR}/interview-answers.json
+   ✓ {DOCS_DIR}/skill-factory-validation.md
+-  ✓ {PLUGIN_DIR}/plugin.json                  ← primary deliverable
++  ✓ {PLUGIN_DIR}/.claude-plugin/plugin.json  ← primary deliverable
+   ✓ {PLUGIN_DIR}/README.md
+   ✓ {PLUGIN_DIR}/skills/{name}/SKILL.md       (×N)
+   ✓ {PLUGIN_DIR}/skills/{name}/scripts/       (×N when artifacts were promoted)
+diff --color -ruN a/skills/video-to-deliverables/references/pre-flight.md b/skills/video-to-deliverables/references/pre-flight.md
+--- a/skills/video-to-deliverables/references/pre-flight.md	2026-09-28 11:27:58
++++ b/skills/video-to-deliverables/references/pre-flight.md	2026-09-28 11:28:56
+@@ -74,7 +74,7 @@
+ 
+ ### Phase 2
+ 
+-- Check: the primary deliverable for the selected profile exists (the per-profile reference file names this). For `skill-factory`, this is `{PLUGIN_DIR}/plugin.json` — but `PLUGIN_SLUG` isn't known until Phase 2 runs, so the check is "any directory matching `{PROJECT_DIR}/generated-plugin-*/plugin.json`". If one exists, describe it and ask the user whether to reuse or rebuild before auto-skipping.
++- Check: the primary deliverable for the selected profile exists (the per-profile reference file names this). For `skill-factory`, this is `{PLUGIN_DIR}/.claude-plugin/plugin.json` — but `PLUGIN_SLUG` isn't known until Phase 2 runs, so the check is "any directory matching `{PROJECT_DIR}/generated-plugin-*/.claude-plugin/plugin.json`". If one exists, describe it and ask the user whether to reuse or rebuild before auto-skipping.
+ - Skip message: `Phase 2: Skipping — {profile} deliverables already exist`.
+ 
+ ### Reuse mode (`--from-deliverables`)
+diff --color -ruN a/skills/video-to-deliverables/references/skill-factory-profile.md b/skills/video-to-deliverables/references/skill-factory-profile.md
+--- a/skills/video-to-deliverables/references/skill-factory-profile.md	2026-09-28 11:27:58
++++ b/skills/video-to-deliverables/references/skill-factory-profile.md	2026-09-28 11:29:03
+@@ -5,7 +5,7 @@
+ Originally designed for technical talks and tutorials (e.g., a Neo4j graph-RAG walkthrough), but also supports conceptual / architecture talks (doc-only skills) and product demos (setup / integration skills derived from UI + narration).
+ 
+ ## Primary Deliverable
+-`{PROJECT_DIR}/generated-plugin-{PLUGIN_SLUG}/plugin.json`
++`{PROJECT_DIR}/generated-plugin-{PLUGIN_SLUG}/.claude-plugin/plugin.json`
+ 
+ `PLUGIN_SLUG` is set during the Wave 2 interview (defaults to `PROJECT_SLUG-{LABEL}`).
+ 
+@@ -32,7 +32,7 @@
+ 
+ ## Final Deliverables (generated plugin)
+ All under `{PLUGIN_DIR} = {PROJECT_DIR}/generated-plugin-{PLUGIN_SLUG}/`:
+-- `{PLUGIN_DIR}/plugin.json` — plugin manifest (primary)
++- `{PLUGIN_DIR}/.claude-plugin/plugin.json` — plugin manifest (primary; Claude Code reads the manifest from `.claude-plugin/`)
+ - `{PLUGIN_DIR}/README.md` — plugin overview, install instructions, source video citation
+ - `{PLUGIN_DIR}/skills/{skill-name}/SKILL.md` — one per user-selected skill
+ - `{PLUGIN_DIR}/skills/{skill-name}/scripts/*` — executable scripts (when user promoted artifacts)
+@@ -312,7 +312,7 @@
+ 
+ `PLUGIN_DIR = {PROJECT_DIR}/generated-plugin-{plugin.slug}`
+ 
+-Create `{PLUGIN_DIR}/` and its subdirectories (`skills/`, `commands/`, `agents/`, `references/`) before launching.
++Create `{PLUGIN_DIR}/` and its subdirectories (`.claude-plugin/`, `skills/`, `commands/`, `agents/`, `references/`) before launching.
+ 
+ ### Templates
+ 
+@@ -339,7 +339,7 @@
+   Read: {DOCS_DIR}/interview-answers.json
+ 
+   Produce:
+-  1. {PLUGIN_DIR}/plugin.json — plugin manifest. Use this shape:
++  1. {PLUGIN_DIR}/.claude-plugin/plugin.json — plugin manifest (Claude Code reads it from `.claude-plugin/`). Use this shape:
+      {
+        "name": "<plugin.slug>",
+        "version": "<plugin.version>",
+@@ -516,13 +516,13 @@
+   Validate the generated plugin at {PLUGIN_DIR} for schema correctness.
+ 
+   Checks:
+-  1. {PLUGIN_DIR}/plugin.json parses as valid JSON and has required fields: name, version, description, skills.
++  1. {PLUGIN_DIR}/.claude-plugin/plugin.json parses as valid JSON and has required fields: name, version, description, skills.
+   2. Every {PLUGIN_DIR}/skills/*/SKILL.md has parseable YAML frontmatter with `name` and `description` fields.
+   3. Every SKILL.md `name` field matches the directory it lives in.
+   4. Every command file in {PLUGIN_DIR}/commands/ has valid frontmatter and the command name matches {plugin.slug}:{x}.
+   5. Every referenced script path (in SKILL.md body) actually exists under scripts/.
+   6. Every referenced references/*.md actually exists.
+-  7. No unsubstituted placeholders of the form {variable-name} or ${CLAUDE_PLUGIN_ROOT} embedded in content that should have been replaced.
++  7. No unsubstituted placeholders of the form {variable-name}. `${CLAUDE_PLUGIN_ROOT}` in script references is expected and correct — do not flag it.
+ 
+   Output findings to {DOCS_DIR}/skill-factory-validation.md under a "## Schema Validation" section. Use:
+     ✓ check passed
+@@ -596,7 +596,7 @@
+   For each SKILL.md, evaluate:
+   - Description triggers: does the description include natural-language phrases a user would actually say? Are trigger phrases concrete and non-overlapping with other skills in the plugin?
+   - Structure: is the body well-organized (objective → prerequisites → procedure → validation)?
+-  - Naming: does the `name` field match plugin conventions (namespace:slug)?
++  - Naming: does each `name` match its directory with no namespace prefix (the plugin supplies the namespace)?
+   - Argument handling: if the skill takes arguments, are they documented?
+   - Clarity: are steps imperative and actionable? Are frame references preserved but not overwhelming?
+ 
+diff --color -ruN a/skills/wiki-init/SKILL.md b/skills/wiki-init/SKILL.md
+--- a/skills/wiki-init/SKILL.md	2026-09-28 11:27:58
++++ b/skills/wiki-init/SKILL.md	2026-09-28 11:29:14
+@@ -8,7 +8,7 @@
+ disable-model-invocation: true
+ ---
+ 
+-You are the Wiki Init agent. You create an entirely new Karpathy-style LLM wiki vault from scratch — but you MUST understand the project you're working in before creating anything. You never assume what platforms, tools, or domains are involved. You discover them.
++You are the Wiki Init agent. You create an entirely new Karpathy-style LLM wiki vault from scratch — and you understand the project you're working in before creating anything. You never assume what platforms, tools, or domains are involved. You discover them.
+ 
+ ## When to use
+ 
+@@ -18,16 +18,6 @@
+ 
+ This is the **first thing you run** when starting a new wiki. After init, use `/wiki:new-client` to add clients, `/wiki:ingest-meeting` to populate content, and `/wiki:lint` to validate health.
+ 
+-## Critical rule — no assumptions
+-
+-DO NOT hardcode or assume:
+-- Any specific platform (Salesforce, Shopify, SAP, etc.)
+-- Any specific industry or domain.
+-- Any specific company or organization name.
+-- Any specific workflow (migration, implementation, etc.).
+-
+-Instead, **discover** all of this from the repo and the user.
+-
+ ## Workflow
+ 
+ 1. **Repo discovery (silent)** — see `references/interview.md#step-0`. Build a mental model from `CLAUDE.md`, `README.md`, package manifests, existing `.claude/`, raw content folders, and git metadata.
+@@ -44,10 +34,8 @@
+ 
+ ## Key behaviors (apply throughout)
+ 
+-- ALWAYS scan the repo first — understand what you're working with before asking or creating.
+-- ALWAYS interview the user — never assume platforms, domains, or structure.
+-- NEVER hardcode platform names — only create stubs for platforms confirmed by the user.
+-- NEVER hardcode org names — use whatever the user specifies, or skip entirely.
++- Scan the repo before asking or creating anything, then interview the user: discovery proposes, the user confirms.
++- Platforms, industry, org name, and workflow type are discovered, not assumed — this skill serves any project. Create platform stubs and an org section only for names the user confirmed (or skip them).
+ - Adapt folder structure to the organizational model chosen (clients, projects, teams, domains).
+ - Write a project-specific SCHEMA.md, not a generic template.
+ - Declare each controlled value list **once**, as the `# a|b|c` comment on its key in the page template; SCHEMA.md points to the templates instead of restating the values (two lists drift apart).
+diff --color -ruN a/skills/wiki-lint/references/checks.md b/skills/wiki-lint/references/checks.md
+--- a/skills/wiki-lint/references/checks.md	2026-09-28 11:27:58
++++ b/skills/wiki-lint/references/checks.md	2026-09-28 11:29:24
+@@ -73,7 +73,7 @@
+ 
+ ## Check 4 — Stale pages (LOW)
+ 
+-Find the most recent meeting date across all `wiki/clients/*/meetings/`. Pages with `updated < (most-recent-meeting - 14 days)` are stale.
++Find the most recent meeting date across all `wiki/{top-level}/*/meetings/`, where `{top-level}` is the vault's grouping folder (`clients/`, `projects/`, `teams/` or `domains/`, per `_schema/SCHEMA.md`). Pages with `updated < (most-recent-meeting - 14 days)` are stale.
+ 
+ - Very stale (>90 days): may contain outdated info.
+ - Moderately stale (30–90 days): review if project is active.
+@@ -119,17 +119,15 @@
+ **Required keys come from the vault's templates, not from this file.** A typed page must carry every key
+ its template `wiki/_schema/templates/<type>.md` declares (an empty value is allowed unless the key has a
+ vocabulary and the vault expects a value). Every page needs `type`. A type with no template has no
+-required keys beyond `type`. (An earlier hard-coded list required `sources`, `category` and `decision`
+-on vaults whose templates never defined them.) Formats: keys named like `*date*`, `created`, `updated`
++required keys beyond `type`. (The templates are the single declaration, so lint and ingest read the
++same keys.) Formats: keys named like `*date*`, `created`, `updated`
+ must be ISO `YYYY-MM-DD`; keys the template writes as lists (`sources`, `tags`, `attendees`) must be lists.
+ Untyped pages (README, index pages without `type`) are not frontmatter-checked.
+ 
+ **Count one INVALID_FRONTMATTER issue per page**, listing every missing key and bad value on that page in
+ its record — the health score weighs pages, not fields.
+ 
+-**Allowed values come from the vault, never from this file.** (A hard-coded list here once said feature
+-statuses were `identified|in-design|in-dev|delivered|deprecated` while the vault's templates and schema
+-said otherwise — lint and ingest then disagreed about every page.) Resolve the vocabulary in order:
++**Allowed values come from the vault, never from this file.** Resolve the vocabulary in order:
+ 
+ 1. **Ontology installed** (`.claude/ontology/ontology.py` + the ontology file) → value checks belong to
+    Check 8. Check 6 validates presence and format only.
+diff --color -ruN a/skills/wiki-lint/references/discovery.md b/skills/wiki-lint/references/discovery.md
+--- a/skills/wiki-lint/references/discovery.md	2026-09-28 11:27:58
++++ b/skills/wiki-lint/references/discovery.md	2026-09-28 11:29:27
+@@ -16,7 +16,7 @@
+ Apply the scope filter from the skill's `scope` argument:
+ 
+ - `full` — keep all pages.
+-- `client:{slug}` — keep only `wiki/clients/{slug}/**/*.md`.
++- `client:{slug}` — keep only `wiki/{top-level}/{slug}/**/*.md`, where `{top-level}` is the vault's grouping folder (`clients/`, `projects/`, `teams/` or `domains/`, per `_schema/SCHEMA.md`).
+ - `recent` — keep only pages whose mtime is within the last 7 days.
+ 
+ For each discovered page record: file path, mtime, parsed YAML frontmatter (first 20 lines), inferred page type (from frontmatter `type:` or path).
+diff --color -ruN a/skills/wiki-query/SKILL.md b/skills/wiki-query/SKILL.md
+--- a/skills/wiki-query/SKILL.md	2026-09-28 11:27:57
++++ b/skills/wiki-query/SKILL.md	2026-09-28 11:28:15
+@@ -14,7 +14,7 @@
+ disable-model-invocation: true
+ ---
+ 
+-You are the Wiki Query agent. Your job is to search the Verndale wiki and synthesize answers from compiled client and platform knowledge.
++You are the Wiki Query agent. Your job is to search the project wiki and synthesize answers from compiled client and platform knowledge.
+ 
+ ## When to Use This Skill
+ 
+@@ -139,10 +139,10 @@
+ - **Feature Summary**: If answering "How does [feature] work?" → Create a `features/{slug}.md` page
+ - **Integration Summary**: If answering "How does [system] integrate?" → Create an `integrations/{slug}.md` page
+ - **Meeting Synthesis**: If answering "What was discussed about...?" → Create a `meetings/{slug}.md` page
+-- **Capability**: If answering "What is Verndale's approach to...?" → Create a `verndale/capabilities/{slug}.md` page
++- **Capability**: If answering "What is our approach to...?" → Create a page under the vault's org section (`{org-slug}/…`), if one exists
+ 
+ #### 5b. Create the New Page
+-1. Use the appropriate template from `wiki/_schema/TEMPLATES.md`
++1. Use the page template at `wiki/_schema/templates/<type>.md`
+ 2. Fill in:
+    - **title**: Clear, descriptive title for the answer
+    - **client**: (If applicable) The client slug
+diff --color -ruN a/skills/wiki-scaffold-client/SKILL.md b/skills/wiki-scaffold-client/SKILL.md
+--- a/skills/wiki-scaffold-client/SKILL.md	2026-09-28 11:27:57
++++ b/skills/wiki-scaffold-client/SKILL.md	2026-09-28 11:28:17
+@@ -75,7 +75,7 @@
+ - Always derive the slug from the company name using lowercase-hyphenated convention.
+ - Always check slug uniqueness before creating directories.
+ - Always create all 7 directories in one operation for consistency.
+-- Always use templates from `wiki/_schema/TEMPLATES.md` for initial pages.
++- Always use the page templates in `wiki/_schema/templates/<type>.md` for initial pages.
+ - Mark stubs with `status: stub` and `source: initial-context`.
+ - Create cross-references between client and source-platform entities.
+ - When ingesting initial context, extract features / integrations / questions — do not dump raw text.
+diff --color -ruN a/skills/wiki-scaffold-client/references/entity-templates.md b/skills/wiki-scaffold-client/references/entity-templates.md
+--- a/skills/wiki-scaffold-client/references/entity-templates.md	2026-09-28 11:27:57
++++ b/skills/wiki-scaffold-client/references/entity-templates.md	2026-09-28 11:28:22
+@@ -2,7 +2,7 @@
+ 
+ ## Step 3a — Client entity page
+ 
+-Path: `wiki/clients/{company-slug}/entities/{company-slug}.md`. Template: `wiki/_schema/TEMPLATES.md` → Entity.
++Path: `wiki/clients/{company-slug}/entities/{company-slug}.md`. Template: `wiki/_schema/templates/entity.md`.
+ 
+ Frontmatter:
+ 
+@@ -68,7 +68,7 @@
+ 
+ ### 4b. Feature stub template
+ 
+-Path: `wiki/clients/{company-slug}/features/{feature-slug}.md`. Template: `wiki/_schema/TEMPLATES.md` → Feature.
++Path: `wiki/clients/{company-slug}/features/{feature-slug}.md`. Template: `wiki/_schema/templates/feature.md`.
+ 
+ ```yaml
+ ---
+diff --color -ruN a/skills/wiki-status/SKILL.md b/skills/wiki-status/SKILL.md
+--- a/skills/wiki-status/SKILL.md	2026-09-28 11:27:57
++++ b/skills/wiki-status/SKILL.md	2026-09-28 11:28:08
+@@ -13,7 +13,7 @@
+ ## Derived variables
+ 
+ ```
+-WIKI_DIR     = ./.claude/wiki   (or the project's documented wiki root)
++WIKI_DIR     = ./wiki   (or the wiki root the project's CLAUDE.md names)
+ CLIENT_SCOPE = value from --client, or "" (all wikis)
+ ```
+ 
+@@ -49,7 +49,7 @@
+ 
+ ### Phase 3 — Latest lint health
+ 
+-Find the most recent `{WIKI_DIR}/_lint-report-*.md` and extract its `## Health Score Summary` section (overall %, broken links, orphans, contradictions). Fall back to "No lint report yet" if none exists.
++Find the most recent `{WIKI_DIR}/_lint-report-*.md` and read `**Health Score**` plus the issue counts (broken links, orphans, contradictions) from its `## Executive Summary` section. Fall back to "No lint report yet" if none exists.
+ 
+ ### Phase 4 — Render dashboard
+ 
+diff --color -ruN a/skills/wiki-to-mcp/SKILL.md b/skills/wiki-to-mcp/SKILL.md
+--- a/skills/wiki-to-mcp/SKILL.md	2026-09-28 11:27:57
++++ b/skills/wiki-to-mcp/SKILL.md	2026-09-28 11:28:45
+@@ -49,7 +49,7 @@
+ ```bash
+ TMPDIR=$(mktemp -d)
+ git clone --depth 1 --branch {branch_or_default} {repo_url} "$TMPDIR/wiki"
+-node {SKILL_DIR}/assets/detect.mjs "$TMPDIR/wiki" {subpath_or_empty}
++node ${CLAUDE_PLUGIN_ROOT}/skills/wiki-to-mcp/assets/detect.mjs "$TMPDIR/wiki" {subpath_or_empty}
+ ```
+ 
+ The scanner emits a JSON report:
+@@ -122,7 +122,7 @@
+ 
+ ### Phase 5 — Scaffold
+ 
+-1. Create `wiki-mcp-{slug}/` next to `wiki-mcp-server/` (i.e. at the current repo root). If the current working directory is not a Git repo root, ask the user to confirm the destination.
++1. Create `wiki-mcp-{slug}/` at the current repo root. If the current working directory is not a Git repo root, ask the user to confirm the destination.
+ 
+ 2. Copy the appropriate template tree. Files starting with `wiki-source` and the `_common/src/wiki.ts.tmpl` placeholder are skipped — they exist only as fallbacks and are always overridden by the target.
+ 
+@@ -147,9 +147,9 @@
+ Call the bundled composer:
+ 
+ ```bash
+-node {SKILL_DIR}/assets/compose.mjs \
++node ${CLAUDE_PLUGIN_ROOT}/skills/wiki-to-mcp/assets/compose.mjs \
+   --config wiki-mcp-{slug}/tools-config.json \
+-  --templates {SKILL_DIR}/templates/tools \
++  --templates ${CLAUDE_PLUGIN_ROOT}/skills/wiki-to-mcp/templates/tools \
+   --out wiki-mcp-{slug}/src/tools.ts
+ ```
+ 
+@@ -157,7 +157,7 @@
+ - Reads the chosen tool list and filter fields from `tools-config.json`.
+ - Concatenates each tool's registration template into a single `src/tools.ts`.
+ - Injects filter logic into `wiki_search` and `wiki_list_pages` based on `filterable_fields`.
+-- Emits both read- and write-section markers so future `/wiki-mcp:add-tool` invocations work.
++- Emits read- and write-section markers so a re-run can regenerate `src/tools.ts` in place.
+ 
+ ### Phase 7 — Validate
+ 
+@@ -198,7 +198,7 @@
+ 
+ ### Phase 9 — Emit verification recipe
+ 
+-Write `SMOKE-TEST.md` inside the generated project with the 6-check recipe (same shape as `/wiki-mcp:smoke-test`):
++Write `SMOKE-TEST.md` inside the generated project with this 6-check recipe:
+ 
+ ```
+ [1] /health returns 200
+@@ -211,7 +211,7 @@
+ 
+ Print the curl commands inline so the user can run them immediately.
+ 
+-### Phase 10 — Log to the wiki (if running inside Verndale-Agentics)
++### Phase 10 — Log to the wiki (if a vault exists)
+ 
+ If the current working directory contains `wiki/` and `wiki/_log.md`, append an entry:
+ 
+@@ -219,7 +219,7 @@
+ - {ISO date} — Generated MCP server `{slug}` for `{repo_url}`. Target: {deploy_target}. Tools: {N}. Filters: {fields}.
+ ```
+ 
+-Otherwise skip this phase silently — the skill is reusable outside Verndale.
++Otherwise skip this phase.
+ 
+ ## Validation Checklist
+ 
+@@ -270,7 +270,7 @@
+ 
+ ## Notes on the Two Backend Code Paths
+ 
+-- **Render + Docker** share the same `src/wiki.ts` (the `simple-git` based one from `wiki-mcp-server/`). They share `src/index.ts` (Express + StreamableHTTPServerTransport). The only deltas are `Dockerfile`/`render.yaml`/`docker-compose.yml`.
++- **Render + Docker** share the same `simple-git` based `src/wiki.ts`. They share `src/index.ts` (Express + StreamableHTTPServerTransport). The only deltas are `Dockerfile`/`render.yaml`/`docker-compose.yml`.
+ 
+ - **Workers** is a different code path entirely:
+   - `src/index.ts` is the Workers `fetch` handler, not Express.
+@@ -278,4 +278,4 @@
+   - Writes go through the GitHub Contents API (REST), not `git push`.
+   - The MCP runtime uses Cloudflare's Workers MCP support (currently `agents` SDK / `workers-mcp`).
+ 
+-Be honest with the user: the Render/Docker paths are battle-tested by `wiki-mcp-server/`. The Workers path is supported but newer — flag it as such during the interview.
++Flag the Workers path as newer than Render/Docker during the interview.
+diff --color -ruN a/skills/wireframe-parity/references/measurement.md b/skills/wireframe-parity/references/measurement.md
+--- a/skills/wireframe-parity/references/measurement.md	2026-09-28 11:27:58
++++ b/skills/wireframe-parity/references/measurement.md	2026-09-28 11:29:29
+@@ -6,7 +6,7 @@
+ 
+ 1. **Serve the wireframe** with `interactive-wireframe`'s script (do not reinvent it):
+    ```sh
+-   "$WIREFRAME_SKILL_DIR/scripts/serve-wireframe.sh" start wireframes/<slug>
++   "${CLAUDE_PLUGIN_ROOT}/skills/interactive-wireframe/scripts/serve-wireframe.sh" start wireframes/<slug>
+    ```
+    It prints a `http://127.0.0.1:PORT/` URL, sends `no-store`, and reuses a live server. `file://` fails under browser automation — always serve.
+ 2. **Confirm the app** at `APP_URL` loads (read-only; never submit forms or mutate data).
+diff --color -ruN a/skills/wireframe-parity/references/resolve-and-parse.md b/skills/wireframe-parity/references/resolve-and-parse.md
+--- a/skills/wireframe-parity/references/resolve-and-parse.md	2026-09-28 11:27:58
++++ b/skills/wireframe-parity/references/resolve-and-parse.md	2026-09-28 11:29:31
+@@ -12,7 +12,7 @@
+ 
+ If a spec resolves no wireframe HTML, stop — this skill reviews *against* a wireframe.
+ 
+-## What to extract (from `references/spec-template.md`'s sections)
++## What to extract (from `interactive-wireframe`'s `references/spec-template.md` sections)
+ 
+ Write `intended-model.md` with these blocks:
+ 
+diff --color -ruN a/skills/workstream-orchestrate/SKILL.md b/skills/workstream-orchestrate/SKILL.md
+--- a/skills/workstream-orchestrate/SKILL.md	2026-09-28 11:27:58
++++ b/skills/workstream-orchestrate/SKILL.md	2026-09-28 11:29:33
+@@ -193,7 +193,8 @@
+ small (≤3 agent roles × ≤`ATTEMPTS`, well under the harness's small-workflow guideline) and keeps
+ you — and the human — in the loop between workstreams. The bundled template is
+ `assets/workflow-templates/workstream-loop.mjs`; pass it
+-`args = {ws, planPath, contractPath, gates, hardGates, commitStyle, attempts}` and read back
++`args = {ws, planPath, contractPath, gates, hardGates, commitStyle, attempts, models}` (`models =
++{code, validate, commit}` from the roster below) and read back
+ `{ws, passed, attempts, commit, findings}`. **Do not paste feature-specific text into the template** —
+ everything specific travels in `args` and the contract slice, so the template stays reusable.
+ 
+diff --color -ruN a/skills/worktree-ops/SKILL.md b/skills/worktree-ops/SKILL.md
+--- a/skills/worktree-ops/SKILL.md	2026-09-28 11:27:58
++++ b/skills/worktree-ops/SKILL.md	2026-09-28 11:29:38
+@@ -90,12 +90,12 @@
+ 
+ ## Mode: `merge` — pre-merge readiness
+ 
+-This skill does not re-implement merging — the repo already has a `merge-worktree` skill and `create-pr`/`commit` flows. Your job is the _readiness gate_ before handing off:
++This skill does not re-implement merging — hand off to the repo's own merge or PR flow if it has one. Your job is the _readiness gate_ before handing off:
+ 
+ 1. Run `wt-migrations.sh audit` — block if this branch's migration number collides with `production` or another unmerged worktree.
+ 2. Confirm the branch is pushed and not behind `production` in a way that will conflict.
+ 3. Confirm the worktree's changes were tested against its isolated DB (not the dev DB).
+-4. Then hand off: invoke the `merge-worktree` skill (or the repo's PR flow) with a one-line summary of what's being merged and the verified merge position.
++4. Then hand off to the repo's merge or PR flow with a one-line summary of what's being merged and the verified merge position.
+ 
+ ## Mode: `clean` — safe teardown
+ 

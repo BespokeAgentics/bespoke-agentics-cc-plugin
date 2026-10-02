@@ -15,6 +15,7 @@ description: >-
   similar_to lineage. Distinct from foundry-project (which SEEDS a new app from the base)
   and design-zip-to-library (which builds a library from a design zip): this MERGES an
   existing library INTO the base.
+disable-model-invocation: true
 ---
 
 **Invocation.** `/foundry-consolidate --incoming <path-to-other/packages/ui> --lib <slug> [--base <path>]`.
@@ -87,8 +88,11 @@ items, wire the base's existing component instead of adding anything.
 - Gate: `bun run typecheck && bun run index:check && bun run build-storybook`.
 
 ### 5 — Promote back + report
-The base is the source of truth: commit the merge to `foundry-base` (or open a PR) so
-every app inherits the enriched canon. Report: components scanned, reused vs reconciled
+The base is the source of truth: the merge belongs in `foundry-base` so every app
+inherits the enriched canon. Never commit unprompted — stage nothing; tell the user what to
+commit in `foundry-base` (the merged components, barrel exports, index) with a suggested
+message (e.g. `feat(canon): merge <slug> library`), and offer to commit it (or open a PR) —
+do so only on their explicit yes. Report: components scanned, reused vs reconciled
 vs promoted vs app-added counts, which incoming components were dropped as duplicates,
 and the new canon additions by name.
 

@@ -8,6 +8,7 @@ args:
   - name: path
     description: "Optional path to scope the audit. Defaults to the repo root."
     required: false
+disable-model-invocation: true
 ---
 
 <role>
@@ -289,7 +290,7 @@ Print:
 
 After scaffolding, run (or instruct the user to run):
 - `npx tsc --noEmit` — type-check the generated code
-- `npx next lint` — lint pass
+- The project's own lint script (e.g. `npm run lint`, with the project's package manager) — lint pass
 - `node -e "require('./{{TARGET_ROOT}}/events')"` skipped — these are TS files
 
 If type-check fails, classify the failure: was it in generated code (your bug → fix the template) or at integration points (expected → tell user where to wire)?

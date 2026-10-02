@@ -2,8 +2,11 @@
 name: "disclosure:refresh"
 description: "Re-run progressive disclosure to update only the managed sections of an existing context layer. Rewrites content inside the progressive-disclosure:managed sentinels (refreshed commands, stack, conventions) and adds files for newly-discovered subsystems, while leaving hand-written sections and unmanaged files untouched. Use to keep CLAUDE.md/AGENTS.md current as the code evolves."
 argument-hint: "[<root>] [--depth subsystem|diverge|deep] [--no-wiki]"
-allowed-tools: Skill(progressive-disclosure), Agent, AskUserQuestion, Bash, Read, Write, Edit, Glob, Grep
+allowed-tools: Agent, AskUserQuestion, Bash, Read, Write, Edit, Glob, Grep
+disable-model-invocation: true
 ---
+
+> **How this command loads its skill.** `progressive-disclosure` is manual-only (`disable-model-invocation: true`), so do not call it through the Skill tool. Read `${CLAUDE_PLUGIN_ROOT}/skills/progressive-disclosure/SKILL.md` and follow it. Paths inside a SKILL.md are relative to its own directory, and the arguments it expects are the ones given to this command.
 
 # Progressive Disclosure — Refresh
 
@@ -23,7 +26,7 @@ Same meanings as `/disclosure:map`.
 
 ## Process
 
-Invoke the `progressive-disclosure` skill with `mode: refresh` and forward `$ARGUMENTS`. The
+Follow the `progressive-disclosure` skill (loaded as described above) with `mode: refresh` and forward `$ARGUMENTS`. The
 skill scans (parallel subagents), diffs the freshly-synthesized managed blocks against the
 current ones, and presents a plan limited to:
 

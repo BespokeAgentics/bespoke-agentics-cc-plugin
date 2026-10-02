@@ -2,12 +2,15 @@
 name: "agentnative:proof-of-work"
 description: "Give coding agents the means to prove their work: installs agent-browser (accessibility-tree snapshots, annotated screenshots, console/network checks, baseline pixel/structural diffs) or wires Playwright's screenshot/trace CLIs where Playwright is incumbent, establishes an evidence/ directory convention with a machine-readable manifest, sets up storage (S3/R2 presigned URLs for inline PR images, Actions artifacts v4 for traces), and a create-or-update PR evidence comment — so every UI claim ships with before/after pixels, a mechanical check, and a repro command."
 argument-hint: "[mode: plan|implement] [scope: local|ci|both]"
-allowed-tools: Skill(proof-of-work), Agent, AskUserQuestion, Bash, Read, Write, Edit, Glob, Grep
+allowed-tools: Agent, AskUserQuestion, Bash, Read, Write, Edit, Glob, Grep
+disable-model-invocation: true
 ---
+
+> **How this command loads its skill.** `proof-of-work` is manual-only (`disable-model-invocation: true`), so do not call it through the Skill tool. Read `${CLAUDE_PLUGIN_ROOT}/skills/proof-of-work/SKILL.md` and follow it. Paths inside a SKILL.md are relative to its own directory, and the arguments it expects are the ones given to this command.
 
 # Proof of Work
 
-Run the `proof-of-work` skill: build the evidence chain from capture to PR comment, then prove
+Follow the `proof-of-work` skill (loaded as described above): build the evidence chain from capture to PR comment, then prove
 it end-to-end once.
 
 ## Arguments
@@ -25,7 +28,7 @@ Parse from `$ARGUMENTS`:
 
 ## Process
 
-Invoke the `proof-of-work` skill and forward `$ARGUMENTS`. The skill will:
+Follow the `proof-of-work` skill (loaded as described above) and forward `$ARGUMENTS`. The skill will:
 
 1. Detect the UI stack, existing capture tooling (reuse Playwright/Chromatic rather than
    duplicate), storage availability, and where agents run

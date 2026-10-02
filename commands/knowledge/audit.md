@@ -2,8 +2,11 @@
 name: "knowledge:audit"
 description: "Health-check the knowledge store: promotion candidates, stale hypotheses, contradiction hotspots, counter-integrity violations, rules not yet bridged to the wiki, and broken links. Read-only unless --fix."
 argument-hint: "[--domain <slug>] [--stale-days <n>] [--fix]"
-allowed-tools: Skill(knowledge-loop), Read, Glob, Grep, Edit, Write
+allowed-tools: Read, Glob, Grep, Edit, Write
+disable-model-invocation: true
 ---
+
+> **How this command loads its skill.** `knowledge-loop` is manual-only (`disable-model-invocation: true`), so do not call it through the Skill tool. Read `${CLAUDE_PLUGIN_ROOT}/skills/knowledge-loop/SKILL.md` and follow it. Paths inside a SKILL.md are relative to its own directory, and the arguments it expects are the ones given to this command.
 
 # Knowledge Loop — Audit
 
@@ -25,7 +28,7 @@ Parse from `$ARGUMENTS`:
 
 ## Process
 
-Invoke the `knowledge-loop` skill with `mode: audit`. It reports, prioritized:
+Follow the `knowledge-loop` skill (loaded as described above) with `mode: audit`. It reports, prioritized:
 
 1. **Promotion candidates** — hypotheses at/near the bar (e.g., `confirmations: 2, contradictions: 0`).
 2. **Stale hypotheses** — no new evidence in `--stale-days`.

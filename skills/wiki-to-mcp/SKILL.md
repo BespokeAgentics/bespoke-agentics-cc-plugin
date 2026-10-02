@@ -1,6 +1,7 @@
 ---
 name: wiki-to-mcp
 description: "Generate, configure, and publish an MCP server for any wiki hosted in a Git repository. Detects layout, interviews the user, scaffolds a deployable project (Render, Cloudflare Workers, or Docker), and emits per-target deploy + smoke-test walkthroughs."
+disable-model-invocation: true
 ---
 
 You are the Wiki-to-MCP Skill. Your role is to take a Git-backed wiki of markdown files and produce a working, deployable MCP server that exposes search/read (and optionally write) tools over that wiki's content.
@@ -48,7 +49,7 @@ Shallow-clone the repo to a tempdir and run the bundled scanner:
 ```bash
 TMPDIR=$(mktemp -d)
 git clone --depth 1 --branch {branch_or_default} {repo_url} "$TMPDIR/wiki"
-node {SKILL_DIR}/assets/detect.mjs "$TMPDIR/wiki" {subpath_or_empty}
+node ${CLAUDE_PLUGIN_ROOT}/skills/wiki-to-mcp/assets/detect.mjs "$TMPDIR/wiki" {subpath_or_empty}
 ```
 
 The scanner emits a JSON report:
@@ -68,7 +69,7 @@ The scanner emits a JSON report:
   "wikilinks": { "obsidian": 1247, "markdown_relative": 38 },
   "has_index_md": true,
   "has_log_md": true,
-  "directory_top_level": ["clients", "platforms", "verndale", "_schema"],
+  "directory_top_level": ["clients", "platforms", "acme", "_schema"],
   "guessed_style": "obsidian"
 }
 ```
@@ -121,7 +122,7 @@ Save it inside the generated project at `wiki-mcp-{slug}/tools-config.json` for 
 
 ### Phase 5 — Scaffold
 
-1. Create `wiki-mcp-{slug}/` next to `wiki-mcp-server/` (i.e. at the current repo root). If the current working directory is not a Git repo root, ask the user to confirm the destination.
+1. Create `wiki-mcp-{slug}/` at the current repo root. If the current working directory is not a Git repo root, ask the user to confirm the destination.
 
 2. Copy the appropriate template tree. Files starting with `wiki-source` and the `_common/src/wiki.ts.tmpl` placeholder are skipped — they exist only as fallbacks and are always overridden by the target.
 
@@ -146,9 +147,9 @@ Save it inside the generated project at `wiki-mcp-{slug}/tools-config.json` for 
 Call the bundled composer:
 
 ```bash
-node {SKILL_DIR}/assets/compose.mjs \
+node ${CLAUDE_PLUGIN_ROOT}/skills/wiki-to-mcp/assets/compose.mjs \
   --config wiki-mcp-{slug}/tools-config.json \
-  --templates {SKILL_DIR}/templates/tools \
+  --templates ${CLAUDE_PLUGIN_ROOT}/skills/wiki-to-mcp/templates/tools \
   --out wiki-mcp-{slug}/src/tools.ts
 ```
 
@@ -156,7 +157,7 @@ The composer:
 - Reads the chosen tool list and filter fields from `tools-config.json`.
 - Concatenates each tool's registration template into a single `src/tools.ts`.
 - Injects filter logic into `wiki_search` and `wiki_list_pages` based on `filterable_fields`.
-- Emits both read- and write-section markers so future `/wiki-mcp:add-tool` invocations work.
+- Emits read- and write-section markers so a re-run can regenerate `src/tools.ts` in place.
 
 ### Phase 7 — Validate
 
@@ -197,7 +198,7 @@ Based on `deploy_target`, write a `DEPLOY.md` inside the generated project and p
 
 ### Phase 9 — Emit verification recipe
 
-Write `SMOKE-TEST.md` inside the generated project with the 6-check recipe (same shape as `/wiki-mcp:smoke-test`):
+Write `SMOKE-TEST.md` inside the generated project with this 6-check recipe:
 
 ```
 [1] /health returns 200
@@ -210,15 +211,17 @@ Write `SMOKE-TEST.md` inside the generated project with the 6-check recipe (same
 
 Print the curl commands inline so the user can run them immediately.
 
-### Phase 10 — Log to the wiki (if running inside Verndale-Agentics)
+### Phase 10 — Log to the wiki (if a vault exists)
 
-If the current working directory contains `wiki/` and `wiki/_log.md`, append an entry:
+If the current working directory contains `wiki/` and `wiki/_log.md`, append an entry at the end of the file in the vault's heading format:
 
 ```markdown
-- {ISO date} — Generated MCP server `{slug}` for `{repo_url}`. Target: {deploy_target}. Tools: {N}. Filters: {fields}.
+## {ISO date} — wiki-to-mcp — Generated MCP server `{slug}`
+
+- Repo: `{repo_url}` · Target: {deploy_target} · Tools: {N} · Filters: {fields}
 ```
 
-Otherwise skip this phase silently — the skill is reusable outside Verndale.
+Otherwise skip this phase.
 
 ## Validation Checklist
 
@@ -269,7 +272,7 @@ What to flag for the user when they pick a monorepo path:
 
 ## Notes on the Two Backend Code Paths
 
-- **Render + Docker** share the same `src/wiki.ts` (the `simple-git` based one from `wiki-mcp-server/`). They share `src/index.ts` (Express + StreamableHTTPServerTransport). The only deltas are `Dockerfile`/`render.yaml`/`docker-compose.yml`.
+- **Render + Docker** share the same `simple-git` based `src/wiki.ts`. They share `src/index.ts` (Express + StreamableHTTPServerTransport). The only deltas are `Dockerfile`/`render.yaml`/`docker-compose.yml`.
 
 - **Workers** is a different code path entirely:
   - `src/index.ts` is the Workers `fetch` handler, not Express.
@@ -277,4 +280,4 @@ What to flag for the user when they pick a monorepo path:
   - Writes go through the GitHub Contents API (REST), not `git push`.
   - The MCP runtime uses Cloudflare's Workers MCP support (currently `agents` SDK / `workers-mcp`).
 
-Be honest with the user: the Render/Docker paths are battle-tested by `wiki-mcp-server/`. The Workers path is supported but newer — flag it as such during the interview.
+Flag the Workers path as newer than Render/Docker during the interview.

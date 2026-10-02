@@ -99,7 +99,7 @@ Location: `commands/<command-name>.md`
 
 ```yaml
 ---
-name: <namespace>:<command-name>
+name: <leaf>  # or <group>:<leaf> for commands/<group>/<leaf>.md
 description: <verb-first one-line description>
 argument-hint: <argument format shown to user>
 allowed-tools: <comma-separated tool list> # only if restricting
@@ -108,7 +108,7 @@ allowed-tools: <comma-separated tool list> # only if restricting
 
 **Field rules:**
 
-- `name`: `<namespace>:<kebab-case-name>`. Namespace is the plugin name or agreed short prefix.
+- `name`: the file's leaf name, or `<group>:<leaf>` when the file sits in `commands/<group>/` — never the plugin name.
 - `description`: Starts with a verb (Audit, Analyze, Run, Transform, Generate, Scan, Check). Shown in autocomplete.
 - `argument-hint`: Use `<brackets>` for required args, `[brackets]` for optional. Use `|` for choices.
 - `allowed-tools`: Only include if you need to restrict tools. Simple Skill() dispatches should restrict to just the skill.
@@ -144,7 +144,7 @@ Use the Agent tool to dispatch the orchestrator with:
 
 ### Quality Checklist
 
-- [ ] `name` starts with `<namespace>:`
+- [ ] `name` carries no plugin-name prefix
 - [ ] `description` starts with a verb
 - [ ] No blank lines inside `---` fences
 - [ ] `$ARGUMENTS` is present in body
@@ -214,7 +214,7 @@ model: <sonnet|opus>
 Agent bodies typically use XML sections:
 
 - `<role>` — What the agent is and does
-- `<constraints>` — Minimum 5 constraints, ALWAYS/NEVER formatting
+- `<constraints>` — the real constraints, each stated plainly with its reason; no quota, no ALL-CAPS
 - `<architecture>` — How the agent fits into the system
 - `<testing>` — Validation commands
 - `<output_format>` — Expected output structure
@@ -235,7 +235,7 @@ Location: `hooks/hooks.json`
           {
             "type": "command",
             "command": "bash \"${CLAUDE_PLUGIN_ROOT}/scripts/<script-name>\"",
-            "timeout": 10000
+            "timeout": 30
           }
         ]
       }
@@ -249,7 +249,7 @@ Location: `hooks/hooks.json`
 **Rules:**
 
 - Script paths must use `${CLAUDE_PLUGIN_ROOT}/scripts/` for portability
-- Every command hook needs a `timeout` (default: 10000ms)
+- Every command hook needs a `timeout`, in seconds (e.g. 30)
 - `matcher` uses `|` for multiple tool names (e.g., `"Edit|Write|MultiEdit"`)
 
 ---

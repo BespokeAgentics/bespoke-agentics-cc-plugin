@@ -17,6 +17,7 @@ description: >
   WORK: fast CI, hermetic deploys, evidence) — this skill transforms the PROCESS around the work:
   who approves what, which artifact fires which stage, and where human judgment concentrates.
 argument-hint: "[mode: assess|adopt|run] [plays or '<work item>'] [--home <dir>] [--out <file>] [--no-confirm]"
+disable-model-invocation: true
 ---
 
 <role>
@@ -184,6 +185,9 @@ from the playbook:
   gate checks the diff against it, so a stale plan turns the audit trail into fiction.
 - Where the `orchestrate` or `workstream-orchestrate` skills are available and the plan is large,
   offer them as the execution engine instead of building inline.
+- The sibling skills offered at these gates (`spec-elicitation`, `plan-review`, `orchestrate`,
+  `workstream-orchestrate`) are manual-only, so do not call them through the Skill tool: on a yes, read
+  `${CLAUDE_PLUGIN_ROOT}/skills/<skill>/SKILL.md` and follow it.
 
 **Gate 5 — Review-ready.** Run the gates one final time and paste the output. Summarize the diff
 against `plan.md` (what matches, what departed and why). If `REVIEW.md` exists, self-review

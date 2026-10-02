@@ -1,19 +1,11 @@
 ---
 name: defect-intake
 description: >
-  User-invoked disposition of a defect found mid-session — a bug, a missing test, a swallowed
-  error, a bad practice, a gap you or someone else just noticed in code nobody was asked to touch.
-  Invoke only when the user explicitly asks for it ("run defect intake", "/defect-intake", "take
-  this one through intake", "handle this properly before we move on"); this skill does not
-  self-trigger on the mere mention of a bug, because deciding a defect is worth stopping for is the
-  user's call, not an inference. It verifies the defect is real before anything is edited (an
-  unreproduced defect is a hypothesis), classifies it as fix-now / fold-into-current-change /
-  escalate-to-user using blast radius rather than authorship, records a baseline from the repo's
-  own gates, writes the failing test first so the fix is provable, applies the narrowest fix that
-  makes the test pass, re-runs the gates, documents the fix and its reasoning where that repo keeps
-  durable knowledge, and returns to the interrupted work with an explicit account of what changed.
-  Provenance is irrelevant to disposition: "we didn't introduce it" is not a reason to defer it.
-  A failing test is never deleted, skipped, or loosened to reach green. Never commits.
+  Manual only (/defect-intake). Takes one known defect — a bug, missing test, swallowed error, or
+  gap found mid-session — through proper disposition: verify it is real, classify by blast radius
+  (fix now / fold in / escalate), baseline the repo's gates, write the failing test first, apply
+  the narrowest fix, document it, resume. Never commits.
+disable-model-invocation: true
 ---
 
 # Defect Intake

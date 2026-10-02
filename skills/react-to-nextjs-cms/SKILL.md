@@ -17,6 +17,7 @@ description: >-
   from a design zip; this one turns a prototype site into an editable, deployed app).
   Runs in ultracode mode: component/page porting and content externalization fan out
   across parallel subagent waves.
+disable-model-invocation: true
 ---
 
 **Invocation.** The user points you at a prototype (a folder like `…/protec-website/site`,

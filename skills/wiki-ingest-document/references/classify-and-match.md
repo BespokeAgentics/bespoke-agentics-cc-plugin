@@ -42,11 +42,11 @@ Extract the most important facts:
 For each entity mentioned:
 
 1. **Normalize slug** — lowercase-hyphenated.
-2. **Check wiki location** for an existing page at one of:
-   - `wiki/clients/{company}/features/{slug}.md`
-   - `wiki/clients/{company}/gaps/{slug}.md`
-   - `wiki/clients/{company}/decisions/{slug}.md`
-   - `wiki/clients/{company}/questions/{slug}.md`
+2. **Check wiki location** for an existing page at one of (`{group}` = the vault's grouping folder, per `_schema/SCHEMA.md`):
+   - `wiki/{group}/{company}/features/{slug}.md`
+   - `wiki/{group}/{company}/gaps/{slug}.md`
+   - `wiki/{group}/{company}/decisions/{slug}.md`
+   - `wiki/{group}/{company}/questions/{slug}.md`
 3. **Assess impact** — what aspect of the page is affected?
    - Decision status changing (e.g. `ootb → custom`)?
    - Description needing clarification?

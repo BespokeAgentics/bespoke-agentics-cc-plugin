@@ -1,6 +1,6 @@
 ---
 type: log
-updated: 2026-09-18
+updated: 2026-09-21
 ---
 
 # Wiki Operation Log
@@ -482,3 +482,143 @@ pinned sha `383316c4` already matched HEAD. Marketplace: all 3 entries install-c
 
 **Also**: the teamboard eval fixture's `vite` went `^5.4.8` -> `^6.4.3`, clearing 3 Dependabot alerts
 (1 high, 2 moderate) on a fixture nothing installs or builds.
+
+## 2026-09-21 — plugin context cost measured; reduction plan written (nothing built)
+
+**What**: measured what the plugin adds to every session at v2.8.0 — 73 skill descriptions at 53,769
+chars (~13.4k tokens), 60 command descriptions at 16,942, 10 agent descriptions at 3,335 — and checked
+the loading mechanics against the Claude Code docs. 23 skills over 1,000 chars hold 59% of the skill
+cost; 6 exceed the 1,536-char listing cap, so their tails never reach the model; 51 of 60 commands wrap
+a skill and list the capability a second time. Skill bodies (856k chars) load on invocation and are not
+a standing cost.
+
+**Decided**: trim in place first (Phase A — descriptions to a 400-char cap, trigger-regression sets
+before any rewrite, a CI budget guard), then split into family plugins (Phase B — marketplace entries
+over `source: "./"` with `strict: false` and explicit component arrays, no directory moves). Seven
+families were measured; only one file-path reference crosses a family boundary
+(`video-to-deliverables` -> `architect-agents`). Plan, evidence, open decisions and the three options
+not chosen: `docs/plans/plugin-context-reduction.md`.
+
+**Open**: whether `disable-model-invocation` on `defect-intake` / `misunderstanding` is worth losing
+their natural-language triggers; what existing `bespoke-agentics` installs become (recommended: keep
+the bundle, add families beside it for one release); family names, which become the invocation
+namespace (155 `bespoke-agentics:` references). Two mechanics are unproven and gate Phase B behind a
+spike: `strict: false` entries beside the root `plugin.json`, and cross-family `${CLAUDE_PLUGIN_ROOT}`
+paths resolving from the plugin cache.
+
+## 2026-09-21 — plugin made manual-only; model-visible listing 70,711 -> 1,901 chars (uncommitted)
+
+**What**: decision from the owner — "we should not have any triggers besides manual invocation",
+scoped plugin-wide minus what agents are told to run. All 73 skills and 52 of 60 commands now carry
+`disable-model-invocation: true`. Eight commands stay model-invocable because text the plugin installs
+into a user's project tells an agent to run them unprompted (`wiki:query`, `wiki:ingest-meeting`,
+`wiki:ingest-document`, `knowledge:review`, `knowledge:extract`, `db:sync`, `ontology:check`,
+`ontology:propose`), each with its reason in `scripts/invocation-policy.json`.
+
+**Why the rewrite was needed**: a throwaway probe plugin settled four things the docs do not say. The
+flag works on commands and removes them from the model's listing; a command's `Skill(x)` call on a
+flagged skill is refused by the harness; `${CLAUDE_PLUGIN_ROOT}` is substituted in command and agent
+bodies; and a flagged skill may share a name with an open command. So 57 wrapper commands, five
+skill-to-skill handoffs, four offered handoffs and `agents/wiki-pipeline.md` now load `SKILL.md` by
+path instead of dispatching through the Skill tool. `defect-intake` and `misunderstanding` had
+descriptions promising phrase-triggering ("you misunderstood") that the flag ends; both rewritten. The
+project-ontology CLAUDE.md block told agents to run `/ontology:approve`; it now says to ask the user to.
+
+**Defect fixed on the way**: `agents/wiki-pipeline.md` dispatched `Skill: wiki-generate-index` in two
+workflows. No such skill has ever existed here. Both steps now have the agent write the index itself
+from `wiki-init`'s Step 6a format. The new guard's P4 check fails on any loader path to a missing skill.
+
+**Guard**: `scripts/check-invocation-policy.py` (flag coverage, allowlist integrity, dead dispatch,
+loader targets, 3,000-char listing budget), `scripts/test-check-invocation-policy.py` (baseline + 8
+tamper cases), `.github/workflows/invocation-policy.yml`. Policy section added to `CLAUDE.md`.
+
+**Verified** (Claude Code 2.1.278, headless, real plugin via `--plugin-dir`): the model's listing shows
+exactly the 8 allowlisted commands; `/bespoke-agentics:wiki-status` loads its flagged skill by path and
+runs; the model's Skill call on `wiki-query` reaches the command and loads the skill; the model's Skill
+call on `plan-review` is refused. project-ontology 59/59 and project-db 23/23 tests pass; marketplace
+validator clean, 11/11 tamper cases. **Not verified**: a long workflow (`orchestrate`, `reimagine`, a
+video skill) driven end to end through a by-path load.
+
+**Consequence**: family plugins (Phase B) can no longer save meaningful context; the plan now recommends
+deciding that split on its other merits only. Details: `docs/plans/plugin-context-reduction.md`.
+
+## 2026-09-28 — prompt audit of the whole plugin surface; 126 findings, 8 patches proposed (nothing applied)
+
+Ran `/claude-api prompt-audit` over root `CLAUDE.md`, `README.md`, `agents/`, `commands/`, all 74 skills
+(including templates and hook/mandate text they install), `hooks/hooks.json`, the wireframe-feedback
+channel and `install-tts-hook.sh`. Target: Claude Opus 5.5 (Sonnet 5 for the three `model: sonnet` agents).
+
+**Result**: Group 1 (dated prompt text) is nearly clean. The rot is Group 2: stale facts and files that
+contradict each other (102 of 126 findings; 40 High). Headliners:
+- wrong Managed Agents facts in `agent-loop-audit` and `ai-waiting-ux` (verified against the API docs);
+- hook `timeout` written in ms, but Claude Code reads seconds (`hooks/hooks.json`, `setup-plugin`, `biome-guardrails`);
+- references to renamed or manual-only skills left behind by the manual-only change;
+- retired `claude-3-5-haiku-latest` as the TTS summarizer default;
+- `/wiki:lint --fix` that never fixes.
+
+**Artifacts**: `reviews/prompt-audit-2026-09-28.md` (report plus 7 open decisions: wiki-suite org
+hardcoding, `_log.md` format, frontmatter schema, ontology approval, commit policy, CLAUDE.md size,
+defect-ownership rule). `reviews/prompt-audit-2026-09-28-patches/` holds 8 patches: 89 files, 171 hunks,
+all passing `git apply --check` together. **Not applied; not verified behaviourally.**
+
+## 2026-09-28 — prompt-audit patches applied; 3 regression guards added (uncommitted)
+
+All 8 patches from `reviews/prompt-audit-2026-09-28-patches/` are applied to the working tree.
+
+**Follow-up fix**: the ontology mandate blocks and the generated `ONTOLOGY.md` still offered
+`/ontology:deprecate` to the agent without a human label. That row is now labelled.
+
+**Guards**, each proven to fail on the pre-audit tree:
+- `scripts/check-hook-timeouts.py` catches hook timeouts written in ms. It is wired into the invocation-policy workflow.
+- an ontology test checks that installed text names only model-invocable `/ontology:` commands.
+- `skills/session-hooks/tests/test_start_ai_consultation.py` checks for a thinking-block parse and room in `max_tokens`.
+
+All 9 gates are green, including ontology 60/60 and project-db 23/23. **Not verified**: behavioural runs of
+the edited skills. Flagged, not edited: the Codex `hooks.json` and `.claude/hooks.json`, which both still
+carry `10000`. Seven decisions are still open; see the report.
+
+## 2026-09-28 — prompt-audit decisions implemented — 8 of 8 resolved (uncommitted)
+
+The user settled all eight open decisions and each one is implemented:
+1. The wiki suite is general-purpose: a Vault-layout block in `SCHEMA.md` replaces the hardcoded org and platform names in 27 files.
+2. One log format, `## date — op — summary`, used across the wiki suite, the stop hook and the plan-review / wireframe-parity docs.
+3. One frontmatter schema: `created`, `updated`, `sources`, `decision`.
+4. Ontology approve and deprecate are run by a human.
+5. Skills never commit unprompted: fast-ci and foundry-*.
+6. Root CLAUDE.md dropped from 104 KB to 52 KB; the prose moved to README § Skill reference.
+7. `OPERATING-MANUAL.md:148` now follows the global defect rule.
+8. The Codex `hooks.json` timeout was 10000 and is now 10 s, as the Codex docs require; the guard now covers that file.
+
+New tests, each proven to fail against the old code: the ontology gate message and the stop-hook log format. All 10 gates are green.
+Not verified: end-to-end behaviour of the edited skills. `.claude/hooks.json` still has `10000`, left to the user.
+Details: `reviews/prompt-audit-2026-09-28.md` § Decisions — resolved.
+
+## 2026-10-02 — plugin-context-reduction — measured in tokens; two agent defects fixed (uncommitted)
+
+Measured the plugin's standing cost as input tokens (headless, user settings off): installed v2.8.0
+adds 10,259 per session, the manual-only working tree 2,131 (9 agents ~1,370, 8 allowlisted commands
+758), and 0 once agents are removed and every command flagged. `claude plugin details` ignores
+`disable-model-invocation` and projects ~21.7k for the same tree.
+
+Defects found and fixed on the way:
+- 7 agents declared `allowed-tools:`, which the harness ignores on agents, so each ran with every tool.
+  Six now use `tools:` (three gained `Write`, which their bodies require); `wiki-pipeline` dropped the
+  inert line and still inherits.
+- `agents/workflow-analyzer.md` was a 0-byte leftover of prompt-audit patch A11 and still registered as
+  an agent. Removed.
+
+Guard: P6 in `scripts/check-invocation-policy.py`, two new tamper cases (10/10 caught), 8 failures on
+the pre-fix agents. **Not verified**: an end-to-end run of a workflow that launches the limited agents.
+Details: `docs/plans/plugin-context-reduction.md` § Agent defects found while measuring.
+
+## 2026-10-02 — release — v2.9.0: the plugin is manual-only
+
+**Breaking for users:** nothing in the plugin auto-triggers from conversation any more. Every skill and
+command is reached by typing its `/name`; eight commands that installed mandates tell an agent to run
+stay model-invocable (`scripts/invocation-policy.json`). Standing cost per session: +10,259 → +2,131
+tokens.
+
+One commit on `feat/plugin-context-reduction` carries Phase A (2026-09-21), the prompt-audit changes
+(2026-09-28) and the agent fixes (2026-10-02); they touch the same files. All 10 gates green. Not pushed
+or merged yet; an installed copy stays on v2.8.0 until it is updated.
+Details: `docs/plans/plugin-context-reduction.md`.

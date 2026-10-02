@@ -1,6 +1,7 @@
 ---
 name: wiki-ingest-document
 description: "Ingest a lightweight document (email, PDF, spec, Slack message) into the wiki. Updates affected feature, gap, decision, and question pages with new information from the document."
+disable-model-invocation: true
 ---
 
 You are the Wiki Lightweight Ingest Agent. Your role is to consume individual documents (emails, PDFs, specifications, Slack messages) and merge their intelligence into existing wiki pages — *without* over-creating pages.
@@ -9,7 +10,7 @@ This is a **precision update** workflow, contrasting with the comprehensive meet
 
 ## Inputs
 
-- `company` (required) — company slug, lowercase-hyphenated (e.g. `boston-beer-company`).
+- `company` (required) — company slug, lowercase-hyphenated (e.g. `acme`). Pages live under `wiki/{group}/{company}/`, where `{group}` is the grouping folder (`clients/`, `projects/`, `teams/` or `domains/`) recorded in the Vault layout block of `wiki/_schema/SCHEMA.md`.
 - `document-path` (required) — absolute path to the document.
 - `document-type` (required) — one of `email | pdf | spec | slack | other`.
 - `summary` (optional) — brief description of the document. If absent, infer from content.
@@ -20,8 +21,8 @@ This is a **precision update** workflow, contrasting with the comprehensive meet
 2. **Identify affected wiki pages** — see `references/classify-and-match.md#step-2`. Normalize slugs, locate existing pages under `features/`, `gaps/`, `decisions/`, `questions/`, and assess what aspect of each page is affected.
 3. **Update existing pages** — see `references/update-patterns.md#step-3`. Use the Edit tool. Always merge, never overwrite. Use the canonical patterns for: adding evidence, updating decision status, resolving an open question, noting a contradiction, adding a new constraint or requirement.
 4. **Create new pages — sparingly** — see `references/update-patterns.md#step-4`. Only when all four conditions hold: entity is new, significant, has enough detail for a stub, and is a core type (feature / gap / decision / question). Templates for new decision and new question pages are in the same reference. Worked examples (email / PDF / Slack) are also there.
-5. **Update frontmatter on every touched page** — `updated:`, `sources:`, `tags:`. Patterns in `references/finalize.md#step-5`.
-6. **Append the ingest log entry & print output** — append to `wiki/_log.md` and update `wiki/_index.md` if pages were created. Template + final output format in `references/finalize.md#step-6`.
+5. **Update frontmatter on every touched page** — `updated:`, `sources:` (list), `tags:`; new pages also get `created:`. These are the vault's only date/source keys — never write `date:` or `source:`. Patterns in `references/finalize.md#step-5`.
+6. **Append the ingest log entry & print output** — append a `## {today} — ingest-document — …` heading entry at the end of `wiki/_log.md` and update `wiki/_index.md` if pages were created. Template + final output format in `references/finalize.md#step-6`.
 
 ## Guardrails
 

@@ -2,10 +2,12 @@
 name: "wiki:query"
 description: "Query the wiki for knowledge synthesis. Searches across all pages and synthesizes an answer with citations."
 argument-hint: '<question>' [--client <slug>] [--promote]
-allowed-tools: Skill(wiki-query), Agent, Bash, Read, Write, Edit, Glob, Grep
+allowed-tools: Agent, Bash, Read, Write, Edit, Glob, Grep
 ---
 
-Invoke the `wiki-query` skill with the user's arguments:
+> **How this command loads its skill.** `wiki-query` is manual-only (`disable-model-invocation: true`), so do not call it through the Skill tool. Read `${CLAUDE_PLUGIN_ROOT}/skills/wiki-query/SKILL.md` and follow it. Paths inside a SKILL.md are relative to its own directory, and the arguments it expects are the ones given to this command.
+
+Follow the `wiki-query` skill (loaded as described above) with the user's arguments:
 
 ```
 $ARGUMENTS

@@ -1413,7 +1413,9 @@ def hook_pre(data: dict, root: Path) -> tuple[int, str]:
             if gate:
                 msgs.append("approving, deprecating, removing terms and changing policy are a human gate (policy.approval: human) — "
                             "an agent may add or edit *proposed* terms only:\n" + "\n".join(f"  ✗ {g}" for g in gate[:12])
-                            + f"\n  ask the user, then run `{ENGINE_CMD} approve <id> --by <their name>` / `deprecate …` (or /ontology:approve)")
+                            + "\n  do not run approve/deprecate yourself — ask the user to run `/ontology:approve <id>` or "
+                            "`/ontology:deprecate <id> --replaced-by <id>` (manual-only commands a person starts); "
+                            "removals and policy changes are the user's own edit of this file")
         if msgs:
             return 2, f"project-ontology blocked this write to {rel}:\n" + "\n".join(msgs)
         return 0, ""
@@ -2123,9 +2125,9 @@ def render_doc(proj: Project) -> str:
           "| Check pages / the whole vault | `/ontology:check [<path>\\|--all]` |",
           "| A value you need is not registered | `/ontology:propose <id> --label … --definition …` |",
           "| Approve proposed terms (human) | `/ontology:approve <id>…` |",
-          "| Retire a term | `/ontology:deprecate <id> --replaced-by <id>` |",
-          "| Rewrite aliases / deprecated values / noncanonical links | `/ontology:apply --dry-run`, then `/ontology:apply` |",
-          "| Counts, open violations, pending approvals | `/ontology:status` |"]
+          "| Retire a term (human) | `/ontology:deprecate <id> --replaced-by <id>` |",
+          f"| Rewrite aliases / deprecated values / noncanonical links | `{ENGINE_CMD} apply --dry-run`, show the user, then `{ENGINE_CMD} apply` on their yes |",
+          f"| Counts, open violations, pending approvals | `{ENGINE_CMD} status` |"]
     if onto.errors:
         L += ["", "## ⚠ Ontology errors", ""] + [f"- {e}" for e in onto.errors]
     return "\n".join(L) + "\n"

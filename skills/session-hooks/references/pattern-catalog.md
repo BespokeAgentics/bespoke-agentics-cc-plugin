@@ -94,7 +94,7 @@ A menu the skill agent can offer during the interview. Each pattern lists what i
 ## Stop / SessionEnd Patterns (capture context out)
 
 ### A. Wiki Log Line
-**Writes:** A single row appended to `wiki/_log.md`: date, session ID, summary, files touched.
+**Writes:** One entry appended to `wiki/_log.md` in the wiki's format — a `## YYYY-MM-DD — session — <summary>` heading (session ID, branch) and a one-line body.
 **Best for:** Every wiki-aware project. **Required by the bespoke-agentics wiki-first mandate when wiki/ exists.**
 
 ### B. Session Page

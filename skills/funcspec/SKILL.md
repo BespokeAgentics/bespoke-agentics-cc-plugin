@@ -13,6 +13,7 @@ description: >-
   /bespoke-agentics:funcspec-plan. Works on any Storybook workspace; uses a
   design-zip-to-library analysis.json as a fast path when present. Runs in ultracode
   mode: page evaluation and deliverable drafting fan out across parallel subagents.
+disable-model-invocation: true
 ---
 
 **Invocation.** The user points you at a Storybook workspace (often the output of

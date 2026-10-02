@@ -1,20 +1,11 @@
 ---
 name: misunderstanding
 description: >
-  User-invoked correction of a wrong inference — the plan step you read too generously, the wiki
-  claim that was stale, the doc that implied something it never said, the earlier turn you took as
-  settled. Invoke only when the user explicitly asks ("run misunderstanding", "you misunderstood",
-  "that's not what I meant", "you inferred that wrong", "stop and clarify before you continue",
-  "/misunderstanding"); this skill does not self-trigger on the mere smell of confusion, because
-  deciding that something was misunderstood is the user's call, not an inference. It reconstructs
-  the inference chain behind the flagged belief — each belief paired with the verbatim source text
-  that produced it, and labeled as stated, inferred, or assumed from silence — scopes to that
-  belief's blast radius, then asks specific, source-quoted questions via AskUserQuestion so the
-  user corrects the reading rather than re-explaining from scratch. It corrects the artifact that
-  seeded the bad inference, inventories the work already built on it and lets the user disposition
-  each item, records the correction where that repo keeps durable knowledge, feeds the corrected
-  belief into a knowledge store when one exists, and resumes with a corrected restatement. It never
-  auto-reverts work and never commits.
+  Manual only (/misunderstanding). Corrects a wrong inference that work was built on: rebuilds the
+  inference chain with the verbatim source text behind each belief, asks source-quoted questions
+  so you correct the reading instead of re-explaining, fixes the source that misled, and lets you
+  keep / revise / revert each item built on the error. Never auto-reverts, never commits.
+disable-model-invocation: true
 ---
 
 # Misunderstanding
@@ -194,7 +185,7 @@ nothing needs no document.
 
 The record holds four things: the wrong belief, the source text that produced it, the corrected
 reading, and the disposition of the affected work. Where it goes is repo-specific — read
-`skills/defect-intake/references/documentation-targets.md` for the routing (wiki page, ADR,
+`${CLAUDE_PLUGIN_ROOT}/skills/defect-intake/references/documentation-targets.md` for the routing (wiki page, ADR,
 changelog, or a comment plus a test). Do not duplicate that logic here.
 
 ---

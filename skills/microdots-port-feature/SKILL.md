@@ -20,6 +20,7 @@ description: >
   (scaffolds fresh and ports prior art between micros in the same workspace): this one extracts a
   feature from a FOREIGN codebase and carries it across the boundary.
 argument-hint: "'<feature>' [--source <path>] [--micros <path>] [--app <url>] [--mode full|scaffold|spec] [--dossier-only] [--no-browser] [--slug <name>] [--out <dir>]"
+disable-model-invocation: true
 ---
 
 Port a feature out of an existing application into a standalone micro-app.
@@ -58,7 +59,7 @@ Parse `$ARGUMENTS`. Then resolve, in order:
    source is where the feature lives today; it is read-only for the entire run.
    If the cwd turns out to be the micros workspace itself and no `--source` was
    given, ask for the source repo — porting between micros in the same
-   workspace is `new-micro`'s prior-art protocol, not this skill.
+   workspace is `microdots-new-micro`'s prior-art protocol, not this skill.
 2. **Micros workspace** — `--micros <path>`, else the cwd if it looks like one
    (a `package.json` with `micros/*` in `workspaces`, plus
    `scripts/new-micro.ts` and `docs/reuse-catalog.md`), else ask once via
@@ -202,8 +203,10 @@ to fill gaps, not to audit fabrications. `--dossier-only` stops here.
 
 ## Phase 6 — Elicit (spec-elicitation)
 
-Invoke the `spec-elicitation` skill with the dossier's `spec.md` path as its
-argument. Its first phase reads the file, assesses completeness, and interviews
+Load the `spec-elicitation` skill — read
+`${CLAUDE_PLUGIN_ROOT}/skills/spec-elicitation/SKILL.md` and follow it (the skill is manual-only, so do not call it through the
+Skill tool; paths inside it are relative to its own directory) —
+with the dossier's `spec.md` path as its argument. Its first phase reads the file, assesses completeness, and interviews
 until every dimension is settled — the pre-written spec is the documented way
 to hand it context, and a well-seeded spec naturally shrinks the interview to
 the decisions that are actually open. Do not duplicate its interview here, and
@@ -218,14 +221,17 @@ edited before this gate. One AskUserQuestion: confirm the micro name
 (lower-kebab), and how far to go — full implementation, scaffold only, or stop
 at the spec. For a port the dossier shows to be large (a multi-thousand-line
 feature), offer the orchestrate handoff as an alternative to building inline —
-the spec and port map are exactly the plan it consumes.
+the spec and port map are exactly the plan it consumes. On a yes, read
+`${CLAUDE_PLUGIN_ROOT}/skills/orchestrate/SKILL.md` and follow it (it is manual-only, so do not call it through the
+Skill tool).
 
 On a yes, in order (details in `references/spec-and-execution.md`):
 
-1. **Scaffold** — invoke the `new-micro` skill with `<name>` plus a brief
-   distilled from the spec that names the catalog-matched needs, so its own
-   prior-art protocol ports the matched patterns. Never reimplement the
-   scaffold or wiring here.
+1. **Scaffold** — read `${CLAUDE_PLUGIN_ROOT}/skills/microdots-new-micro/SKILL.md`
+   and follow it in **repository-extension mode** (manual-only; do not call it
+   through the Skill tool), with `<name>` plus a brief distilled from the spec
+   that names the catalog-matched needs, so its own prior-art protocol ports
+   the matched patterns. Never reimplement the scaffold or wiring here.
 2. **Implementation waves**, each ending with `bun run check` green:
    contract + client → service + store + migrations + wire tests → TEA app +
    story tests (each observed UI state gets a story test where sensible —
@@ -233,12 +239,14 @@ On a yes, in order (details in `references/spec-and-execution.md`):
    multi-tag conversion if needed. The disposition table is the worklist; a
    disposition that proves wrong mid-wave is corrected in `port-map.md`, not
    silently diverged from.
-3. **Verify** — invoke the `verify` skill. Its browser bar is the done bar;
-   green static checks alone do not make a port done.
+3. **Verify** — read `${CLAUDE_PLUGIN_ROOT}/skills/microdots-verify/SKILL.md`
+   and follow it. Its browser bar is the done bar; green static checks alone
+   do not make a port done.
 4. **Catalog maintenance** — if the port shipped a genuinely reusable pattern,
    append the catalog entry and Trigger-index row in this run.
 
-Deploy is never run by this skill — point at the `deploy` skill and stop.
+Deploy is never run by this skill — point the user at
+`/bespoke-agentics:microdots-deploy` and stop.
 
 Then report honestly: what was ported, adapted, dropped, deferred; dispositions
 changed mid-flight; what verify actually observed; traps hit; catalog entries
@@ -260,8 +268,8 @@ app's fate).
   only writes until Phase 7 says go.
 - **Unverified claims are labeled** — "not visually verified", "not walked",
   `assumed` — never dressed up as findings.
-- **Compose by invocation** — spec-elicitation, new-micro, verify are invoked,
-  never reimplemented.
+- **Compose by loading** — spec-elicitation, microdots-new-micro and
+  microdots-verify are loaded by path, never reimplemented.
 - **Deploy is never run. Nothing is committed.**
 
 ## Degradation matrix

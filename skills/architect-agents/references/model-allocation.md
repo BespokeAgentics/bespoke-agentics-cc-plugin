@@ -46,6 +46,6 @@ Present these three options during elicitation:
 
 ## Cost Awareness
 
-- Opus costs ~5x more than Sonnet per token
+- Opus costs more per token than Sonnet — check current per-model pricing before quoting a ratio
 - A team of 10 agents with 5 Opus validators will cost significantly more than all-Sonnet
 - For budget-sensitive projects, recommend starting all-Sonnet and upgrading individual agents that underperform

@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Stop / SessionEnd hook: append a single-line entry to wiki/_log.md.
+# Stop / SessionEnd hook: append a `## YYYY-MM-DD — <operation> — <summary>` entry to wiki/_log.md.
 #
 # Idempotent: uses a daily lock file so multi-firing during a session
 # doesn't produce duplicate rows. (Stop hooks fire once per assistant
@@ -33,8 +33,7 @@ if [ -f "$LOCK" ]; then
 fi
 touch "$LOCK"
 
-# Build the row. The summary cell is intentionally a TODO — Claude can
-# come back and edit it via /wiki:query --promote, or the user can fill it.
+# Build the entry: the wiki's log format is a heading line plus a short body.
 TODAY=$(date +%Y-%m-%d)
 SUMMARY="claude-code session ${SESSION_ID:0:8}"
 
@@ -46,7 +45,7 @@ if command -v git >/dev/null 2>&1 && git rev-parse --git-dir >/dev/null 2>&1; th
   fi
 fi
 
-echo "| $TODAY | claude-code | session | $SUMMARY | |" >> "$LOG"
+printf '\n## %s — session — %s\n\nLogged by the stop-wiki-log hook.\n' "$TODAY" "$SUMMARY" >> "$LOG"
 
 # Stop hooks don't inject context — output is ignored. Still exit 0.
 exit 0

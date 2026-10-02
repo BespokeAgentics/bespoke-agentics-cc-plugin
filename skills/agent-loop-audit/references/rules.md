@@ -173,13 +173,13 @@ Vocabulary bindings — audit against these concrete names when the pack is acti
 
 | Core concept | Anthropic vocabulary |
 |---|---|
-| Input events (fixed set of 5) | chiefly `user.message` (initiate task), `user.interrupt` (halt/steer) |
+| Input events (fixed set of 6) | `user.message` (initiate task), `user.interrupt` (halt/steer), `user.tool_confirmation` (allow/deny a paused tool call), `user.custom_tool_result` (answer a custom tool call), `user.define_outcome`, `system.message` |
 | Output family 1 — agent narration | agent events: reasoning text, tool calls |
-| Output family 2 — system status/control | session events, incl. `session.status.idle` |
-| Output family 3 — observability | fan events: timing, token metrics |
-| Idle signal | `session.status.idle` — momentary inactivity, **not** completion (SR1) |
-| Stopping criterion | `stop_reason` field in the event payload (SR1–SR4) |
-| Blocked-on-client value | requires-action: pending tool-call event IDs nested inside `stop_reason` payload; client must approve/respond (SR2, EL3) |
+| Output family 2 — system status/control | session events, incl. `session.status_idle` |
+| Output family 3 — observability | span events: `span.model_request_start` / `span.model_request_end` (`model_usage`) for timing, token metrics |
+| Idle signal | `session.status_idle` — momentary inactivity, **not** completion (SR1) |
+| Stopping criterion | `stop_reason.type` in the idle event payload: `end_turn` / `requires_action` / `budget_reached` (SR1–SR4) |
+| Blocked-on-client value | `requires_action`: `stop_reason.event_ids` lists the pending `agent.tool_use`/`agent.mcp_tool_use` events (answer with `user.tool_confirmation`, `tool_use_id` = that event ID) and `agent.custom_tool_use` events (answer with `user.custom_tool_result`) (SR2, EL3) |
 | Steering | combined `user.interrupt` + new `user.message` packet in the same session (RS2) |
 
 Pack-specific greps: `stop_reason`, `session.status`, `user.interrupt`, `user.message`,

@@ -81,8 +81,9 @@ MicroDot source, choose tags/ports/imports, or edit generated files.**
    bun scripts/microdots-authoring.ts verify-workspace --input <verify-input.json>
    ```
 
-   Then use `microdots-verify` for build, service, DOM, RPC and polling
-   evidence. **The structural report is not browser proof.**
+   Then run `microdots-verify` — read `${CLAUDE_PLUGIN_ROOT}/skills/microdots-verify/SKILL.md`
+   and follow it (manual-only, so do not call it through the Skill tool) — for build, service, DOM, RPC and
+   polling evidence. **The structural report is not browser proof.**
 
 5. If compilation returns `catalog-gap`, **stop the application lane.** Explain
    it with `explain-issue` and offer a deliberate repository/framework
@@ -320,8 +321,8 @@ cd <dot-dir>/<name> && timeout 6 bun service/main.ts
 
 Expect `Listening on http://0.0.0.0:<port>`. Free the port first if it is taken.
 
-For a MicroDot that will actually be used, finish with `microdots-verify` to
-confirm it renders and polls in a browser.
+For a MicroDot that will actually be used, finish with `microdots-verify` (loaded the same
+way) to confirm it renders and polls in a browser.
 
 ## 13. Record it in the wiki
 

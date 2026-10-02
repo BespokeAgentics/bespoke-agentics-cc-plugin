@@ -18,6 +18,7 @@ args:
   - name: chores
     description: "Optional comma-separated chore keys to scope to, e.g. 'regression-backfill,dep-updates'. Defaults to the full inventory interview."
     required: false
+disable-model-invocation: true
 ---
 
 <role>

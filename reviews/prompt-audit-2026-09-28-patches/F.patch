@@ -1,0 +1,364 @@
+diff --color -ruN a/skills/project-db/templates/claude-md-block.standalone.md b/skills/project-db/templates/claude-md-block.standalone.md
+--- a/skills/project-db/templates/claude-md-block.standalone.md	2026-09-28 11:27:51
++++ b/skills/project-db/templates/claude-md-block.standalone.md	2026-09-28 11:28:32
+@@ -1,10 +1,10 @@
+ ## Project Database (project-db) — source of truth
+ 
+-This project keeps its knowledge in a queryable SQLite database at `.claude/db/project.sqlite` (slug `{{SLUG}}`, mode `{{MODE}}`), built from the source collections declared in `.claude/db/config.json` and rebuilt incrementally by a SessionStart hook. Every agent operating in this repository MUST use it as the primary knowledge layer.
++This project keeps its knowledge in a queryable SQLite database at `.claude/db/project.sqlite` (slug `{{SLUG}}`, mode `{{MODE}}`), built from the source collections declared in `.claude/db/config.json` and rebuilt incrementally by a SessionStart hook. Use it as the primary knowledge layer for project questions.
+ 
+ ### Rules
+ 
+-1. **Query the database before answering any project question.** Decisions, entities, status, data, history: if a table or view exists for it, do not rely on memory or general knowledge. Run `python3 .claude/db/db.py query "SELECT …"` first; open the source file at `pages.path` for the full text.
++1. **Query the database before answering questions it covers.** Decisions, entities, status, data, history: when a table or view exists for it, run `python3 .claude/db/db.py query "SELECT …"` first rather than relying on memory; open the source file at `pages.path` for the full text.
+ 2. **Read `.claude/db/SCHEMA.md` before writing SQL.** Prefer the typed views (one per page type) and the curated views over raw tables.
+ 3. **Update the sources after every content-producing operation, then sync.** New decisions, analyses, findings or data belong in the configured collections (markdown with frontmatter, or the tabular files) — not only in chat. Then `/db:sync`. Knowledge that exists only in a conversation is lost knowledge.
+ 4. **Never modify raw sources; never write to the database by hand.** Sources are the record; the database is derived and rebuildable. Correct a source by editing it (or, for immutable inputs, by adding a page that records the correction and links back).
+diff --color -ruN a/skills/project-ontology/scripts/ontology.py b/skills/project-ontology/scripts/ontology.py
+--- a/skills/project-ontology/scripts/ontology.py	2026-09-28 11:27:51
++++ b/skills/project-ontology/scripts/ontology.py	2026-09-28 11:28:38
+@@ -2124,8 +2124,8 @@
+           "| A value you need is not registered | `/ontology:propose <id> --label … --definition …` |",
+           "| Approve proposed terms (human) | `/ontology:approve <id>…` |",
+           "| Retire a term | `/ontology:deprecate <id> --replaced-by <id>` |",
+-          "| Rewrite aliases / deprecated values / noncanonical links | `/ontology:apply --dry-run`, then `/ontology:apply` |",
+-          "| Counts, open violations, pending approvals | `/ontology:status` |"]
++          f"| Rewrite aliases / deprecated values / noncanonical links | `{ENGINE_CMD} apply --dry-run`, show the user, then `{ENGINE_CMD} apply` on their yes |",
++          f"| Counts, open violations, pending approvals | `{ENGINE_CMD} status` |"]
+     if onto.errors:
+         L += ["", "## ⚠ Ontology errors", ""] + [f"- {e}" for e in onto.errors]
+     return "\n".join(L) + "\n"
+diff --color -ruN a/skills/project-ontology/templates/claude-md-block.standalone.md b/skills/project-ontology/templates/claude-md-block.standalone.md
+--- a/skills/project-ontology/templates/claude-md-block.standalone.md	2026-09-28 11:27:51
++++ b/skills/project-ontology/templates/claude-md-block.standalone.md	2026-09-28 11:28:32
+@@ -8,7 +8,7 @@
+ 2. **A new concept is registered before it is used.** Run `{{ENGINE}} propose <id> --label … --definition …`. A proposed term is usable at once and stays flagged until a human approves it. Never invent a near-synonym of an existing value to avoid proposing.
+ 3. **Approval and deprecation are human gates.** Do not edit a term's `status` to approved or deprecated yourself; ask the user to run `/ontology:approve` or `/ontology:deprecate` — both are manual-only commands, so only a person can start them.
+ 4. **Links resolve to exactly one document:** `[[slug]]`, or the document's full path inside its root when two documents share a slug (`[[adr/0004-stripe-sync-job]]`).
+-5. **The write hook is the contract.** A Write/Edit that adds a strict violation is blocked with the approved values and the propose command in the message. Fix the value; do not route around the hook with Bash writes (those are blocked too). Violations that predate your edit do not block (ratchet) and are not yours to fix as a side effect of another task: mechanical ones go through `/ontology:apply` after the user confirms the dry run; the rest need a human's decision — list them for the user instead.
++5. **The write hook is the contract.** A Write/Edit that adds a strict violation is blocked with the approved values and the propose command in the message. Fix the value; do not route around the hook with Bash writes (those are blocked too). Violations that predate your edit do not block (ratchet) and are not yours to fix as a side effect of another task: mechanical ones go through `{{ENGINE}} apply` after the user confirms the dry run; the rest need a human's decision — list them for the user instead.
+ 6. **Everything reads the same rules:** project-db's `ontology_violations`, `{{ENGINE}} check --all`, and `{{ENGINE}} check --changed-since <ref>` in CI.
+ 
+ ### Commands
+@@ -20,5 +20,5 @@
+ | A value you need is not registered | `/ontology:propose <id> --label … --definition …` |
+ | Approve proposed terms (the user decides) | `/ontology:approve <id>…` |
+ | Retire a term, naming its replacement | `/ontology:deprecate <id> --replaced-by <id>` |
+-| Rewrite aliases, deprecated values, noncanonical links | `/ontology:apply --dry-run`, confirm, then `/ontology:apply` |
+-| Counts, open violations, pending approvals | `/ontology:status` |
++| Rewrite aliases, deprecated values, noncanonical links | `{{ENGINE}} apply --dry-run`, show the user, then `{{ENGINE}} apply` on their yes |
++| Counts, open violations, pending approvals | `{{ENGINE}} status` |
+diff --color -ruN a/skills/project-ontology/templates/claude-md-block.wiki.md b/skills/project-ontology/templates/claude-md-block.wiki.md
+--- a/skills/project-ontology/templates/claude-md-block.wiki.md	2026-09-28 11:27:51
++++ b/skills/project-ontology/templates/claude-md-block.wiki.md	2026-09-28 11:28:32
+@@ -8,7 +8,7 @@
+ 2. **A new concept is registered before it is used.** Run `{{ENGINE}} propose <id> --label … --definition …` (vocabulary `<type>.<field>.<value>`, entity `<namespace>.<slug>`, tag `tag.<path>`). A proposed term is usable at once and stays flagged until a human approves it. Never invent a near-synonym of an existing value to avoid proposing.
+ 3. **Approval and deprecation are human gates.** Do not edit a term's `status` to approved or deprecated yourself; ask the user to run `/ontology:approve` or `/ontology:deprecate` — both are manual-only commands, so only a person can start them.
+ 4. **Links resolve to exactly one page:** `[[slug]]`, or the page's full path inside the vault when two pages share a slug (`[[clients/acme/gaps/co-op-billing]]` — the form Obsidian, project-db and the hook all agree on). `[[type|slug]]` and title-only links are noncanonical.
+-5. **The write hook is the contract.** A Write/Edit that adds a strict violation is blocked, and the message names the approved values and the propose command. Fix the value; do not route around the hook with Bash writes (those are blocked too). Violations already on a page before your edit do not block (ratchet) and are not yours to fix as a side effect of another task: mechanical ones (aliases, spelling variants, noncanonical links) go through `/ontology:apply` after the user confirms the dry run; the rest need a human's decision — list them for the user instead.
++5. **The write hook is the contract.** A Write/Edit that adds a strict violation is blocked, and the message names the approved values and the propose command. Fix the value; do not route around the hook with Bash writes (those are blocked too). Violations already on a page before your edit do not block (ratchet) and are not yours to fix as a side effect of another task: mechanical ones (aliases, spelling variants, noncanonical links) go through `{{ENGINE}} apply` after the user confirms the dry run; the rest need a human's decision — list them for the user instead.
+ 6. **The database, lint and CI read the same rules.** `ontology_violations` in project-db, Check 8 in `/wiki:lint`, and `{{ENGINE}} check --changed-since <ref>` in CI all run this engine.
+ 
+ ### Commands
+@@ -20,5 +20,5 @@
+ | A value you need is not registered | `/ontology:propose <id> --label … --definition …` |
+ | Approve proposed terms (the user decides) | `/ontology:approve <id>…` |
+ | Retire a term, naming its replacement | `/ontology:deprecate <id> --replaced-by <id>` |
+-| Rewrite aliases, deprecated values, noncanonical links | `/ontology:apply --dry-run`, confirm, then `/ontology:apply` |
+-| Counts, open violations, pending approvals | `/ontology:status` |
++| Rewrite aliases, deprecated values, noncanonical links | `{{ENGINE}} apply --dry-run`, show the user, then `{{ENGINE}} apply` on their yes |
++| Counts, open violations, pending approvals | `{{ENGINE}} status` |
+diff --color -ruN a/skills/proof-of-work/SKILL.md b/skills/proof-of-work/SKILL.md
+--- a/skills/proof-of-work/SKILL.md	2026-09-28 11:27:51
++++ b/skills/proof-of-work/SKILL.md	2026-09-28 11:28:32
+@@ -32,8 +32,7 @@
+ </role>
+ 
+ <context>
+-The user invokes this via `/agentnative:proof-of-work [mode] [scope]`, or implicitly when asking
+-how agents can verify or demonstrate UI work.
++The user invokes this via `/agentnative:proof-of-work [mode] [scope]`.
+ 
+ Tool mechanics live in `references/capture.md` (agent-browser, Playwright CLIs, the
+ verify-loop); storage and publishing live in `references/storage.md` (artifact vs S3-presign
+diff --color -ruN a/skills/screencast-capture/SKILL.md b/skills/screencast-capture/SKILL.md
+--- a/skills/screencast-capture/SKILL.md	2026-09-28 11:27:51
++++ b/skills/screencast-capture/SKILL.md	2026-09-28 11:28:47
+@@ -120,9 +120,9 @@
+    `{OUT_DIR}/capture-plan.md` as the shot list you'll execute. Set `CAPTURE_SLUG` now.
+ 
+ 3. **Load the browser tools.** In **one** `ToolSearch` call:
+-   `select:mcp__claude-in-chrome__tabs_context_mcp,mcp__claude-in-chrome__tabs_create_mcp,mcp__claude-in-chrome__navigate,mcp__claude-in-chrome__computer,mcp__claude-in-chrome__read_page,mcp__claude-in-chrome__resize_window,mcp__claude-in-chrome__javascript_tool,mcp__claude-in-chrome__gif_creator`
++   `select:mcp__claude-in-chrome__tabs_context_mcp,mcp__claude-in-chrome__tabs_create_mcp,mcp__claude-in-chrome__navigate,mcp__claude-in-chrome__computer,mcp__claude-in-chrome__read_page,mcp__claude-in-chrome__resize_window,mcp__claude-in-chrome__javascript_tool,mcp__claude-in-chrome__gif_creator,mcp__claude-in-chrome__browser_batch`
+    (`gif_creator` is used only by `chrome-gif`; `resize_window` + `javascript_tool` size the window and
+-   compute the `screen`-engine crop rect.) Then call `tabs_context_mcp{createIfEmpty:true}` — required
++   compute the `screen`-engine crop rect; `browser_batch` groups consecutive `screen`-engine actions.) Then call `tabs_context_mcp{createIfEmpty:true}` — required
+    before any other browser tool — to get the tab group and its tab IDs.
+ 
+ 4. **Phase 0.5 — Manual setup gate.** Create a fresh tab (`tabs_create_mcp`) unless `--tab` was given;
+@@ -168,7 +168,7 @@
+    from `screen_record.sh stop`): it drives the reel interval,
+    `INTERVAL = --interval value, else max(2, min(4, round(duration / 8)))`.
+ 
+-8. **Phase 4 — Hand off (or stop).** Present `{MP4_PATH}` to the user (via `present_files`), and report
++8. **Phase 4 — Hand off (or stop).** Present `{MP4_PATH}` to the user (its absolute path; use `present_files` only when the surface provides it), and report
+    the duration, what was recorded, and where the GIF + MP4 live. Then, per `HANDOFF`:
+    - `never` (`--no-reel`) → stop here; the MP4 is the deliverable.
+    - `always` (`--reel`) or `ask` → if `ask`, use **AskUserQuestion** ("Turn this recording into a
+diff --color -ruN a/skills/screencast-capture/references/convert-and-handoff.md b/skills/screencast-capture/references/convert-and-handoff.md
+--- a/skills/screencast-capture/references/convert-and-handoff.md	2026-09-28 11:27:51
++++ b/skills/screencast-capture/references/convert-and-handoff.md	2026-09-28 11:28:47
+@@ -45,7 +45,7 @@
+ 
+ ## Phase 4 — Present, then hand off (or stop)
+ 
+-Present `{MP4_PATH}` to the user with `present_files`, and report: duration, what was recorded, and
++Present `{MP4_PATH}` to the user (its absolute path; use `present_files` only when the surface provides it), and report: duration, what was recorded, and
+ the `OUT_DIR` layout (GIF + MP4 + `capture-plan.md`).
+ 
+ Then branch on `HANDOFF`:
+diff --color -ruN a/skills/screencast-capture/references/screen-record-protocol.md b/skills/screencast-capture/references/screen-record-protocol.md
+--- a/skills/screencast-capture/references/screen-record-protocol.md	2026-09-28 11:27:51
++++ b/skills/screencast-capture/references/screen-record-protocol.md	2026-09-28 11:28:47
+@@ -80,7 +80,7 @@
+ **Dead time is real.** Unlike the gif engine (where each screenshot *is* a frame), the screen engine
+ records continuously — so your own think-time *between* tool calls lands in the video as pauses. A
+ ~30s demo can produce a multi-minute raw file. Mitigate by **batching actions** (`browser_batch`) so
+-consecutive clicks/waits happen in one round-trip, and **don't narrate to yourself between calls**.
++consecutive clicks/waits happen in one round-trip.
+ Either way, hand the raw MP4 to `screencast-highlight-reel` — trimming that dead time down to the real
+ moments is exactly what it does. Also consider fullscreening the app (Ctrl+Cmd+F) before recording so
+ the browser chrome + menu bar stay out of frame.
+diff --color -ruN a/skills/screencast-highlight-reel/SKILL.md b/skills/screencast-highlight-reel/SKILL.md
+--- a/skills/screencast-highlight-reel/SKILL.md	2026-09-28 11:27:51
++++ b/skills/screencast-highlight-reel/SKILL.md	2026-09-28 11:28:47
+@@ -118,7 +118,7 @@
+    frame when a narration beat runs longer than its clip so nothing is cut off, concatenates, and
+    burns the subtitles. Output: `{OUT_DIR}/{REEL_SLUG}.mp4` + `{REEL_SLUG}.srt`.
+ 
+-9. **Summary.** Present the finished `.mp4` to the user (via `present_files`), report the length,
++9. **Summary.** Present the finished `.mp4` to the user (its absolute path; use `present_files` only when the surface provides it), report the length,
+    the moments included, and where the intermediate artifacts live. If a wiki vault exists, log the
+    run per the wiki-first mandate.
+ 
+diff --color -ruN a/skills/session-hooks/SKILL.md b/skills/session-hooks/SKILL.md
+--- a/skills/session-hooks/SKILL.md	2026-09-28 11:27:51
++++ b/skills/session-hooks/SKILL.md	2026-09-28 11:28:47
+@@ -282,7 +282,7 @@
+ 
+ When generating files, write to the **project root** (or wherever the repo is mounted). Use `.claude/hooks/` as the convention for hook scripts — it's not required by Claude Code, but it keeps things tidy.
+ 
+-Always print the path to every file created using `computer://` links in the final message so the user can open them.
++Give the absolute path of every file created in the final message (use `computer://` links only when the surface provides them) so the user can open them.
+ 
+ ## Success Criteria
+ 
+diff --color -ruN a/skills/session-hooks/templates/start-ai-consultation.py b/skills/session-hooks/templates/start-ai-consultation.py
+--- a/skills/session-hooks/templates/start-ai-consultation.py	2026-09-28 11:27:51
++++ b/skills/session-hooks/templates/start-ai-consultation.py	2026-09-28 11:28:13
+@@ -9,7 +9,7 @@
+ 
+ Required env vars:
+   CONSULT_PROVIDER     "openai" | "anthropic" | "gemini"
+-  CONSULT_MODEL        e.g. "gpt-5", "claude-opus-4-6", "gemini-3-pro"
++  CONSULT_MODEL        e.g. "gpt-5", "claude-opus-5", "gemini-3-pro"
+   CONSULT_API_KEY      provider API key
+ 
+ Optional:
+@@ -83,7 +83,8 @@
+ def call_anthropic(model: str, key: str, system: str, user: str, max_tokens: int) -> str | None:
+     payload = json.dumps({
+         "model": model,
+-        "max_tokens": max_tokens,
++        # Thinking counts toward max_tokens on current Claude models; leave room for it.
++        "max_tokens": max(max_tokens, 4000),
+         "system": system,
+         "messages": [{"role": "user", "content": user}],
+     }).encode()
+@@ -99,7 +100,10 @@
+     try:
+         with urllib.request.urlopen(req, timeout=30) as resp:
+             data = json.loads(resp.read().decode())
+-        return data["content"][0]["text"]
++        if data.get("stop_reason") == "refusal":
++            warn("anthropic call refused; skipping")
++            return None
++        return next((b["text"] for b in data.get("content", []) if b.get("type") == "text"), None)
+     except Exception as e:  # noqa: BLE001
+         warn(f"anthropic call failed: {e}")
+         return None
+diff --color -ruN a/skills/setup-plugin/SKILL.md b/skills/setup-plugin/SKILL.md
+--- a/skills/setup-plugin/SKILL.md	2026-09-28 11:27:50
++++ b/skills/setup-plugin/SKILL.md	2026-09-28 11:28:05
+@@ -112,7 +112,7 @@
+ ### Restructuring Rules
+ 
+ 1. **Skills**: Move from `.claude/skills/<name>/` → `skills/<name>/`. Preserve internal structure (references/, templates/, scripts/).
+-2. **Commands**: Flatten from `.claude/commands/<namespace>/` → `commands/`. Remove subdirectory nesting. Rename files to drop namespace prefix from filename since it will be in the frontmatter `name` field.
++2. **Commands**: Move from `.claude/commands/` → `commands/`, keeping `<group>/` subdirectories (each becomes a `<group>:` namespace).
+ 3. **Agents**: Move from `.claude/agents/` → `agents/`.
+ 4. **Hooks**: Convert `.claude/settings.json` hook entries or `.claude/hooks.json` → `hooks/hooks.json` using the plugin hooks format.
+ 5. **Scripts**: Move from `.claude/scripts/` → `scripts/`. Update any references in hooks or skills.
+@@ -128,7 +128,7 @@
+ 
+ For each command file:
+ 
+-1. **Add `name` field** — Must be `<namespace>:<command-name>` (e.g., `verndale:migration-pipeline`). The namespace is the plugin name or a short prefix agreed with the user.
++1. **Set the `name` field** — `commands/<leaf>.md` gets `name: <leaf>`; `commands/<group>/<leaf>.md` gets `name: <group>:<leaf>`. Never put the plugin name in `name`; Claude Code adds it.
+ 2. **Description must start with a verb** — "Audit...", "Analyze...", "Run...", "Transform...", "Generate...". Not "End-to-end..." or "Quick...".
+ 3. **Fix YAML frontmatter** — No blank lines inside `---` fences. All required fields present: `description`, `argument-hint`.
+ 4. **Validate `allowed-tools`** — Only include if restricting beyond the agent's own tool set. Simple dispatch commands that only call `Skill()` should restrict to just that skill.
+@@ -159,7 +159,7 @@
+ 
+ 1. **Structure** — Must follow the plugin hooks format with `hooks` → `<HookType>` → array of matchers.
+ 2. **Script references** — Must use `${CLAUDE_PLUGIN_ROOT}/scripts/` prefix for portability.
+-3. **Timeouts** — Every command hook should have a reasonable `timeout` (default 10000ms).
++3. **Timeouts** — Every command hook sets `timeout` in seconds (typically 10–30).
+ 
+ ## Phase 4: Generate Metadata Files
+ 
+@@ -243,7 +243,7 @@
+ 
+ After all changes:
+ 
+-1. **Grep all command files** for `name: <namespace>:` to confirm naming.
++1. **Grep all command files** for `name:` to confirm naming (leaf, or `<group>:<leaf>` for grouped files; no plugin-name prefix).
+ 2. **Check no blank lines** inside YAML frontmatter fences.
+ 3. **Verify all referenced skills/agents exist** — every `Skill()` or agent dispatch in commands must point to a real file.
+ 4. **Verify all hook script paths exist** — every script referenced in hooks.json must be present.
+@@ -252,7 +252,6 @@
+ 
+ ## Important Notes
+ 
+-- Always ask the user for the namespace prefix before optimizing commands. Different plugins use different prefixes.
+ - Preserve all existing functionality — this is a restructuring and optimization pass, not a rewrite.
+ - If a `.claude/` directory existed alongside the new plugin structure, remind the user they can safely remove it after verifying the migration.
+ - When optimizing descriptions, keep the original intent — just improve the phrasing to follow best practices (verb-first, concise, specific).
+diff --color -ruN a/skills/setup-plugin/references/plugin-structure.md b/skills/setup-plugin/references/plugin-structure.md
+--- a/skills/setup-plugin/references/plugin-structure.md	2026-09-28 11:27:50
++++ b/skills/setup-plugin/references/plugin-structure.md	2026-09-28 11:28:05
+@@ -99,7 +99,7 @@
+ 
+ ```yaml
+ ---
+-name: <namespace>:<command-name>
++name: <leaf>  # or <group>:<leaf> for commands/<group>/<leaf>.md
+ description: <verb-first one-line description>
+ argument-hint: <argument format shown to user>
+ allowed-tools: <comma-separated tool list> # only if restricting
+@@ -108,7 +108,7 @@
+ 
+ **Field rules:**
+ 
+-- `name`: `<namespace>:<kebab-case-name>`. Namespace is the plugin name or agreed short prefix.
++- `name`: the file's leaf name, or `<group>:<leaf>` when the file sits in `commands/<group>/` — never the plugin name.
+ - `description`: Starts with a verb (Audit, Analyze, Run, Transform, Generate, Scan, Check). Shown in autocomplete.
+ - `argument-hint`: Use `<brackets>` for required args, `[brackets]` for optional. Use `|` for choices.
+ - `allowed-tools`: Only include if you need to restrict tools. Simple Skill() dispatches should restrict to just the skill.
+@@ -144,7 +144,7 @@
+ 
+ ### Quality Checklist
+ 
+-- [ ] `name` starts with `<namespace>:`
++- [ ] `name` carries no plugin-name prefix
+ - [ ] `description` starts with a verb
+ - [ ] No blank lines inside `---` fences
+ - [ ] `$ARGUMENTS` is present in body
+@@ -214,7 +214,7 @@
+ Agent bodies typically use XML sections:
+ 
+ - `<role>` — What the agent is and does
+-- `<constraints>` — Minimum 5 constraints, ALWAYS/NEVER formatting
++- `<constraints>` — the real constraints, each stated plainly with its reason; no quota, no ALL-CAPS
+ - `<architecture>` — How the agent fits into the system
+ - `<testing>` — Validation commands
+ - `<output_format>` — Expected output structure
+@@ -235,7 +235,7 @@
+           {
+             "type": "command",
+             "command": "bash \"${CLAUDE_PLUGIN_ROOT}/scripts/<script-name>\"",
+-            "timeout": 10000
++            "timeout": 30
+           }
+         ]
+       }
+@@ -249,7 +249,7 @@
+ **Rules:**
+ 
+ - Script paths must use `${CLAUDE_PLUGIN_ROOT}/scripts/` for portability
+-- Every command hook needs a `timeout` (default: 10000ms)
++- Every command hook needs a `timeout`, in seconds (e.g. 30)
+ - `matcher` uses `|` for multiple tool names (e.g., `"Edit|Write|MultiEdit"`)
+ 
+ ---
+diff --color -ruN a/skills/sim-data/SKILL.md b/skills/sim-data/SKILL.md
+--- a/skills/sim-data/SKILL.md	2026-09-28 11:27:51
++++ b/skills/sim-data/SKILL.md	2026-09-28 11:28:32
+@@ -35,8 +35,7 @@
+ </role>
+ 
+ <context>
+-The user invokes this via `/agentnative:sim-data [mode] [scenario]`, or implicitly when test
+-data is unrealistic or agents need production-like environments.
++The user invokes this via `/agentnative:sim-data [mode] [scenario]`.
+ 
+ Tool selection and shape-mining queries live in `references/data-tools.md` (read before
+ building). The two pipelines, chosen by prod access:
+diff --color -ruN a/skills/skill-reverse-engineer/SKILL.md b/skills/skill-reverse-engineer/SKILL.md
+--- a/skills/skill-reverse-engineer/SKILL.md	2026-09-28 11:27:51
++++ b/skills/skill-reverse-engineer/SKILL.md	2026-09-28 11:28:32
+@@ -62,7 +62,7 @@
+ 
+ <context>
+ Invoked via `/bespoke-agentics:skill-reverse-engineer '<target>' [--mode audit|apply|new-version]
+-[--out <dir>]`, or implicitly when someone wants a skill hardened. Parse whatever the user typed
++[--out <dir>]`. Parse whatever the user typed
+ against that form: the first token is `target`, `--mode` and `--out` are optional flags, and
+ anything omitted takes the default stated in the `args` frontmatter above.
+ 
+@@ -229,7 +229,7 @@
+      generation date.
+      In a non-interactive run, the stated defaults apply and are recorded as assumptions.
+ 
+-No file is created or edited before this gate. Deselected findings are recorded in the report as
++No target-skill file is created or edited before this gate. Deselected findings are recorded in the report as
+ `acknowledged — out of scope`.
+ 
+ ## Phase 5 — Apply the accepted refactors
+@@ -315,7 +315,8 @@
+ <quality_bar>
+ 
+ - Zero findings without a `file:line`.
+-- Zero files created or edited before the Phase 4 gate.
++- Zero target-skill files created or edited before the Phase 4 gate (the report and its host-context
++  sidecar are the only earlier writes).
+ - Every CRITICAL finding phrased as the run-to-run consequence it produces.
+ - Every shipped script has been executed at least once in this run.
+ - The essential-judgment register is never empty for a non-trivial skill — a report that proposes
+diff --color -ruN a/skills/spec-elicitation/SKILL.md b/skills/spec-elicitation/SKILL.md
+--- a/skills/spec-elicitation/SKILL.md	2026-09-28 11:27:51
++++ b/skills/spec-elicitation/SKILL.md	2026-09-28 11:28:32
+@@ -40,7 +40,7 @@
+ - Challenge assumptions; play devil's advocate.
+ - After every answer, generate 1–3 follow-ups until you hit bedrock.
+ 
+-**Do not stop early.** Keep interviewing until: every dimension is explored, every follow-up answered, no new questions arise, and the user explicitly confirms completeness.
++Keep interviewing until every dimension has a specific answer, no follow-ups remain open, and the user confirms completeness.
+ 
+ ### Phase 3 — Iterative refinement
+ 
+@@ -66,11 +66,9 @@
+ 
+ ## Hard rules
+ 
+-- **ALWAYS** use `AskUserQuestion` — this is interactive, never a one-shot generation.
+-- **ALWAYS** complete the interview before generating the spec.
+-- **ALWAYS** write the spec to a file; don't just display it.
+-- **ALWAYS** probe edge cases; the hard parts hide at the edges.
+-- **NEVER** stop at surface-level answers.
++- The interview runs through `AskUserQuestion` and finishes before the spec is written.
++- Write the spec to the file, not just the chat.
++- Push vague answers and edge cases until they are concrete — the hard parts hide there.
+ 
+ ## Reference files
+ 

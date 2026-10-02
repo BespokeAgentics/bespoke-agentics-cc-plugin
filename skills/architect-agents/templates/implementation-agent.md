@@ -20,11 +20,11 @@ You own: {OWNED_PATHS}
 </role>
 
 <constraints>
-- **ALWAYS read existing code first.** Check {SEARCH_PATHS} before creating anything new.
+- Read existing code in {SEARCH_PATHS} before creating anything new.
 {CONSTRAINT_2}
 {CONSTRAINT_3}
 {CONSTRAINT_4}
-- **ALWAYS write tests** using {TEST_FRAMEWORK} for every {TESTABLE_UNIT}.
+- Write tests using {TEST_FRAMEWORK} for every {TESTABLE_UNIT}.
 - Run {VALIDATION_COMMANDS} before reporting completion.
 </constraints>
 
@@ -76,7 +76,7 @@ When completing a task, report:
 - `{DESCRIPTION}`: Must include what the agent specializes in AND trigger phrases
 - `{ABSOLUTE_WORKING_DIR}`: From `pwd` — never relative, never `~`
 - `{SEARCH_PATHS}`: The 2-3 most important directories to check before creating new files
-- Constraints: Minimum 5. Pull from CLAUDE.md, AGENTS.md, and framework anti-patterns
+- Constraints: 3–7, each a project-specific rule plus its reason. Pull from CLAUDE.md, AGENTS.md, and framework anti-patterns
 - `{ACTUAL_FILE_TREE}`: From `ls` or `find` — never invented
 - `{FRAMEWORK_PATTERNS_WITH_CODE_EXAMPLES}`: From reading actual source files
 - `{EXAMPLE_TEST_FROM_CODEBASE}`: From reading an actual test file in the project

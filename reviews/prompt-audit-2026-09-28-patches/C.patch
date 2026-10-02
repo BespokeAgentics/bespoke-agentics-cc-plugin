@@ -1,0 +1,610 @@
+diff --color -ruN a/skills/agent-loop-audit/SKILL.md b/skills/agent-loop-audit/SKILL.md
+--- a/skills/agent-loop-audit/SKILL.md	2026-09-28 11:27:40
++++ b/skills/agent-loop-audit/SKILL.md	2026-09-28 11:27:55
+@@ -7,8 +7,8 @@
+   payload-before-listener races, idle treated as done instead of branching on stop_reason,
+   unanswered tool-approval requests (server-side deadlock), undifferentiated errors, and missing
+   interrupt+redirect steering. Tiered rules: a stack-agnostic core (raw SSE/WebSocket, any vendor)
+-  plus an Anthropic pack (user.message/user.interrupt, session.status.idle, stop_reason,
+-  agent/session/fan event families). TS/JS + Python. Severity-rated file:line report,
++  plus an Anthropic pack (user.message/user.interrupt, session.status_idle, stop_reason,
++  agent/session/span event families). TS/JS + Python. Severity-rated file:line report,
+   interview-gated fixes. Use when the user says "audit my AI integration", "my agent hangs", "app
+   stalls waiting for the AI", "why does my session deadlock", "check my stop_reason handling", or
+   invokes /bespoke-agentics:agent-loop-audit. Complements ai-transparency and ai-waiting-ux.
+@@ -49,13 +49,18 @@
+   streaming. Rule families: `EL*` (event-loop lifecycle), `SR*` (stop-reason & state semantics),
+   `RS*` (resilience & steering), `OB*` (observability & protocol hygiene).
+ - **Anthropic pack** — the same rules bound to the concrete Anthropic managed-agent vocabulary:
+-  the **five fixed input event types** (chiefly `user.message` to initiate and `user.interrupt` to
+-  steer), the **three output-event families** (agent events narrating reasoning/tool calls, session
+-  events for system status/control flow, fan events for timing/token observability),
+-  `session.status.idle`, and the `stop_reason` payload field whose two values — successful
+-  completion vs **requires-action** (blocked awaiting client approval for tool calls, with the
+-  pending event IDs nested inside) — determine what the client must do next. Activates when Phase 0
+-  detects an Anthropic SDK.
++  the **six input event types** (`user.message` to initiate, `user.interrupt` to steer,
++  `user.tool_confirmation` and `user.custom_tool_result` to answer a blocked session,
++  `user.define_outcome`, `system.message`), the **three output-event families** (agent events
++  narrating reasoning/tool calls, session events for system status/control flow, span events —
++  `span.model_request_start` / `span.model_request_end` with `model_usage` — for timing/token
++  observability), `session.status_idle`, and its `stop_reason` object, whose `type` sets the
++  client's next move: `end_turn` (turn finished — an interrupted turn reports this too),
++  `requires_action` (blocked on the client: `stop_reason.event_ids` lists the
++  `agent.tool_use`/`agent.mcp_tool_use` events awaiting `user.tool_confirmation` and the
++  `agent.custom_tool_use` events awaiting `user.custom_tool_result`), or `budget_reached` (paused
++  at the session budget; only settle events are accepted). Activates when Phase 0 detects an
++  Anthropic SDK.
+ 
+ Correct-pattern reference implementations (TypeScript and Python) live in
+ `references/patterns.md`. Fixes must follow those shapes, adapted to the project's conventions —
+@@ -68,7 +73,7 @@
+    the initial events (a race condition, and the single most common startup failure).
+ 2. Send the initial task payload only after listener confirmation.
+ 3. Loop over incoming event packets, decoding by event family.
+-4. On **every** idle event, branch on the stop reason: completed → finalize; requires-action →
++4. On **every** idle event, branch on the stop reason: end_turn → finalize; requires-action →
+    answer the pending tool-call approvals (a _client_ responsibility — skipping it deadlocks the
+    server-side process indefinitely); otherwise → interrupt and redirect.
+ 5. Error handlers that differentiate transient network breaks (reconnect/resume) from hard API
+diff --color -ruN a/skills/agent-loop-audit/references/patterns.md b/skills/agent-loop-audit/references/patterns.md
+--- a/skills/agent-loop-audit/references/patterns.md	2026-09-28 11:27:40
++++ b/skills/agent-loop-audit/references/patterns.md	2026-09-28 11:31:25
+@@ -15,35 +15,40 @@
+ ## TypeScript — canonical loop (fixes EL1, EL2, SR1, SR2, SR3)
+ 
+ ```ts
++// Sends are POSTs to the session; the stream (SSE) only receives.
++const send = (events: SessionEvent[]) =>
++  client.beta.sessions.events.send(sessionId, { events });
++
+ // 1–2. Listener first, payload second — never in parallel (EL1).
+-const stream = await client.sessions.connect(sessionId);   // resolves when listener is OPEN
+-await stream.ready;                                        // explicit open confirmation
+-await stream.send({ type: "user.message", content: task }); // payload only after confirmation
++const stream = await client.beta.sessions.events.stream(sessionId); // open BEFORE sending
++await send([{ type: "user.message", content: [{ type: "text", text: task }] }]);
+ 
+ // 3. Consume — the stream is the control surface; never fire-and-forget (EL2).
+ for await (const event of stream) {
+   switch (eventFamily(event)) {                            // OB1: decode by family
+     case "agent":   onAgentEvent(event); break;            // reasoning, tool calls → debug layer
+     case "session": {
+-      if (event.type === "session.status.idle") {
++      if (event.type === "session.status_idle") {
+         // 4. Idle ≠ done (SR1). The stop reason decides (SR2/SR3).
+-        switch (event.stop_reason?.kind) {
+-          case "completed":
+-            return finalize(event);
++        switch (event.stop_reason?.type) {
++          case "end_turn":
++            return finalize(event);   // an interrupted turn also ends here — track interrupts you sent
+           case "requires_action":
+-            // Client responsibility: answer every pending tool call, or the
+-            // server-side process deadlocks indefinitely (SR2 / EL3).
+-            for (const toolCallId of event.stop_reason.pending_tool_call_ids) {
+-              await stream.send(approveOrDecline(toolCallId));
+-            }
++            // Client responsibility: answer every pending event, or the
++            // server-side process waits indefinitely (SR2 / EL3). Each ID is an
++            // agent.tool_use / agent.mcp_tool_use (→ user.tool_confirmation) or
++            // agent.custom_tool_use (→ user.custom_tool_result) event.
++            await send(event.stop_reason.event_ids.map(answerPendingEvent));
+             break; // agent resumes; keep looping
++          case "budget_reached":
++            return pausedAtBudget(event); // only settle events accepted until the budget changes
+           default:
+-            await steer(stream); // interrupt & redirect, or keep waiting
++            await steer(); // interrupt & redirect, or keep waiting
+         }
+       }
+       break;
+     }
+-    case "fan": recordMetrics(event); break;               // OB4: timing/tokens
++    case "span": recordMetrics(event); break;              // OB4: span.model_request_end.model_usage
+   }
+ }
+ ```
+@@ -75,15 +80,18 @@
+ ```ts
+ // Steering: halt mid-execution and redirect IN THE SAME SESSION — no teardown,
+ // context preserved. Server stops, acknowledges, resumes on the new task.
+-await stream.send({ type: "user.interrupt" });
+-await stream.send({ type: "user.message", content: newInstruction });
++await send([
++  { type: "user.interrupt" },
++  { type: "user.message", content: [{ type: "text", text: newInstruction }] },
++]);
+ 
+ // Teardown: never disconnect with pending required actions (EL3).
+-async function safeClose(stream: AgentStream) {
+-  for (const id of stream.pendingToolCallIds()) {
+-    await stream.send(decline(id, "client shutting down"));
+-  }
+-  await stream.close();
++// pendingEventIds = the event_ids from the last requires_action idle.
++// Call this before leaving the `for await` loop over the stream; breaking out
++// of the loop is what closes it.
++async function answerPendingBeforeClose(pendingEventIds: string[]) {
++  await send(pendingEventIds.map((id) =>
++    decline(id, "client shutting down"))); // user.tool_confirmation {result: "deny"} or a custom_tool_result error
+ }
+ ```
+ 
+@@ -103,28 +111,33 @@
+ ## Python (asyncio) — canonical loop
+ 
+ ```python
+-async def run_task(client, session_id: str, task: str):
+-    # 1–2. Listener first (EL1): connect resolves only when the stream is open.
+-    stream = await client.sessions.connect(session_id)
+-    await stream.wait_ready()
+-    await stream.send(type="user.message", content=task)
++async def run_task(client, session_id: str, task: str):   # client = AsyncAnthropic()
++    async def send(events):                               # sends are POSTs; the stream only receives
++        await client.beta.sessions.events.send(session_id=session_id, events=events)
+ 
+-    # 3. Consume (EL2).
+-    async for event in stream:
+-        family = event_family(event)                      # OB1
+-        if family == "agent":
+-            on_agent_event(event)
+-        elif family == "session" and event.type == "session.status.idle":
+-            reason = event.stop_reason                    # SR1: idle ≠ done
+-            if reason.kind == "completed":
+-                return finalize(event)
+-            if reason.kind == "requires_action":          # SR2: client must answer
+-                for call_id in reason.pending_tool_call_ids:
+-                    await stream.send(approve_or_decline(call_id))
+-                continue                                  # agent resumes
+-            await steer(stream)                           # interrupt & redirect
+-        elif family == "fan":
+-            record_metrics(event)                         # OB4
++    # 1–2. Listener first (EL1): open the stream, then send.
++    async with client.beta.sessions.events.stream(session_id=session_id) as stream:
++        await send([{"type": "user.message", "content": [{"type": "text", "text": task}]}])
++
++        # 3. Consume (EL2).
++        async for event in stream:
++            family = event_family(event)                  # OB1
++            if family == "agent":
++                on_agent_event(event)
++            elif event.type == "session.status_idle":
++                reason = event.stop_reason                # SR1: idle ≠ done
++                if reason.type == "end_turn":             # also what an interrupted turn reports
++                    return finalize(event)
++                if reason.type == "requires_action":      # SR2: client must answer
++                    # agent.tool_use / agent.mcp_tool_use → user.tool_confirmation;
++                    # agent.custom_tool_use → user.custom_tool_result
++                    await send([answer_pending_event(eid) for eid in reason.event_ids])
++                    continue                              # agent resumes
++                if reason.type == "budget_reached":
++                    return paused_at_budget(event)        # only settle events accepted
++                await steer(send)                         # interrupt & redirect
++            elif family == "span":
++                record_metrics(event)                     # OB4: span.model_request_end.model_usage
+ ```
+ 
+ ## Python — resilience wrapper
+@@ -147,13 +160,14 @@
+ 
+ ```python
+ # RS2 — same session, no teardown:
+-await stream.send(type="user.interrupt")
+-await stream.send(type="user.message", content=new_instruction)
++await send([
++    {"type": "user.interrupt"},
++    {"type": "user.message", "content": [{"type": "text", "text": new_instruction}]},
++])
+ 
+-# EL3 — answer pending calls before closing:
+-async def safe_close(stream):
+-    for call_id in stream.pending_tool_call_ids():
+-        await stream.send(decline(call_id, reason="client shutting down"))
++# EL3 — answer pending events (event_ids from the last requires_action idle) before closing:
++async def safe_close(stream, pending_event_ids):
++    await send([decline(eid, reason="client shutting down") for eid in pending_event_ids])
+     await stream.close()
+ ```
+ 
+@@ -179,7 +193,7 @@
+ const es = new EventSource(url);      // ← initial events already gone
+ 
+ // SR1 — idle treated as done:
+-if (event.type === "session.status.idle") { resolve(result); } // no stop_reason check
++if (event.type === "session.status_idle") { resolve(result); } // no stop_reason check
+ 
+ // RS1 — conflated errors:
+ try { await loop(); } catch { /* retry forever */ }
+diff --color -ruN a/skills/agent-loop-audit/references/rules.md b/skills/agent-loop-audit/references/rules.md
+--- a/skills/agent-loop-audit/references/rules.md	2026-09-28 11:27:40
++++ b/skills/agent-loop-audit/references/rules.md	2026-09-28 11:28:06
+@@ -173,13 +173,13 @@
+ 
+ | Core concept | Anthropic vocabulary |
+ |---|---|
+-| Input events (fixed set of 5) | chiefly `user.message` (initiate task), `user.interrupt` (halt/steer) |
++| Input events (fixed set of 6) | `user.message` (initiate task), `user.interrupt` (halt/steer), `user.tool_confirmation` (allow/deny a paused tool call), `user.custom_tool_result` (answer a custom tool call), `user.define_outcome`, `system.message` |
+ | Output family 1 — agent narration | agent events: reasoning text, tool calls |
+-| Output family 2 — system status/control | session events, incl. `session.status.idle` |
+-| Output family 3 — observability | fan events: timing, token metrics |
+-| Idle signal | `session.status.idle` — momentary inactivity, **not** completion (SR1) |
+-| Stopping criterion | `stop_reason` field in the event payload (SR1–SR4) |
+-| Blocked-on-client value | requires-action: pending tool-call event IDs nested inside `stop_reason` payload; client must approve/respond (SR2, EL3) |
++| Output family 2 — system status/control | session events, incl. `session.status_idle` |
++| Output family 3 — observability | span events: `span.model_request_start` / `span.model_request_end` (`model_usage`) for timing, token metrics |
++| Idle signal | `session.status_idle` — momentary inactivity, **not** completion (SR1) |
++| Stopping criterion | `stop_reason.type` in the idle event payload: `end_turn` / `requires_action` / `budget_reached` (SR1–SR4) |
++| Blocked-on-client value | `requires_action`: `stop_reason.event_ids` lists the pending `agent.tool_use`/`agent.mcp_tool_use` events (answer with `user.tool_confirmation`, `tool_use_id` = that event ID) and `agent.custom_tool_use` events (answer with `user.custom_tool_result`) (SR2, EL3) |
+ | Steering | combined `user.interrupt` + new `user.message` packet in the same session (RS2) |
+ 
+ Pack-specific greps: `stop_reason`, `session.status`, `user.interrupt`, `user.message`,
+diff --color -ruN a/skills/ai-waiting-ux/SKILL.md b/skills/ai-waiting-ux/SKILL.md
+--- a/skills/ai-waiting-ux/SKILL.md	2026-09-28 11:27:40
++++ b/skills/ai-waiting-ux/SKILL.md	2026-09-28 11:30:44
+@@ -290,7 +290,7 @@
+ 
+ After scaffolding, run (or instruct the user to run):
+ - `npx tsc --noEmit` — type-check the generated code
+-- `npx next lint` — lint pass
++- The project's own lint script (e.g. `npm run lint`, with the project's package manager) — lint pass
+ - `node -e "require('./{{TARGET_ROOT}}/events')"` skipped — these are TS files
+ 
+ If type-check fails, classify the failure: was it in generated code (your bug → fix the template) or at integration points (expected → tell user where to wire)?
+diff --color -ruN a/skills/ai-waiting-ux/references/architecture.md b/skills/ai-waiting-ux/references/architecture.md
+--- a/skills/ai-waiting-ux/references/architecture.md	2026-09-28 11:27:40
++++ b/skills/ai-waiting-ux/references/architecture.md	2026-09-28 11:30:33
+@@ -83,7 +83,7 @@
+   activeToolCall: ToolCall | null
+   completedToolCalls: ToolCall[]
+   textBuffer: string        // current assistant message accumulating
+-  thinkingBuffer: string    // current thinking block (if extended thinking on)
++  thinkingBuffer: string    // current thinking block (empty unless summarized display is requested)
+   cumulativeUsage: { inputTokens: number; outputTokens: number }
+   modelId: string | null
+   etaMs: number | null      // null until enough signal
+diff --color -ruN a/skills/ai-waiting-ux/references/audit-rules.md b/skills/ai-waiting-ux/references/audit-rules.md
+--- a/skills/ai-waiting-ux/references/audit-rules.md	2026-09-28 11:27:40
++++ b/skills/ai-waiting-ux/references/audit-rules.md	2026-09-28 11:30:31
+@@ -16,7 +16,7 @@
+ | P1-A | critical | An SDK call site uses the blocking call shape (no streaming iterator, no async-iterator consumption). Look for `await query(...)` without iteration, or `messages.create` instead of `messages.stream`. |
+ | P1-B | critical | Streaming iterator is consumed but only the final assistant text is rendered; tool_use / tool_result blocks are never surfaced. |
+ | P1-C | blocking | Tool inputs are logged server-side but the client UI shows only "Calling tool…" with no name or arguments. |
+-| P1-D | blocking | Thinking/reasoning blocks (extended thinking enabled) are dropped instead of rendered in a collapsed peripheral panel. |
++| P1-D | blocking | Thinking blocks are dropped, or summarized thinking display is not requested so they arrive empty, instead of rendering in a collapsed peripheral panel. |
+ | P1-E | warning | Stream consumption runs on the main thread without `requestAnimationFrame` throttling — layout thrash at high token rates. |
+ | P1-F | warning | UI logic branches off the raw SDK event shape (e.g. `if (event.type === 'content_block_delta')` in a component) instead of a normalized `AgentEvent`. |
+ | P1-G | nit | Step counter is absent or hard-coded ("Step 1 of 1"). |
+diff --color -ruN a/skills/ai-waiting-ux/references/event-mapping.md b/skills/ai-waiting-ux/references/event-mapping.md
+--- a/skills/ai-waiting-ux/references/event-mapping.md	2026-09-28 11:27:40
++++ b/skills/ai-waiting-ux/references/event-mapping.md	2026-09-28 11:30:29
+@@ -1,6 +1,6 @@
+ # SDK Event → AgentEvent Mapping
+ 
+-Source: `@anthropic-ai/claude-agent-sdk` streaming async iterator. The exact event names follow the Messages streaming protocol the Claude Agent SDK is built on.
++Source: `@anthropic-ai/claude-agent-sdk` `query()`, which yields `SDKMessage`s: `system` (init), `assistant` (complete content blocks), `user` (carrying `tool_result` blocks), and a final `result` (subtype, `usage`, `total_cost_usd`). The Messages-API stream events in the table below (`message_start`, `content_block_delta`, …) arrive only wrapped as `{ type: 'stream_event', event }`, and only when the `query()` options set `includePartialMessages: true`. Set it, unwrap `stream_event` messages into the rows below, and take tool results from `user` messages and the session end from the `result` message.
+ 
+ | SDK event | AgentEvent type | Notes |
+ |-----------|-----------------|-------|
+@@ -15,7 +15,7 @@
+ | `content_block_stop` (type=`text` / `thinking`) | (none — buffer only) | Marks the block boundary |
+ | `tool_result` (back from a tool runner, surfaced by the Claude Agent SDK as a content block) | `tool.result` | Match by `tool_use_id`; `output` is the result content; `isError` from the SDK's flag |
+ | `message_delta` | (update usage only) | Update `cumulativeUsage` from `usage.input_tokens` / `usage.output_tokens` |
+-| `message_stop` | `message.stop` | Capture `stop_reason` and `usage`. If `stop_reason === 'end_turn'`, the agent loop may continue; if `tool_use`, expect a tool result next; if `end_turn` and no further tool round-trip pending, the **session** is done. |
++| `message_stop` | `message.stop` | Capture `stop_reason` and `usage`. `tool_use` → expect a tool result and another turn; `end_turn` → this turn finished (the **session** ends at the SDK's `result` message); `max_tokens`, `refusal`, `pause_turn` → surface as distinct non-success states, never as success. |
+ | (iterator returns / completes) | `session.stop` (status=`success`) | Emit once the async iterator is exhausted with no error |
+ | (iterator throws non-abort) | `session.stop` (status=`error`, error=`...`) | Capture `error.message` and `error.name` |
+ | `AbortController.abort()` | `control.abort` then `session.stop` (status=`aborted`) | Distinguish from `error`; preserve the reason string |
+@@ -38,9 +38,9 @@
+ 
+ Heartbeats are events too. They flow through the reducer, persist to the LogSink, and drive the "Still running — last event 73 s ago" UI sub-state.
+ 
+-## When extended thinking is off
++## Thinking content
+ 
+-Skip `thinking.delta` events entirely. Reducer should still handle them (they may appear if a config change happens mid-session) but UI may omit the peripheral panel.
++Current models think by default (Claude Opus 5.5 always does), but thinking blocks arrive with empty text unless the model request opts into summarized display (`thinking: { type: 'adaptive', display: 'summarized' }`, or the equivalent option the SDK exposes). When scaffolding `ThinkingPanel`, set that option in the SDK call. Without it, expect `thinking` blocks with no text: the reducer still handles `thinking.delta`, and the UI hides the panel.
+ 
+ ## When the model ID changes mid-session
+ 
+diff --color -ruN a/skills/architect-agents/SKILL.md b/skills/architect-agents/SKILL.md
+--- a/skills/architect-agents/SKILL.md	2026-09-28 11:27:40
++++ b/skills/architect-agents/SKILL.md	2026-09-28 11:29:53
+@@ -183,7 +183,7 @@
+    - `{OWNED_PATHS}` → packages/directories this agent owns
+    - `{ROLE_DESCRIPTION}` → senior engineer persona specialized in this domain
+    - `{SEARCH_PATHS}` → directories to check before creating new files
+-   - `{ADDITIONAL_CONSTRAINTS}` → project-specific NEVER/ALWAYS rules from CLAUDE.md + domain-specific rules
++   - `{ADDITIONAL_CONSTRAINTS}` → project-specific rules (each with its reason) from CLAUDE.md + domain-specific rules
+    - `{FILE_STRUCTURE}` → actual file tree from codebase exploration
+    - `{PATTERNS_AND_CONVENTIONS}` → framework patterns, import conventions, state management approach
+    - `{TEST_FRAMEWORK_AND_PATTERNS}` → test framework name, conventions, example from actual test file
+@@ -194,7 +194,7 @@
+ 3. Apply quality rules from `references/agent-file-format.md`:
+    - Verify YAML frontmatter has all required fields
+    - Verify all required XML sections are present
+-   - Verify ≥5 constraints in NEVER/ALWAYS format
++   - Verify each constraint (3–7) is project-specific and carries its reason
+    - Verify working directory is absolute path
+    - Verify validation commands are real (from manifests)
+    - Verify code examples use project's actual patterns
+diff --color -ruN a/skills/architect-agents/references/agent-file-format.md b/skills/architect-agents/references/agent-file-format.md
+--- a/skills/architect-agents/references/agent-file-format.md	2026-09-28 11:27:40
++++ b/skills/architect-agents/references/agent-file-format.md	2026-09-28 11:29:39
+@@ -39,25 +39,25 @@
+ - Never use `~` or relative paths
+ - "You own:" lists the specific directories this agent is responsible for
+ 
+-### `<constraints>` (required, minimum 5)
++### `<constraints>` (required, 3–7 rules)
+ 
+ ```xml
+ <constraints>
+-- **ALWAYS read existing code first.** Check {paths} before creating anything new.
+-- **NEVER {anti-pattern}.** {explanation of why}.
+-- **ALWAYS {required practice}.** {explanation}.
+-- **ALWAYS write tests** using {test framework} for every {testable unit}.
++- Read existing code in {paths} before creating anything new.
++- {Project-specific rule} — {reason}.
++- {Project-specific rule} — {reason}.
++- Write tests using {test framework} for every {testable unit}.
+ - Run {validation commands} before reporting completion.
+ </constraints>
+ ```
+ 
+ **Rules:**
+-- Minimum 5 constraints
+-- Use **NEVER** and **ALWAYS** bold formatting
+-- First constraint is always "read existing code first" with specific paths
+-- Last constraint is always "run validation before reporting"
++- 3–7 constraints, each a concrete project rule plus its reason (e.g. "Use the client in `src/lib/api.ts`, not `fetch` — it carries auth and retries")
++- State rules plainly; reserve NEVER for hard safety or data constraints
++- First constraint: read existing code first, naming the paths
++- Last constraint: run validation before reporting
+ - Middle constraints come from: CLAUDE.md rules, AGENTS.md guidelines, framework-specific anti-patterns, domain-specific requirements
+-- Be specific: "NEVER use localStorage" not "NEVER use bad patterns"
++- Be specific: "Don't use localStorage — session data must survive a new device" not "Avoid bad patterns"
+ 
+ ### `<architecture>` (required)
+ 
+diff --color -ruN a/skills/architect-agents/references/command-file-format.md b/skills/architect-agents/references/command-file-format.md
+--- a/skills/architect-agents/references/command-file-format.md	2026-09-28 11:29:01
++++ b/skills/architect-agents/references/command-file-format.md	2026-09-28 11:29:29
+@@ -54,20 +54,20 @@
+ 
+ ### Orchestration Command (multi-agent coordination)
+ 
+-For commands that dispatch an orchestrator which then dispatches sub-agents:
++For commands that coordinate several agents. The command body runs in the main session, which
++holds the Agent tool; the orchestrator agent returns a dispatch plan, because a subagent cannot
++dispatch other agents:
+ 
+ ```markdown
+ {Brief task context}: $ARGUMENTS
+ 
+-Use the Agent tool to dispatch the `{orchestrator-name}` agent with this orchestration task:
++Phase/agent mapping: {table}
+ 
+-"{Detailed prompt including:
+-- Phase/agent mapping
+-- Execution protocol (prerequisites → implementation → validation)
+-- Model assignments for sub-agents
+-- Result synthesis instructions}"
+-
+-Use subagent_type: "{orchestrator-name}" and model: "opus".
++1. Use the Agent tool to dispatch the `{orchestrator-name}` agent (subagent_type:
++   "{orchestrator-name}", model: "opus") to check prerequisites and return a dispatch plan.
++2. Dispatch the implementation agents in the plan (parallel where independent), with their
++   model assignments.
++3. Dispatch the validators, then synthesize results and report status + next steps.
+ ```
+ 
+ ## Naming Conventions
+diff --color -ruN a/skills/architect-agents/references/model-allocation.md b/skills/architect-agents/references/model-allocation.md
+--- a/skills/architect-agents/references/model-allocation.md	2026-09-28 11:27:40
++++ b/skills/architect-agents/references/model-allocation.md	2026-09-28 11:28:55
+@@ -46,6 +46,6 @@
+ 
+ ## Cost Awareness
+ 
+-- Opus costs ~5x more than Sonnet per token
++- Opus costs more per token than Sonnet — check current per-model pricing before quoting a ratio
+ - A team of 10 agents with 5 Opus validators will cost significantly more than all-Sonnet
+ - For budget-sensitive projects, recommend starting all-Sonnet and upgrading individual agents that underperform
+diff --color -ruN a/skills/architect-agents/templates/implementation-agent.md b/skills/architect-agents/templates/implementation-agent.md
+--- a/skills/architect-agents/templates/implementation-agent.md	2026-09-28 11:27:40
++++ b/skills/architect-agents/templates/implementation-agent.md	2026-09-28 11:29:48
+@@ -20,11 +20,11 @@
+ </role>
+ 
+ <constraints>
+-- **ALWAYS read existing code first.** Check {SEARCH_PATHS} before creating anything new.
++- Read existing code in {SEARCH_PATHS} before creating anything new.
+ {CONSTRAINT_2}
+ {CONSTRAINT_3}
+ {CONSTRAINT_4}
+-- **ALWAYS write tests** using {TEST_FRAMEWORK} for every {TESTABLE_UNIT}.
++- Write tests using {TEST_FRAMEWORK} for every {TESTABLE_UNIT}.
+ - Run {VALIDATION_COMMANDS} before reporting completion.
+ </constraints>
+ 
+@@ -76,7 +76,7 @@
+ - `{DESCRIPTION}`: Must include what the agent specializes in AND trigger phrases
+ - `{ABSOLUTE_WORKING_DIR}`: From `pwd` — never relative, never `~`
+ - `{SEARCH_PATHS}`: The 2-3 most important directories to check before creating new files
+-- Constraints: Minimum 5. Pull from CLAUDE.md, AGENTS.md, and framework anti-patterns
++- Constraints: 3–7, each a project-specific rule plus its reason. Pull from CLAUDE.md, AGENTS.md, and framework anti-patterns
+ - `{ACTUAL_FILE_TREE}`: From `ls` or `find` — never invented
+ - `{FRAMEWORK_PATTERNS_WITH_CODE_EXAMPLES}`: From reading actual source files
+ - `{EXAMPLE_TEST_FROM_CODEBASE}`: From reading an actual test file in the project
+diff --color -ruN a/skills/architect-agents/templates/orchestration-command.md b/skills/architect-agents/templates/orchestration-command.md
+--- a/skills/architect-agents/templates/orchestration-command.md	2026-09-28 11:27:40
++++ b/skills/architect-agents/templates/orchestration-command.md	2026-09-28 11:29:11
+@@ -1,6 +1,8 @@
+ # Orchestration Command Template
+ 
+-For commands that dispatch an orchestrator which coordinates multiple sub-agents.
++For commands that coordinate multiple sub-agents. The command body runs in the main session,
++which holds the Agent tool; the `{ORCHESTRATOR_NAME}` agent plans and validates but cannot
++dispatch (a subagent has no Agent tool).
+ 
+ ## Template
+ 
+@@ -12,23 +14,17 @@
+ 
+ {BRIEF_CONTEXT}: $ARGUMENTS
+ 
+-Use the Agent tool to dispatch the `{ORCHESTRATOR_NAME}` agent with this orchestration task:
++You are running this orchestration from the main session.
+ 
+-"{ORCHESTRATION_PROMPT}
+-
+ Phase → Agent mapping:
+ {PHASE_AGENT_TABLE}
+ 
+ Execution protocol:
+-1. Check prerequisites — are dependent phases complete? If not, report what's blocking.
+-2. Dispatch implementation agents (parallel where independent) using the Agent tool
+-3. When implementation completes, dispatch validators in parallel using the Agent tool
+-4. Synthesize results: what was built, what passed validation, what failed
+-5. Report final status with recommended next steps
+-
+-Use subagent_type matching each agent name. Implementation agents use model '{IMPL_MODEL}'. Validators use model '{VAL_MODEL}'."
+-
+-Use subagent_type: "{ORCHESTRATOR_NAME}" and model: "opus".
++1. Use the Agent tool to dispatch the `{ORCHESTRATOR_NAME}` agent (subagent_type: "{ORCHESTRATOR_NAME}", model: "opus") with: "{ORCHESTRATION_PROMPT}". It checks prerequisites and the dependency graph and returns a dispatch plan (phase, agent, task, acceptance criteria), or what is blocking.
++2. Dispatch the implementation agents in that plan with the Agent tool — in parallel where the plan marks them independent. Use subagent_type matching each agent name and model '{IMPL_MODEL}'.
++3. When implementation completes, dispatch the validators in parallel (model '{VAL_MODEL}').
++4. Synthesize results: what was built, what passed validation, what failed.
++5. Report final status with recommended next steps.
+ ```
+ 
+ ## Filling Instructions
+diff --color -ruN a/skills/architect-agents/templates/orchestrator-agent.md b/skills/architect-agents/templates/orchestrator-agent.md
+--- a/skills/architect-agents/templates/orchestrator-agent.md	2026-09-28 11:27:40
++++ b/skills/architect-agents/templates/orchestrator-agent.md	2026-09-28 11:29:22
+@@ -13,7 +13,7 @@
+ ---
+ 
+ <role>
+-You are the lead architect and orchestrator for {PROJECT_DESCRIPTION}. You coordinate work across specialized implementation agents, manage {BUILD_SYSTEM}, validate cross-package dependencies, and sequence work according to {SEQUENCING_SOURCE}. You never write application code — you analyze, plan, validate, and dispatch.
++You are the lead architect and orchestrator for {PROJECT_DESCRIPTION}. You plan work across specialized implementation agents, manage {BUILD_SYSTEM}, validate cross-package dependencies, and sequence work according to {SEQUENCING_SOURCE}. You never write application code — you analyze, plan, and validate. You cannot dispatch agents yourself: you return a dispatch plan, and the calling session runs it.
+ 
+ Your working directory is: `{ABSOLUTE_WORKING_DIR}`
+ {SPEC_REFERENCE_IF_EXISTS}
+@@ -46,18 +46,18 @@
+ 
+ <dispatch_protocol>
+ 
+-When coordinating implementation work:
++When planning implementation work:
+ 
+ 1. **Identify the phase** and required agents
+ 2. **Check prerequisites** — are dependent phases complete?
+ 3. **Check dependency graph** — what must be built first?
+-4. **Dispatch agents** with clear task descriptions including:
++4. **Write the dispatch plan** — one entry per agent, marked parallel or sequential, each with:
+    - Which package/directory to work in
+    - What to build (specific feature, component, or endpoint)
+    - Dependencies to consume (which packages, which interfaces)
+    - Acceptance criteria (what must work when done)
+-5. **After agent completes** — dispatch relevant validators
+-6. **Track progress** — maintain awareness of what's done vs. remaining
++5. **Name the validators** to run after each implementation entry
++6. **Track progress** — report what's done vs. remaining
+ 
+ </dispatch_protocol>
+ 
+@@ -73,7 +73,7 @@
+ <output_format>
+ When completing orchestration work, report:
+ 1. **Phase status** — which phase, what's complete vs. remaining
+-2. **Agents dispatched** — which agents, what tasks
++2. **Dispatch plan** — which agents, what tasks, parallel or sequential, validators after each
+ 3. **Dependency validation** — any circular deps or mismatches found
+ 4. **Build system status** — task graph correct, workspace config valid
+ 5. **Blockers** — anything preventing next phase from starting
+diff --color -ruN a/skills/biome-guardrails/SKILL.md b/skills/biome-guardrails/SKILL.md
+--- a/skills/biome-guardrails/SKILL.md	2026-09-28 11:27:40
++++ b/skills/biome-guardrails/SKILL.md	2026-09-28 11:30:17
+@@ -191,6 +191,8 @@
+ {PMX} biome check --max-diagnostics=0 biome.json
+ ```
+ 
++The reference config targets the Biome 1.9 schema (`$schema` in the file). If the installed Biome major is newer, first run `{PMX} biome migrate --write` to convert the config, then re-run the check. A rule the newer major dropped (e.g. `noConsoleLog`) that migration doesn't map surfaces as an unknown-rule error, handled below.
++
+ If the check command fails with an unknown rule error, read the error output and remove the offending rule from `biome.json`. Report the removed rule to the user — this can happen when the installed Biome version does not support a nursery rule.
+ 
+ </phase_3>
+@@ -276,7 +278,7 @@
+ 
+ Write the script to `.claude/scripts/lint-on-edit.sh` and make it executable (`chmod +x`).
+ 
+-**IMPORTANT:** Before writing the lint-on-edit script, replace the hardcoded `npx` on lines 12 and 21 with the detected `PMX` value from Phase 1. This ensures the hook uses the correct package manager exec command (e.g., `bunx biome check` for bun projects).
++Before writing the lint-on-edit script, replace the `__PMX__` placeholder with the detected `PMX` value from Phase 1, so the hook uses the project's package manager exec command (e.g. `bunx` for bun projects).
+ 
+ **6c. Register Hooks**
+ 
+@@ -292,7 +294,7 @@
+           {
+             "type": "command",
+             "command": "bash .claude/scripts/protect-lint-config.sh",
+-            "timeout": 5000
++            "timeout": 5
+           }
+         ]
+       }
+@@ -304,7 +306,7 @@
+           {
+             "type": "command",
+             "command": "bash .claude/scripts/lint-on-edit.sh",
+-            "timeout": 15000
++            "timeout": 15
+           }
+         ]
+       }
+diff --color -ruN a/skills/codex-prompt-builder/SKILL.md b/skills/codex-prompt-builder/SKILL.md
+--- a/skills/codex-prompt-builder/SKILL.md	2026-09-28 11:27:40
++++ b/skills/codex-prompt-builder/SKILL.md	2026-09-28 11:30:51
+@@ -45,7 +45,7 @@
+ 
+ ## Asking Questions
+ 
+-Use AskQuestion/request_user_input when available. Ask 1-3 focused questions at a time, using concrete options when possible. If that tool is unavailable, ask concise plain-text questions.
++Use AskUserQuestion when available. Ask 1-3 focused questions at a time, using concrete options when possible. If that tool is unavailable, ask concise plain-text questions.
+ 
+ Ask only for high-impact gaps:
+ 
+diff --color -ruN a/skills/data-ui-craft/SKILL.md b/skills/data-ui-craft/SKILL.md
+--- a/skills/data-ui-craft/SKILL.md	2026-09-28 11:27:40
++++ b/skills/data-ui-craft/SKILL.md	2026-09-28 11:30:49
+@@ -136,8 +136,7 @@
+    findings.
+ 4. Also collect **Opportunities** — good patterns already present worth amplifying, and high-value
+    low-effort wins.
+-5. Write the report. Per the user's earlier choice this skill defaults to **both** formats — read
+-   `references/report-format.md` and emit:
++5. Write the report in **both** formats — read `references/report-format.md` and emit:
+    - `./data-ui-craft-audit.md` — the in-repo, diff-friendly markdown report.
+    - `./data-ui-craft-audit.html` — the self-contained, shareable, color-coded HTML report.
+ 6. Print a compact chat summary: counts by severity, the single highest-impact finding, the single
+@@ -147,8 +146,8 @@
+ 
+ ## Mode: implement
+ 
+-**Goal:** fix the accepted findings in the real codebase, and (by the user's earlier choice) make
+-the reusable pieces available as a small headless **primitives kit** they can carry between apps.
++**Goal:** fix the accepted findings in the real codebase, and offer the reusable pieces as a small
++headless **primitives kit** they can carry between apps (Phase 2b).
+ 
+ ### Phase 2a — Decide scope of changes
+ 
+@@ -227,7 +226,7 @@
+ 
+ - `npx tsc --noEmit` — type-check generated/edited code. Classify any failure: generated-code bug
+   (fix the template) vs. integration point (tell the user where to wire).
+-- The project's linter (`npx eslint` / `biome check` / `npx next lint`).
++- The project's own lint script (e.g. `npm run lint`, or `npx eslint` / `biome check` directly).
+ - A **layout sanity pass**: the most common regression from these fixes is truncation and alignment
+   interacting badly with narrow viewports. Eyeball (or screenshot, if browser tools are available)
+   the edited surface at a narrow and a wide width and confirm: numbers still align, truncation shows

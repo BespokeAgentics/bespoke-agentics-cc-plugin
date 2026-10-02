@@ -2,10 +2,13 @@
 name: ux-audit-quick
 description: Spot-check a single component or screen against top-priority UX heuristics — no full report
 argument-hint: <component-path-or-screenshot>
-allowed-tools: Skill(ux-audit), Read, Glob, Grep, Bash
+allowed-tools: Read, Glob, Grep, Bash
+disable-model-invocation: true
 ---
 
-Invoke the ux-audit skill for a quick spot-check.
+> **How this command loads its skill.** `ux-audit` is manual-only (`disable-model-invocation: true`), so do not call it through the Skill tool. Read `${CLAUDE_PLUGIN_ROOT}/skills/ux-audit/SKILL.md` and follow it. Paths inside a SKILL.md are relative to its own directory, and the arguments it expects are the ones given to this command.
+
+Follow the ux-audit skill (loaded as described above) for a quick spot-check.
 
 Target: $ARGUMENTS
 

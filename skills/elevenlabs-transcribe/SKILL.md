@@ -2,6 +2,7 @@
 name: elevenlabs-transcribe
 description: Transcribes audio/video files using ElevenLabs Scribe v2 API. Use when transcribing audio files, generating transcripts, or converting speech to text.
 argument-hint: <audio-file> [--output transcript.txt] [--language eng] [--num-speakers 2] [--keyterms "term1" "term2"]
+disable-model-invocation: true
 ---
 
 <objective>

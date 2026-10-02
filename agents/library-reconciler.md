@@ -5,7 +5,7 @@ description: >-
   parallel component-porter waves complete, sweeps the generated library + Storybook
   app for idiom drift, fixes mechanical inconsistencies directly, and reports judgment
   calls to the orchestrator. One agent, one sweep, run at the start of Phase 8.
-allowed-tools: Read, Write, Edit, Glob, Grep, Bash
+tools: Read, Write, Edit, Glob, Grep, Bash
 ---
 
 # Library Reconciler

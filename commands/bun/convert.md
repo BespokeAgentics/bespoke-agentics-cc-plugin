@@ -2,8 +2,11 @@
 name: "bun:convert"
 description: "Execute the Bun workspace migration: per-child git posture decisions, optional layout moves, root scaffolding (package.json with workspaces, bunfig.toml, tsconfig.base.json, .gitignore), per-package edits (scope rename, hoisted-deps strip, nested lockfile removal), root `bun install`, and a smoke test. Interactive — every destructive step is announced and confirmed."
 argument-hint: "[<target-dir>] [--layout flat|buckets] [--scope @org] [--force]"
-allowed-tools: Skill(bun-workspace), Skill(git-submodules), AskUserQuestion, Bash, Read, Write, Edit, Glob, Grep
+allowed-tools: AskUserQuestion, Bash, Read, Write, Edit, Glob, Grep
+disable-model-invocation: true
 ---
+
+> **How this command loads its skill.** `bun-workspace` is manual-only (`disable-model-invocation: true`), so do not call it through the Skill tool. Read `${CLAUDE_PLUGIN_ROOT}/skills/bun-workspace/SKILL.md` and follow it. Paths inside a SKILL.md are relative to its own directory, and the arguments it expects are the ones given to this command. Children the user marks "submodule" are not handled here: stop and tell the user to run `/submodule:convert` (step 4).
 
 # Bun Workspace — Convert
 
@@ -26,7 +29,7 @@ If `$ARGUMENTS` is empty, the skill runs the full interactive flow.
 
 ## Process
 
-Invoke the `bun-workspace` skill with `mode: convert` and forward `$ARGUMENTS`.
+Follow the `bun-workspace` skill (loaded as described above) with `mode: convert` and forward `$ARGUMENTS`.
 
 The skill will:
 

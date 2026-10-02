@@ -2,8 +2,11 @@
 name: "funcspec-evaluate"
 description: "Page-by-page functional evaluation of a Storybook workspace. Inventories pages/composites, runs the Stage-1 framing interview, launches parallel page-evaluator agents, optionally verifies visually against running Storybook, and synthesizes a cross-page feature inventory with an ambiguity register. Stops before plan generation."
 argument-hint: "[<workspace>] [--pages all|a,b] [--visual auto|on|off] [--out <dir>]"
-allowed-tools: Skill(funcspec), Agent, AskUserQuestion, Bash, Read, Write, Edit, Glob, Grep
+allowed-tools: Agent, AskUserQuestion, Bash, Read, Write, Edit, Glob, Grep
+disable-model-invocation: true
 ---
+
+> **How this command loads its skill.** `funcspec` is manual-only (`disable-model-invocation: true`), so do not call it through the Skill tool. Read `${CLAUDE_PLUGIN_ROOT}/skills/funcspec/SKILL.md` and follow it. Paths inside a SKILL.md are relative to its own directory, and the arguments it expects are the ones given to this command.
 
 # Funcspec — Evaluate
 
@@ -25,7 +28,7 @@ Parse from `$ARGUMENTS`:
 
 ## Process
 
-Invoke the `funcspec` skill in **evaluate** mode (Phases 0–4 only) and forward
+Follow the `funcspec` skill (loaded as described above) in **evaluate** mode (Phases 0–4 only) and forward
 `$ARGUMENTS`.
 
 The skill will:

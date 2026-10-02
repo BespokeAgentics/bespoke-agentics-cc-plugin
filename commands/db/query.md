@@ -2,12 +2,15 @@
 name: "db:query"
 description: "Answer a question about the project with SQL against the project database — read the schema, run one guarded read-only SELECT (row cap, timeout, CSV), open the source pages for context, cite them. Accepts raw SQL or a natural-language question."
 argument-hint: "'<question or SELECT …>' [--format csv|json|md] [--limit <n>] [--remote] [--explain]"
-allowed-tools: Skill(project-db), Bash, Read, Glob, Grep
+allowed-tools: Bash, Read, Glob, Grep
+disable-model-invocation: true
 ---
+
+> **How this command loads its skill.** `project-db` is manual-only (`disable-model-invocation: true`), so do not call it through the Skill tool. Read `${CLAUDE_PLUGIN_ROOT}/skills/project-db/SKILL.md` and follow it. Paths inside a SKILL.md are relative to its own directory, and the arguments it expects are the ones given to this command.
 
 # Project DB — Query
 
-Invoke the `project-db` skill with `mode: query` and forward:
+Follow the `project-db` skill (loaded as described above) with `mode: query` and forward:
 
 ```
 $ARGUMENTS

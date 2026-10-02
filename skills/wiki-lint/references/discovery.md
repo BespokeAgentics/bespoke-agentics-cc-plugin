@@ -16,7 +16,7 @@ Excludes templates (`wiki/_schema/templates/`), index files (`wiki/_index.md`, `
 Apply the scope filter from the skill's `scope` argument:
 
 - `full` — keep all pages.
-- `client:{slug}` — keep only `wiki/clients/{slug}/**/*.md`.
+- `client:{slug}` — keep only `wiki/{top-level}/{slug}/**/*.md`, where `{top-level}` is the vault's grouping folder (`clients/`, `projects/`, `teams/` or `domains/`, per `_schema/SCHEMA.md`).
 - `recent` — keep only pages whose mtime is within the last 7 days.
 
 For each discovered page record: file path, mtime, parsed YAML frontmatter (first 20 lines), inferred page type (from frontmatter `type:` or path).
@@ -28,7 +28,7 @@ For every page extract:
 **Frontmatter fields**
 - `type` — one of: feature, gap, decision, question, meeting, entity, integration
 - `client` — client slug (or empty for platform-level pages)
-- `status`, `created`, `updated`, `sources`, `tags`
+- `status`, `decision`, `created`, `updated`, `sources`, `tags` — the vault's only date/source keys; `date`, `source` and `status-color` are legacy keys (Check 6 flags them)
 
 **Content analysis**
 - All wiki-links — `[[slug|Display]]` or `[[slug]]`.

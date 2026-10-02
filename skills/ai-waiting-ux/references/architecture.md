@@ -83,7 +83,7 @@ type SessionState = {
   activeToolCall: ToolCall | null
   completedToolCalls: ToolCall[]
   textBuffer: string        // current assistant message accumulating
-  thinkingBuffer: string    // current thinking block (if extended thinking on)
+  thinkingBuffer: string    // current thinking block (empty unless summarized display is requested)
   cumulativeUsage: { inputTokens: number; outputTokens: number }
   modelId: string | null
   etaMs: number | null      // null until enough signal

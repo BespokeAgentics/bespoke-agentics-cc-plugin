@@ -1,6 +1,7 @@
 ---
 name: microdots-brand-recap
 description: Generates a self-contained HTML page in the BespokeAgentics / MicroDots brand — DM Sans + DM Mono, the shipped light/dark token palette, a floating nav capsule with a working theme toggle, and Mermaid diagrams re-themed from live tokens. Use whenever the user asks for a project recap, diff review, plan review, dashboard, report, audit, or any visual-explainer page "in the MicroDots brand", "BespokeAgentics style", or "MicroDots style" — and whenever they ask to restyle an existing visual-explainer page into that brand. This skill REPLACES the visual-explainer skill's aesthetic-selection step; its content workflow still applies.
+disable-model-invocation: true
 ---
 
 # MicroDots brand recap

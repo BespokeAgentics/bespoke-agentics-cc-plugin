@@ -50,7 +50,7 @@ start immediately.
 ## Wiki integration (only if a `wiki/` vault exists)
 
 Per the project's wiki-first mandate:
-1. Ingest the plan: `/wiki:ingest-document '<plan-path>' spec` (or read `wiki/_schema/SCHEMA.md` and
+1. Ingest the plan: `/wiki:ingest-document '<client-slug>' '<plan-path>' spec` (or read `wiki/_schema/SCHEMA.md` and
    create a spec/task page that links to the plan and the source video).
 2. Add cross-references to any related feature/gap pages.
 3. Append an entry to `wiki/_log.md` recording the ingest.

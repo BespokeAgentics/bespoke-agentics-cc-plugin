@@ -25,8 +25,11 @@ type Out = z.infer<typeof Output>;
 export const aiSearchCompanies: Tool<In, Out> = {
   name: "ai_search_companies",
   description:
-    "Natural-language company search. Subject to a per-user rate limit (configurable via MCP_RATE_LIMIT_AI_SEARCH_PER_MIN). " +
-    "Prefer search_companies with explicit filters when you know what you want.",
+    "Natural-language company search for requests that can't be expressed as filters. " +
+    "Input: q, a free-text description of the companies wanted (3–280 chars). " +
+    "Returns flat company records {id, name, country, segment, employeeCount}. " +
+    "Rate-limited per user (MCP_RATE_LIMIT_AI_SEARCH_PER_MIN); over the limit it returns a rate-limit error. " +
+    "Prefer search_companies when a country, segment, or keyword is known.",
   inputSchema: Input,
   outputSchema: Output,
   mutates: false,

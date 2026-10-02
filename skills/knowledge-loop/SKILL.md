@@ -11,6 +11,7 @@ args:
   - name: path
     description: "Root of the knowledge store. Default: wiki/knowledge/ when a wiki vault exists, else ./knowledge/."
     required: false
+disable-model-invocation: true
 ---
 
 You are the Knowledge Loop engine. You run a compounding, self-improving knowledge cycle over a project so that each task makes the agent measurably smarter at the next one. You implement the loop from the brief:
@@ -31,7 +32,7 @@ Settled with the user; honor them unless the user overrides at runtime.
 
 - **Hybrid wiki integration.** Capture fast in the lightweight store, but confirmed **rules are promoted into proper wiki pages** so the wiki stays the single source of truth for validated knowledge (per the repo's Wiki-First Mandate). The store is the working layer; the wiki is the durable layer.
 - **Store lives inside the wiki vault** at `wiki/knowledge/` (falls back to `./knowledge/` only if no `wiki/` exists). This means `/wiki:query`, `/wiki:lint`, and `/wiki:status` already see it and its cross-references resolve.
-- **The loop persists via CLAUDE.md + a SessionStart hook.** `init` writes the loop mandate into the project `CLAUDE.md` (inside managed sentinels) and installs a SessionStart hook that surfaces the active rules for the launch domain — so "before/after every task" actually fires without the user invoking anything.
+- **The loop persists via CLAUDE.md + a SessionStart hook.** `init` writes the loop mandate into the project `CLAUDE.md` (inside managed sentinels) and installs a SessionStart hook that surfaces the active rule headlines across domains — so "before/after every task" actually fires without the user invoking anything.
 - **A subcommand suite, not one command.** `/knowledge:init | :review | :extract | :promote | :audit`, mirroring the `/wiki`, `/bun`, and `/disclosure` suites.
 - **Evidence or it doesn't count.** Every confirmation and contradiction must cite a *distinct*, dated, linkable source (a meeting page, a commit, a task, a transcript). The same source can never increment a counter twice. This is what makes "apply by default" safe.
 - **Ontology-aware.** When the vault has an ontology (`wiki/_schema/ontology.yaml`, from `/ontology:init`), facts, hypotheses and rules use its registered values, and a rule names the terms it governs in a `terms:` field (`terms: gap.severity.critical, rel.related-feature`) so `review` can surface it whenever a task touches those terms and a deprecation of a term flags the rules that cite it. The store's own pages (`type: knowledge`) are governed like any other page — propose `type.knowledge` and its `layer` values if the ontology does not declare them yet.
@@ -71,7 +72,7 @@ Stand up the loop end-to-end. Idempotent.
 2. **Discover domains.** Don't hardcode. Propose an initial domain set from the repo and wiki (e.g., existing `wiki/clients/*`, `wiki/platforms/*`, README topics) and confirm with the user via `AskUserQuestion`. Seeding zero domains is fine — the store grows on first `extract`.
 3. **Scaffold.** Create `INDEX.md` and `_schema.md` from `templates/`, then a folder per confirmed domain, each with `knowledge.md`, `hypotheses.md`, `rules.md` from templates (empty entry sections, valid frontmatter).
 4. **Install the mandate.** Merge the loop mandate into the project `CLAUDE.md` between `<!-- knowledge-loop:managed -->` sentinels — the before/after-task rules, the 3+ promotion / contradiction-demotion rules, and the command table. Preserve all existing content. If the repo already has a Wiki-First Mandate, place the loop as a subsection that *reinforces* it (rules point at wiki pages).
-5. **Install the SessionStart hook.** Write `templates/sessionstart-knowledge-hook.sh` to `.claude/hooks/knowledge-context.sh`, make it executable, fill its domain→rules map, and register it in `.claude/settings.json` under `hooks.SessionStart` (merge, don't overwrite). The hook prints the active rules for the launch domain so the agent reviews them before the first prompt.
+5. **Install the SessionStart hook.** Write `templates/sessionstart-knowledge-hook.sh` to `.claude/hooks/knowledge-context.sh`, make it executable, set its `STORE_REL` to the resolved store path, and register it in `.claude/settings.json` under `hooks.SessionStart` (merge, don't overwrite). The hook prints the rule headlines across all domains (capped at 20) plus the review/extract reminder, so the agent sees them before the first prompt.
 6. **Register with the wiki.** Append a creation entry to `wiki/_log.md` and add a "Knowledge Loop" section to `wiki/_index.md` pointing at `knowledge/INDEX.md`.
 7. **Report.** Counts created, mandate + hook installed, and the next commands to run.
 
@@ -97,7 +98,7 @@ Read `references/loop-algorithm.md` first. Then:
 ### Mode: `promote` — *the wiki bridge*
 
 1. **Find candidates.** List rules in `rules.md` not yet linked to a wiki page (`wiki-page:` empty), plus any the user named explicitly. Also accept manual `--demote <id>` to push a rule back to hypothesis.
-2. **Promote to the wiki.** For each rule, create/update a proper wiki page. Default mapping: an **ADR-style `type: decision` page** (status `approved`, `decision-status` set appropriately) because a confirmed rule is a standing "always do X" decision and `decision` is a lint-valid type. Choose the location by domain (a client → that client's `decisions/`; otherwise `wiki/verndale/playbooks/`). Confirm location/type with `AskUserQuestion` on the first promotion of a run.
+2. **Promote to the wiki.** For each rule, create/update a proper wiki page. Default mapping: an **ADR-style `type: decision` page** (status `approved`, `decision-status` set appropriately) because a confirmed rule is a standing "always do X" decision and `decision` is a lint-valid type. Choose the location by domain (a client → that client's `decisions/`; otherwise the vault's shared playbooks/decisions location as `wiki/_schema/SCHEMA.md` defines it). Confirm location/type with `AskUserQuestion` on the first promotion of a run.
 3. **Cross-link.** Set the rule's `wiki-page:` to the new page and add the rule entry to the wiki page's `related:`. Bidirectional, per the repo's cross-reference rule.
 4. **Log + index.** Append to `wiki/_log.md`; add the new page to `wiki/_index.md`.
 

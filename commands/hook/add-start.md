@@ -2,8 +2,11 @@
 name: "hook:add-start"
 description: "Add a single SessionStart hook to an existing Claude Code setup. Skips the broad interview and asks only what's needed for one hook."
 argument-hint: "[--pattern wiki|confluence|git|todo|ai-consult|comment-inbox|custom] [--scope project|local|user]"
-allowed-tools: Skill(session-hooks), AskUserQuestion, Bash, Read, Write, Edit, Glob, Grep
+allowed-tools: AskUserQuestion, Bash, Read, Write, Edit, Glob, Grep
+disable-model-invocation: true
 ---
+
+> **How this command loads its skill.** `session-hooks` is manual-only (`disable-model-invocation: true`), so do not call it through the Skill tool. Read `${CLAUDE_PLUGIN_ROOT}/skills/session-hooks/SKILL.md` and follow it. Paths inside a SKILL.md are relative to its own directory, and the arguments it expects are the ones given to this command.
 
 # Hook Add — SessionStart
 
@@ -20,7 +23,7 @@ Add a single SessionStart hook without re-running the full design interview.
 
 ## Process
 
-Invoke the `session-hooks` skill with `mode: add-start` and forward `$ARGUMENTS`.
+Follow the `session-hooks` skill (loaded as described above) with `mode: add-start` and forward `$ARGUMENTS`.
 
 The skill will:
 

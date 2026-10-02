@@ -3,6 +3,7 @@ name: "repo-audit"
 description: "Principal-engineer repository audit. Read-only, four-phase analysis (Discovery → evidence-based Audit → Improvement Strategy → milestone Task Plan) that produces a single graded report with file:line-cited findings, severity ratings, strengths, quick wins, and open questions. Calibrates rigor to project maturity, prioritizes the core 20% of code, and never modifies anything but the report it writes."
 argument-hint: "[<path>] [--depth quick|standard|deep] [--out <file>]"
 allowed-tools: Read, Grep, Glob, Bash, Agent, WebSearch, WebFetch, Write, AskUserQuestion
+disable-model-invocation: true
 ---
 
 # Repository Audit — Principal Engineer
@@ -104,7 +105,7 @@ For the **top 3 tasks**, include a brief **implementation sketch** (approach, ke
 
 Produce a **single document** with exactly these sections, in this order:
 
-1. **Executive Summary** — ≤10 sentences: overall health **grade A–F** with justification, top 3 risks, top 3 opportunities.
+1. **Executive Summary** — a short, skimmable opening: overall health **grade A–F** with justification, top 3 risks, top 3 opportunities.
 2. **Repo Map** (Phase 1)
 3. **Audit Report** (Phase 2 — findings by dimension, sorted by severity, + Strengths)
 4. **Improvement Strategy** (Phase 3)

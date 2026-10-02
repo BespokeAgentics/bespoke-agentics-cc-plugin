@@ -1,0 +1,319 @@
+diff --color -ruN a/skills/microdots-debug-blank/SKILL.md b/skills/microdots-debug-blank/SKILL.md
+--- a/skills/microdots-debug-blank/SKILL.md	2026-09-28 11:27:47
++++ b/skills/microdots-debug-blank/SKILL.md	2026-09-28 11:28:59
+@@ -158,6 +158,8 @@
+ No wiki in the workspace: record the trap wherever that project keeps durable
+ knowledge, and say where you put it.
+ 
+-Finish with `microdots-verify` — a blank MicroDot is exactly the defect that
++Finish with `microdots-verify` — read
++`${CLAUDE_PLUGIN_ROOT}/skills/microdots-verify/SKILL.md` and follow it
++(manual-only; do not call it through the Skill tool) — because a blank MicroDot is exactly the defect that
+ green static checks do not catch, so the browser step is the only proof the fix
+ worked.
+diff --color -ruN a/skills/microdots-design/SKILL.md b/skills/microdots-design/SKILL.md
+--- a/skills/microdots-design/SKILL.md	2026-09-28 11:27:47
++++ b/skills/microdots-design/SKILL.md	2026-09-28 11:29:01
+@@ -63,4 +63,4 @@
+ 
+ ## 5. Finish
+ 
+-Report what was changed, which gates ran, and which states were actually reviewed. A state nobody reached is reported as **not reviewed**, never as passing. If the render gate reports `blank` or `startup-defect`, hand off to `microdots-debug-blank` rather than guessing: that is the framework's most expensive failure shape, and it has its own protocol.
++Report what was changed, which gates ran, and which states were actually reviewed. A state nobody reached is reported as **not reviewed**, never as passing. If the render gate reports `blank` or `startup-defect`, hand off to `microdots-debug-blank` (read `${CLAUDE_PLUGIN_ROOT}/skills/microdots-debug-blank/SKILL.md` and follow it) rather than guessing: that is the framework's most expensive failure shape, and it has its own protocol.
+diff --color -ruN a/skills/microdots-port-app/SKILL.md b/skills/microdots-port-app/SKILL.md
+--- a/skills/microdots-port-app/SKILL.md	2026-09-28 11:27:47
++++ b/skills/microdots-port-app/SKILL.md	2026-09-28 11:28:34
+@@ -76,7 +76,11 @@
+    dossier directory and defaults the MicroDot name(s).
+ 5. **Dossier home** — `<target>/docs/ports/<slug>/` (override `--out`). If it
+    already exists, re-verify its anchors instead of re-tracing blind, and say
+-   so in the report.
++   so in the report. If it holds a `dossier-manifest.json` (written by
++   `microdots-port-prototype`), read it first: skip the phases listed in
++   `phases_satisfied`, re-verify each artifact per its `reverify` field, and
++   use `seams.md` and `synthesis.json` as the Seams-lane and entity evidence
++   for Phase 4.
+ 6. **App URL** — `--app <url>`, else discovery per
+    `references/visual-inventory.md` (probe common dev ports; offer to start
+    the app's dev command, asking first; never simulate a walk from source).
+@@ -188,10 +192,13 @@
+ On a yes (details in `references/spec-and-execution.md`):
+ 
+ 1. **Scaffold.**
+-   - Monorepo: `bun run new:microdot <name>` per MicroDot, then the wiring
+-     steps `AGENTS.md` lists (tsconfig paths, vitest aliases, registry,
+-     `index.html` section + slot, `host-topology.json` route + slot). The
+-     topology tests are the wiring's own check.
++   - Monorepo: read `${CLAUDE_PLUGIN_ROOT}/skills/microdots-new-micro/SKILL.md`
++     and follow its repository-extension mode once per MicroDot (manual-only;
++     do not call it through the Skill tool). It names the generator mode the
++     workspace supports and completes the whole host seam — tsconfig paths,
++     vitest aliases, registry, `index.html` section + slot,
++     `host-topology.json` route + slot, and deploy-discovery registration.
++     The topology tests are the wiring's own check.
+    - Standalone: build the workspace per `references/standalone-scaffold.md`
+      — Bun workspace, `@bespokeagentics/microdots-*` from npm with effect pinned to the exact
+      peer version, one directory per MicroDot in the confirmed composition,
+@@ -203,9 +210,10 @@
+    sensible) → element + styles + host wiring. The disposition table is the
+    worklist; a disposition that proves wrong mid-wave is corrected in the port
+    map, not silently diverged from.
+-3. **Verify.** Monorepo: invoke the repo's `verify` skill — its browser bar is
+-   the done bar. Standalone: the equivalent sequence by hand — check green,
+-   all bundles build, boot the dev script, and confirm in a browser that every
++3. **Verify.** Read `${CLAUDE_PLUGIN_ROOT}/skills/microdots-verify/SKILL.md`
++   and follow it in either mode (manual-only; do not call it through the
++   Skill tool) — its browser bar is the done bar: check green, all bundles
++   build, boot the dev script, and confirm in a browser that every
+    MicroDot renders real content and polls its service. Green static checks
+    alone are not done: `Runtime.embed` forks the runtime and swallows startup
+    defects.
+@@ -245,8 +253,8 @@
+   only writes until Phase 7 says go.
+ - **Unverified claims are labeled** — "not visually verified", `assumed` —
+   never dressed up as findings.
+-- **Compose by invocation** — spec-elicitation, the monorepo's new:microdot
+-  and verify, orchestrate — invoked, never reimplemented.
++- **Compose by loading** — spec-elicitation, microdots-new-micro,
++  microdots-verify, orchestrate — loaded by path, never reimplemented.
+ - **Deploy is never run. Nothing is committed** — in the target, the source,
+   or the plugin repo.
+ 
+diff --color -ruN a/skills/microdots-port-app/references/spec-and-execution.md b/skills/microdots-port-app/references/spec-and-execution.md
+--- a/skills/microdots-port-app/references/spec-and-execution.md	2026-09-28 11:27:47
++++ b/skills/microdots-port-app/references/spec-and-execution.md	2026-09-28 11:28:47
+@@ -69,10 +69,12 @@
+ 
+ ### Scaffold
+ 
+-**Monorepo:** run `bun run new:microdot <name>` per dot, then the wiring steps
+-the repo's `AGENTS.md` lists — tsconfig paths, vitest aliases, registry entry,
+-`index.html` section + slot, `host-topology.json` route + slot declaration.
+-The repo's topology tests fail on a mounted-but-undeclared or
++**Monorepo:** read `${CLAUDE_PLUGIN_ROOT}/skills/microdots-new-micro/SKILL.md`
++and follow its repository-extension mode once per dot (manual-only; do not
++call it through the Skill tool). It names the generator mode the workspace
++supports and completes the whole host seam — tsconfig paths, vitest aliases,
++registry entry, `index.html` section + slot, `host-topology.json` route + slot
++declaration, and deploy-discovery registration. The repo's topology tests fail on a mounted-but-undeclared or
+ declared-but-missing slot; run them before calling the scaffold done. Never
+ reimplement the generator or the wiring rules here.
+ 
+@@ -113,9 +115,10 @@
+ 
+ ### Verify
+ 
+-**Monorepo:** invoke the repo's `verify` skill and let its bar be the done
+-bar. **Standalone:** run the equivalent sequence in
+-`references/standalone-scaffold.md` § Verify. Either way: static checks green,
++In either mode, read `${CLAUDE_PLUGIN_ROOT}/skills/microdots-verify/SKILL.md`
++and follow it (manual-only; do not call it through the Skill tool); its bar
++is the done bar, and `references/standalone-scaffold.md` § Verify lists it
++for standalone layouts. Either way: static checks green,
+ every bundle built, the system booted, and every dot confirmed **in a
+ browser** — rendering real content, polling its service, reacting to its
+ attributes, surviving unmount/remount. If the browser step could not be
+diff --color -ruN a/skills/microdots-port-app/references/standalone-scaffold.md b/skills/microdots-port-app/references/standalone-scaffold.md
+--- a/skills/microdots-port-app/references/standalone-scaffold.md	2026-09-28 11:27:47
++++ b/skills/microdots-port-app/references/standalone-scaffold.md	2026-09-28 11:28:51
+@@ -1,7 +1,7 @@
+ # Phases 0 & 7 — Target detection and the standalone scaffold
+ 
+-Two target modes. Monorepo mode delegates scaffolding to the repo's own
+-`bun run new:microdot` and wiring rules — never rebuild those here. This file
++Two target modes. Monorepo mode delegates scaffolding to
++`microdots-new-micro`'s repository-extension mode — never rebuild it here. This file
+ exists for **standalone mode**: bootstrapping a runnable MicroDots workspace in
+ an arbitrary directory from the published `@bespokeagentics/microdots-*` npm packages.
+ 
+@@ -159,7 +159,8 @@
+ 
+ ## Verify (standalone done bar)
+ 
+-The monorepo's verify skill is unavailable here; run its bar by hand:
++Run `microdots-verify` (read `${CLAUDE_PLUGIN_ROOT}/skills/microdots-verify/SKILL.md`
++and follow it); it resolves standalone layouts too. The bar is:
+ 
+ 1. `bun run check` green.
+ 2. `bun run build` — every bundle and the host build.
+diff --color -ruN a/skills/microdots-port-feature/SKILL.md b/skills/microdots-port-feature/SKILL.md
+--- a/skills/microdots-port-feature/SKILL.md	2026-09-28 11:27:47
++++ b/skills/microdots-port-feature/SKILL.md	2026-09-28 11:28:07
+@@ -59,7 +59,7 @@
+    source is where the feature lives today; it is read-only for the entire run.
+    If the cwd turns out to be the micros workspace itself and no `--source` was
+    given, ask for the source repo — porting between micros in the same
+-   workspace is `new-micro`'s prior-art protocol, not this skill.
++   workspace is `microdots-new-micro`'s prior-art protocol, not this skill.
+ 2. **Micros workspace** — `--micros <path>`, else the cwd if it looks like one
+    (a `package.json` with `micros/*` in `workspaces`, plus
+    `scripts/new-micro.ts` and `docs/reuse-catalog.md`), else ask once via
+@@ -227,10 +227,11 @@
+ 
+ On a yes, in order (details in `references/spec-and-execution.md`):
+ 
+-1. **Scaffold** — invoke the `new-micro` skill with `<name>` plus a brief
+-   distilled from the spec that names the catalog-matched needs, so its own
+-   prior-art protocol ports the matched patterns. Never reimplement the
+-   scaffold or wiring here.
++1. **Scaffold** — read `${CLAUDE_PLUGIN_ROOT}/skills/microdots-new-micro/SKILL.md`
++   and follow it in **repository-extension mode** (manual-only; do not call it
++   through the Skill tool), with `<name>` plus a brief distilled from the spec
++   that names the catalog-matched needs, so its own prior-art protocol ports
++   the matched patterns. Never reimplement the scaffold or wiring here.
+ 2. **Implementation waves**, each ending with `bun run check` green:
+    contract + client → service + store + migrations + wire tests → TEA app +
+    story tests (each observed UI state gets a story test where sensible —
+@@ -238,12 +239,14 @@
+    multi-tag conversion if needed. The disposition table is the worklist; a
+    disposition that proves wrong mid-wave is corrected in `port-map.md`, not
+    silently diverged from.
+-3. **Verify** — invoke the `verify` skill. Its browser bar is the done bar;
+-   green static checks alone do not make a port done.
++3. **Verify** — read `${CLAUDE_PLUGIN_ROOT}/skills/microdots-verify/SKILL.md`
++   and follow it. Its browser bar is the done bar; green static checks alone
++   do not make a port done.
+ 4. **Catalog maintenance** — if the port shipped a genuinely reusable pattern,
+    append the catalog entry and Trigger-index row in this run.
+ 
+-Deploy is never run by this skill — point at the `deploy` skill and stop.
++Deploy is never run by this skill — point the user at
++`/bespoke-agentics:microdots-deploy` and stop.
+ 
+ Then report honestly: what was ported, adapted, dropped, deferred; dispositions
+ changed mid-flight; what verify actually observed; traps hit; catalog entries
+@@ -265,8 +268,8 @@
+   only writes until Phase 7 says go.
+ - **Unverified claims are labeled** — "not visually verified", "not walked",
+   `assumed` — never dressed up as findings.
+-- **Compose by invocation** — spec-elicitation, new-micro, verify are invoked,
+-  never reimplemented.
++- **Compose by loading** — spec-elicitation, microdots-new-micro and
++  microdots-verify are loaded by path, never reimplemented.
+ - **Deploy is never run. Nothing is committed.**
+ 
+ ## Degradation matrix
+diff --color -ruN a/skills/microdots-port-feature/references/spec-and-execution.md b/skills/microdots-port-feature/references/spec-and-execution.md
+--- a/skills/microdots-port-feature/references/spec-and-execution.md	2026-09-28 11:27:47
++++ b/skills/microdots-port-feature/references/spec-and-execution.md	2026-09-28 11:28:18
+@@ -69,14 +69,16 @@
+ `--mode` presets the ceiling (`spec` and `scaffold` stop there); the gate can
+ always choose less than the ceiling, never more.
+ 
+-### Scaffold — invoke `new-micro`
++### Scaffold — load `microdots-new-micro`
+ 
+-Invoke the `new-micro` skill with arguments `<name> <brief>`. The brief is one
++Read `${CLAUDE_PLUGIN_ROOT}/skills/microdots-new-micro/SKILL.md` and follow it
++in **repository-extension mode** (manual-only; do not call it through the
++Skill tool), with arguments `<name> <brief>`. The brief is one
+ to three sentences distilled from the spec that *names the catalog-matched
+ needs in the trigger words the catalog indexes* — gating, persistence,
+-polling, streaming, admin dashboard — so new-micro's own prior-art protocol
+-matches and ports the patterns. Never reimplement the scaffold, the wiring, or
+-the prior-art porting here: new-micro owns them, and a fork of that logic in
++polling, streaming, admin dashboard — so microdots-new-micro's own prior-art
++protocol matches and ports the patterns. Never reimplement the scaffold, the
++wiring, or the prior-art porting here: microdots-new-micro owns them, and a fork of that logic in
+ this skill would drift from it within a month.
+ 
+ After it reports: the workspace now has a wired, bootable placeholder micro
+@@ -111,9 +113,10 @@
+ the trap register open next to the wave it threatens; when a trap bites
+ anyway, note it in the report so the register grows teeth.
+ 
+-### Verify — invoke `verify`
++### Verify — load `microdots-verify`
+ 
+-Invoke the `verify` skill and let its bar be the done bar: static checks,
++Read `${CLAUDE_PLUGIN_ROOT}/skills/microdots-verify/SKILL.md` and follow it;
++let its bar be the done bar: static checks,
+ every bundle built, the system booted, and the micro confirmed **in a
+ browser** — rendering real content, polling its service, reacting to its
+ attributes, surviving unmount/remount. Green static checks alone do not make a
+@@ -132,7 +135,7 @@
+ 
+ ### Deploy — never
+ 
+-Point at the `deploy` skill and stop. Deploying publishes publicly and creates
++Point at `/bespoke-agentics:microdots-deploy` and stop. Deploying publishes publicly and creates
+ account resources; it has its own confirmations and its own skill, and this
+ one does not borrow them.
+ 
+diff --color -ruN a/skills/misunderstanding/SKILL.md b/skills/misunderstanding/SKILL.md
+--- a/skills/misunderstanding/SKILL.md	2026-09-28 11:27:47
++++ b/skills/misunderstanding/SKILL.md	2026-09-28 11:27:54
+@@ -185,7 +185,7 @@
+ 
+ The record holds four things: the wrong belief, the source text that produced it, the corrected
+ reading, and the disposition of the affected work. Where it goes is repo-specific — read
+-`skills/defect-intake/references/documentation-targets.md` for the routing (wiki page, ADR,
++`${CLAUDE_PLUGIN_ROOT}/skills/defect-intake/references/documentation-targets.md` for the routing (wiki page, ADR,
+ changelog, or a comment plus a test). Do not duplicate that logic here.
+ 
+ ---
+diff --color -ruN a/skills/orchestrate/SKILL.md b/skills/orchestrate/SKILL.md
+--- a/skills/orchestrate/SKILL.md	2026-09-28 11:27:47
++++ b/skills/orchestrate/SKILL.md	2026-09-28 11:28:57
+@@ -137,8 +137,8 @@
+   batch, not a drip. Behavior-changing ambiguities are resolved HERE, not guessed at later. Skipped
+   under `--no-confirm` (but contradictions that change behavior still stop the run). `--dry-run`
+   ends here with the work order printed.
+-- **Phases 1..N** — for each wave, spawn its agents **in one message** (parallel tool calls),
+-  synchronously (`run_in_background: false`), each with the packet defined in
++- **Phases 1..N** — for each wave, spawn its agents **in one message** (parallel Agent calls)
++  and wait until every agent in the wave has reported before running gates, each with the packet defined in
+   `references/subagent-prompts.md`: role, exact file ownership, corrected anchors, its plan slice
+   verbatim, the guardrails block, and the structured return contract. When a wave returns, **you**
+   run the wave's gate commands in the main session. On failure: send the owning agent the exact
+@@ -180,7 +180,7 @@
+ | Well-specified mechanical work; UI reshapes; smoke driving    | `sonnet`                  | verbatim forks + small edits, codegen additions, persistence handlers, component layout changes, browser smoke tests |
+ | Read-only grounding                                           | `sonnet` (`Explore` type) | anchor verification, drift detection                                                                                 |
+ 
+-Spawn with `Agent(subagent_type: "general-purpose", model: "opus"|"sonnet", run_in_background: false, …)`
++Spawn with `Agent(subagent_type: "general-purpose", model: "opus"|"sonnet", …)`
+ (`Explore` type for grounding). If a model override is unavailable in the session, fall back to
+ inherit and record the substitution in the final report. You (the orchestrator) never take an
+ implementation item yourself — if a piece seems "too small to delegate", it still goes to a Sonnet
+diff --color -ruN a/skills/orchestrate/references/subagent-prompts.md b/skills/orchestrate/references/subagent-prompts.md
+--- a/skills/orchestrate/references/subagent-prompts.md	2026-09-28 11:27:47
++++ b/skills/orchestrate/references/subagent-prompts.md	2026-09-28 11:27:54
+@@ -45,7 +45,7 @@
+ 
+ ## 2. Implementer (Phases 1..N)
+ 
+-Spawn as `Agent(subagent_type: "general-purpose", model: {per work order}, run_in_background: false, …)`.
++Spawn as `Agent(subagent_type: "general-purpose", model: {per work order}, …)`.
+ 
+ ```
+ You are an implementation agent for one work item of a larger orchestrated run. The orchestrator
+diff --color -ruN a/skills/pi-assistant/SKILL.md b/skills/pi-assistant/SKILL.md
+--- a/skills/pi-assistant/SKILL.md	2026-09-28 11:27:47
++++ b/skills/pi-assistant/SKILL.md	2026-09-28 11:27:54
+@@ -16,7 +16,7 @@
+ - Read [references/pi-extensions.md](references/pi-extensions.md) when the task involves custom slash commands, custom tools, lifecycle hooks, UI, event interception, or `pi.registerCommand(...)`.
+ - Read [references/pi-skills.md](references/pi-skills.md) when the task involves Pi skills, skill discovery, `/skill:name`, Agent Skills frontmatter, or reusing Claude/Codex skills inside Pi.
+ - Read [references/pi-packages.md](references/pi-packages.md) when the task involves package discovery, package structure, install/remove/update flows, `pi install`, package manifests, or resources shared through npm, git, or local paths.
+-- Run `python3 skills/pi-assistant/scripts/search_pi_packages.py "<query>"` when the user wants to discover packages. Prefer this over manually trawling the gallery; browse official docs or package pages only when you need README-level detail or verification.
++- Run `python3 ${CLAUDE_PLUGIN_ROOT}/skills/pi-assistant/scripts/search_pi_packages.py "<query>"` when the user wants to discover packages. Prefer this over manually trawling the gallery; browse official docs or package pages only when you need README-level detail or verification.
+ 
+ ## Workflow
+ 
+@@ -67,7 +67,7 @@
+ ## Pi Packages
+ 
+ - Package discovery:
+-  - `python3 skills/pi-assistant/scripts/search_pi_packages.py "<query>"` for quick search
++  - `python3 ${CLAUDE_PLUGIN_ROOT}/skills/pi-assistant/scripts/search_pi_packages.py "<query>"` for quick search
+   - `pi.dev/packages` for gallery browsing
+   - npm search by the `pi-package` keyword for verification
+ - Install sources:
+@@ -100,7 +100,7 @@
+ 
+ ```bash
+ # Search Pi packages by npm keyword
+-python3 skills/pi-assistant/scripts/search_pi_packages.py "browser automation"
++python3 ${CLAUDE_PLUGIN_ROOT}/skills/pi-assistant/scripts/search_pi_packages.py "browser automation"
+ 
+ # Install globally
+ pi install npm:some-pi-package

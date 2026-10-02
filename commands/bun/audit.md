@@ -2,8 +2,11 @@
 name: "bun:audit"
 description: "Health-check an existing Bun workspace. Verifies workspace globs resolve, no duplicate package names, no nested lockfiles, overrides only at root, `private: true` on root, no version drift, and that each package extends the shared tsconfig. Read-only by default; pass `--fix` to apply the safe corrections."
 argument-hint: "[<target-dir>] [--fix]"
-allowed-tools: Skill(bun-workspace), Bash, Read, Edit, Glob, Grep
+allowed-tools: Bash, Read, Edit, Glob, Grep
+disable-model-invocation: true
 ---
+
+> **How this command loads its skill.** `bun-workspace` is manual-only (`disable-model-invocation: true`), so do not call it through the Skill tool. Read `${CLAUDE_PLUGIN_ROOT}/skills/bun-workspace/SKILL.md` and follow it. Paths inside a SKILL.md are relative to its own directory, and the arguments it expects are the ones given to this command.
 
 # Bun Workspace — Audit
 
@@ -22,7 +25,7 @@ Parse from `$ARGUMENTS`:
 
 ## Process
 
-Invoke the `bun-workspace` skill with `mode: audit` and forward `$ARGUMENTS`.
+Follow the `bun-workspace` skill (loaded as described above) with `mode: audit` and forward `$ARGUMENTS`.
 
 The skill will check:
 

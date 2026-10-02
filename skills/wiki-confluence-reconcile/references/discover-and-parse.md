@@ -25,7 +25,7 @@ Columns to expect: Feature #, Functionality, Decision, Status, Notes, Effort.
 ```
 | Feature # | Functionality     | Decision    | Status      | Notes              |
 |-----------|-------------------|-------------|-------------|--------------------|
-| F-001     | Budget Management | Custom LWC  | In Progress | Estimated 6 weeks  |
+| F-001     | Budget Management | Custom Dev  | In Progress | Estimated 6 weeks  |
 | F-002     | Catalog Filtering | OOTB        | Approved    | No gaps            |
 ```
 

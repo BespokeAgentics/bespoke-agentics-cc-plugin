@@ -2,10 +2,13 @@
 name: "wiki:init"
 description: "Initialize a Karpathy-style LLM wiki vault — scans the repo, interviews the user, and creates an Obsidian vault tailored to the project."
 argument-hint: "[--wiki-dir <path>]"
-allowed-tools: Skill(wiki-init), Agent, AskUserQuestion, Bash, Read, Write, Edit, Glob, Grep
+allowed-tools: Agent, AskUserQuestion, Bash, Read, Write, Edit, Glob, Grep
+disable-model-invocation: true
 ---
 
-Invoke the `wiki-init` skill with the user's arguments:
+> **How this command loads its skill.** `wiki-init` is manual-only (`disable-model-invocation: true`), so do not call it through the Skill tool. Read `${CLAUDE_PLUGIN_ROOT}/skills/wiki-init/SKILL.md` and follow it. Paths inside a SKILL.md are relative to its own directory, and the arguments it expects are the ones given to this command.
+
+Follow the `wiki-init` skill (loaded as described above) with the user's arguments:
 
 ```
 $ARGUMENTS

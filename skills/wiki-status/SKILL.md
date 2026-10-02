@@ -1,6 +1,7 @@
 ---
 name: wiki-status
 description: "Display a wiki health + activity dashboard: page counts by type, last 5 operations, latest lint score. Use for 'wiki status', 'wiki dashboard', 'wiki health overview'."
+disable-model-invocation: true
 ---
 
 You are the Wiki Status Dashboard generator. You display the current wiki state without invoking other skills.
@@ -12,12 +13,15 @@ Optional `--client <slug>`: scope the dashboard to a single client wiki. If abse
 ## Derived variables
 
 ```
-WIKI_DIR     = ./.claude/wiki   (or the project's documented wiki root)
+WIKI_DIR     = ./wiki   (or the wiki root the project's CLAUDE.md names)
 CLIENT_SCOPE = value from --client, or "" (all wikis)
+GROUP_DIR    = the vault's grouping folder — clients/ | projects/ | teams/ | domains/ — read from the
+               Vault layout block in {WIKI_DIR}/_schema/SCHEMA.md (fallback: whichever of those exists)
+ORG_DIR      = the vault's org section folder, per _schema/SCHEMA.md ("" if none)
 ```
 
 If `{WIKI_DIR}` does not exist, abort with `Wiki directory not found: {WIKI_DIR}`.
-If `--client <slug>` is given but `{WIKI_DIR}/clients/<slug>/` is missing, list available client slugs and abort.
+If `--client <slug>` is given but `{WIKI_DIR}/{GROUP_DIR}/<slug>/` is missing, list available slugs and abort.
 
 ## Pipeline
 
@@ -25,12 +29,12 @@ If `--client <slug>` is given but `{WIKI_DIR}/clients/<slug>/` is missing, list 
 
 For each scope:
 
-- **Per-client (under `{WIKI_DIR}/clients/<slug>/`)**: count `.md` files in `features/`, `gaps/`, `meetings/`, `questions/`, `entities/`, `integrations/`.
+- **Per-client (under `{WIKI_DIR}/{GROUP_DIR}/<slug>/`)**: count `.md` files in `features/`, `gaps/`, `meetings/`, `questions/`, `entities/`, `integrations/`.
 - **Platform** (only when scope = all): count `.md` files in `{WIKI_DIR}/platforms/`.
-- **Verndale / cumulative processes** (only when scope = all): count `.md` files in `{WIKI_DIR}/verndale/` or `{WIKI_DIR}/cumulative/`.
+- **Org processes** (only when scope = all and `ORG_DIR` is set): count `.md` files in `{WIKI_DIR}/{ORG_DIR}/`.
 
 For each client also derive:
-- custom vs config feature ratio (from frontmatter)
+- custom vs config feature ratio (from the `decision` frontmatter key)
 - critical / high gap counts
 - completed-meetings / total-meetings
 - open / closed question counts
@@ -38,17 +42,17 @@ For each client also derive:
 
 ### Phase 2 — Recent operations
 
-Read `{WIKI_DIR}/_log.md` and extract the last 5 rows. Schema is one of:
+Read `{WIKI_DIR}/_log.md`. Entries are appended at the end as heading sections, so the last 5 entries are the last 5 lines matching:
 
 ```
-{timestamp} — {operation} — {summary}
+## YYYY-MM-DD — <operation> — <summary>
 ```
 
-(or the project's documented schema in `{WIKI_DIR}/_schema/SCHEMA.md`). Tolerate either — fall back to "No operation history" if the log is missing.
+Parse each into `date`, `operation`, `summary` (split on ` — `; the summary may itself contain ` — `, so split at most twice). Ignore the body lines under each heading and any line that does not match. Scoped to a client, keep only entries whose heading or body names the client slug. Fall back to "No operation history" if the log is missing or has no matching headings.
 
 ### Phase 3 — Latest lint health
 
-Find the most recent `{WIKI_DIR}/_lint-report-*.md` and extract its `## Health Score Summary` section (overall %, broken links, orphans, contradictions). Fall back to "No lint report yet" if none exists.
+Find the most recent `{WIKI_DIR}/_lint-report-*.md` and read `**Health Score**` plus the issue counts (broken links, orphans, contradictions) from its `## Executive Summary` section. Fall back to "No lint report yet" if none exists.
 
 ### Phase 4 — Render dashboard
 
@@ -77,10 +81,10 @@ CLIENT WIKIS
   Questions:{N} open ({N} P1)
 
 Platform Knowledge: {N} pages
-Verndale Processes: {N} pages
+{Org Name} Processes: {N} pages   (only if ORG_DIR is set)
 
 Recent Operations (last 5)
-  {timestamp} — {operation} — {summary}
+  {date} — {operation} — {summary}
   ...
 
 Wiki Health Score
@@ -101,7 +105,7 @@ Entities: {N}
 Integrations: {N}
 
 Recent operations for this client:
-  {timestamp} — {operation} — {summary}
+  {date} — {operation} — {summary}
 
 Next steps:
   - {recommended action if open critical gaps}

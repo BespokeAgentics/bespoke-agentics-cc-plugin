@@ -1,6 +1,7 @@
 ---
 name: ux-audit
 description: "UX audit using Nielsen heuristics + Norman principles on code, screenshots, or screencasts. Triggers: UX review, usability audit, heuristic evaluation, design critique."
+disable-model-invocation: true
 ---
 
 # UX Audit Skill
@@ -34,7 +35,7 @@ Read `references/code-patterns.md` before starting code analysis.
 
 ### 1a. Collect files
 
-- Ask for or scan uploaded files. Look in `/mnt/user-data/uploads/` for any uploaded content.
+- Read the files or directories the user names; if none are named, ask which part of the repo to audit.
 - For large codebases, prioritize: form components, modal/dialog components, error handling,
   navigation, loading states, and any component named with words like: `form`, `modal`,
   `dialog`, `error`, `loading`, `submit`, `confirm`, `alert`, `toast`, `nav`, `wizard`, `step`.
@@ -72,20 +73,12 @@ navigation clarity, and whether the system communicates what happened after each
 
 ### For MP4 / MOV / WEBM files
 
-Extract frames using ffmpeg before analysis:
+Extract frames with the plugin's shared frame extractor before analysis (requires ffmpeg — if
+`which ffmpeg` fails: `brew install ffmpeg`):
 
 ```bash
-# Install if needed
-which ffmpeg || apt-get install -y ffmpeg 2>/dev/null
-
-# Extract 1 frame per second (adjust rate for longer videos)
-ffmpeg -i /mnt/user-data/uploads/YOUR_FILE.mp4 \
-  -vf "fps=1" \
-  /home/claude/frames/frame_%04d.png \
-  -hide_banner -loglevel error
-
-# For longer videos, use fps=0.5 (one frame every 2 seconds)
-# For short demos (<30s), use fps=2 for more detail
+# 1 = seconds between frames; use 2 for longer videos
+${CLAUDE_PLUGIN_ROOT}/skills/extract-video-frames/scripts/extract-frames.sh "<video-path>" 1 "./ux-audit-frames"
 ```
 
 After extraction, read the frames sequentially and analyze as a user flow.
@@ -137,7 +130,7 @@ Work through each of these as you review frames in sequence:
 Read `references/report-format.md` before generating the report.
 
 The report must be output as an HTML file (not markdown) for readability and shareability.
-Save to `/mnt/user-data/outputs/ux-audit-report.html`.
+Save to `./ux-audit-report.html` (or the path the user gives).
 
 The report structure:
 

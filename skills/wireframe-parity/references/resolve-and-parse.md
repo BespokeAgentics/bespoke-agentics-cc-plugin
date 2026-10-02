@@ -12,7 +12,7 @@ From `spec-or-slug`:
 
 If a spec resolves no wireframe HTML, stop — this skill reviews *against* a wireframe.
 
-## What to extract (from `references/spec-template.md`'s sections)
+## What to extract (from `interactive-wireframe`'s `references/spec-template.md` sections)
 
 Write `intended-model.md` with these blocks:
 

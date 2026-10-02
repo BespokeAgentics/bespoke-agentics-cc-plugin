@@ -33,8 +33,10 @@ Mark the header block Status: Draft. `--dossier-only` stops after this write.
 
 ## Phase 6 — Elicit
 
-Invoke the `spec-elicitation` skill with the dossier's `spec.md` path as its
-argument, and let it run its own process — it reads, assesses, and interviews
+Load the `spec-elicitation` skill — read
+`${CLAUDE_PLUGIN_ROOT}/skills/spec-elicitation/SKILL.md` and follow it (the skill is manual-only, so do not call it through the
+Skill tool; paths inside it are relative to its own directory) —
+with the dossier's `spec.md` path as its argument, and let it run its own process — it reads, assesses, and interviews
 until every dimension is settled and the user confirms completeness. Do not
 duplicate its interview beforehand, do not answer register rows on the user's
 behalf, and do not "help" by trimming its dimensions: a well-seeded spec
@@ -67,14 +69,16 @@ One AskUserQuestion:
 `--mode` presets the ceiling (`spec` and `scaffold` stop there); the gate can
 always choose less than the ceiling, never more.
 
-### Scaffold — invoke `new-micro`
+### Scaffold — load `microdots-new-micro`
 
-Invoke the `new-micro` skill with arguments `<name> <brief>`. The brief is one
+Read `${CLAUDE_PLUGIN_ROOT}/skills/microdots-new-micro/SKILL.md` and follow it
+in **repository-extension mode** (manual-only; do not call it through the
+Skill tool), with arguments `<name> <brief>`. The brief is one
 to three sentences distilled from the spec that *names the catalog-matched
 needs in the trigger words the catalog indexes* — gating, persistence,
-polling, streaming, admin dashboard — so new-micro's own prior-art protocol
-matches and ports the patterns. Never reimplement the scaffold, the wiring, or
-the prior-art porting here: new-micro owns them, and a fork of that logic in
+polling, streaming, admin dashboard — so microdots-new-micro's own prior-art
+protocol matches and ports the patterns. Never reimplement the scaffold, the
+wiring, or the prior-art porting here: microdots-new-micro owns them, and a fork of that logic in
 this skill would drift from it within a month.
 
 After it reports: the workspace now has a wired, bootable placeholder micro
@@ -109,9 +113,10 @@ same breath** — the dossier stays truthful, or it stops being consulted. Keep
 the trap register open next to the wave it threatens; when a trap bites
 anyway, note it in the report so the register grows teeth.
 
-### Verify — invoke `verify`
+### Verify — load `microdots-verify`
 
-Invoke the `verify` skill and let its bar be the done bar: static checks,
+Read `${CLAUDE_PLUGIN_ROOT}/skills/microdots-verify/SKILL.md` and follow it;
+let its bar be the done bar: static checks,
 every bundle built, the system booted, and the micro confirmed **in a
 browser** — rendering real content, polling its service, reacting to its
 attributes, surviving unmount/remount. Green static checks alone do not make a
@@ -130,7 +135,7 @@ workspace has never needed before.
 
 ### Deploy — never
 
-Point at the `deploy` skill and stop. Deploying publishes publicly and creates
+Point at `/bespoke-agentics:microdots-deploy` and stop. Deploying publishes publicly and creates
 account resources; it has its own confirmations and its own skill, and this
 one does not borrow them.
 

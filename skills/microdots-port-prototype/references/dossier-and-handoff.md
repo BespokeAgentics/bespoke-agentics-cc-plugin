@@ -83,7 +83,10 @@ immutable -- and skip re-deriving the content.
 
 ## The handoff (Phase 8)
 
-Invoke the `microdots-port-app` skill with:
+Load the `microdots-port-app` skill — read
+`${CLAUDE_PLUGIN_ROOT}/skills/microdots-port-app/SKILL.md` and follow it (the skill is manual-only, so do not call it through the
+Skill tool; paths inside it are relative to its own directory) —
+with these arguments:
 
     <dossier>/_src --target <target> --slug <slug> --out <dossier> --mode <plan→spec|scaffold|full> --no-browser
 

@@ -94,7 +94,7 @@ Those belong in Stop / SessionEnd. SessionStart should be **read-only**.
 
 ## Audit Trail
 
-If a hook does anything destructive (writes a page, posts to a channel, modifies code), log it. The bespoke-agentics convention is `wiki/_log.md` — every hook-driven action gets a row.
+If a hook does anything destructive (writes a page, posts to a channel, modifies code), log it. The bespoke-agentics convention is `wiki/_log.md` — every hook-driven action gets an entry (`## YYYY-MM-DD — <operation> — <summary>` plus a short body).
 
 ## Testing a Hook
 

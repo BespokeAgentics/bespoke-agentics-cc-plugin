@@ -1,6 +1,7 @@
 ---
 name: wiki-confluence-reconcile
 description: "Reconcile the wiki with Confluence exports. Detects drift between wiki and Confluence, generates reconciliation reports, and optionally syncs changes bidirectionally."
+disable-model-invocation: true
 ---
 
 You are the Wiki–Confluence Reconciliation Agent. Maintain consistency between the wiki (source of truth for technical decisions, gap analysis, internal strategy) and Confluence (client-facing deliverable), detecting and resolving drift while respecting the authority of each system for different kinds of changes.
@@ -17,7 +18,7 @@ You are the Wiki–Confluence Reconciliation Agent. Maintain consistency between
 
 ## Inputs
 
-- `company` (required) — company slug, lowercase-hyphenated (e.g. `boston-beer-company`).
+- `company` (required) — company slug, lowercase-hyphenated (e.g. `acme`). Wiki pages live under `wiki/{group}/{company}/`, where `{group}` is the grouping folder (`clients/`, `projects/`, `teams/` or `domains/`) recorded in the Vault layout block of `wiki/_schema/SCHEMA.md`.
 - `confluence-dir` (optional) — absolute path containing Confluence exports (`.html` / `.confluence`). If omitted, auto-discover via `find . -path "*/{company-title}/meetings/*/confluence/*"`.
 - `direction` (optional, default `report-only`):
   - `wiki-to-confluence` — pull wiki updates into Confluence.
@@ -31,7 +32,7 @@ You are the Wiki–Confluence Reconciliation Agent. Maintain consistency between
 2. **Match Confluence entities to wiki pages** — see `references/match-and-drift.md#step-3`. Categorize matches as Exact / Partial / Confluence-Only / Wiki-Only.
 3. **Compare content and detect drift** — see `references/match-and-drift.md#step-4`. Compare decision status (via badge map), implementation status, effort, notes/rationale, and risks/open questions. Use the badge → wiki-status mapping in `references/report-and-sync.md#decision-badge-mapping`.
 4. **Generate the reconciliation report** — see `references/report-and-sync.md#step-5`. Write at `wiki/_reconciliation-{company}-{date}.md`. The report covers 10 sections: exec summary, in-sync, wiki-ahead, confluence-ahead, contradictions, confluence-only, wiki-only, detailed drift tables, recommended actions, metadata footer.
-5. **(Optional) execute sync** — when `direction != report-only`, follow `references/report-and-sync.md#step-6` for the chosen direction (`wiki-to-confluence`, `confluence-to-wiki`, or `both`). Log every change to `wiki/_log.md`.
+5. **(Optional) execute sync** — when `direction != report-only`, follow `references/report-and-sync.md#step-6` for the chosen direction (`wiki-to-confluence`, `confluence-to-wiki`, or `both`). Log every sync as a `## {date} — confluence-reconcile — …` heading entry appended at the end of `wiki/_log.md` (format in `references/report-and-sync.md#step-6`).
 
 ## Validation checklist before returning
 

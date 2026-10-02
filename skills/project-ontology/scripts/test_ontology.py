@@ -507,6 +507,20 @@ class TestHooks(unittest.TestCase):
         write(self.v.root / rel, text.replace("approval: human", "approval: agent"))
         self.assertEqual(self.v.pre("Write", rel, content=agent_ok)[0], 0)
 
+    def test_gate_message_asks_the_user_to_run_the_command_not_the_agent_to_approve(self):
+        """Approval is run by a human: the block for approving a proposed term must route the agent to asking
+        the user for /ontology:approve, never hand it an `approve … --by` command line to run itself."""
+        rel = "wiki/_schema/ontology.yaml"
+        text = self.v.ontology_text()
+        approve = text.replace("    label: draft\n    status: proposed", "    label: draft\n    status: approved", 1)
+        code, msg = self.v.pre("Write", rel, content=approve)
+        self.assertEqual(code, 2)
+        self.assertIn("/ontology:approve", msg)
+        self.assertIn("/ontology:deprecate", msg)
+        self.assertIn("ask the user to run", msg)
+        self.assertNotRegex(msg, r"approve\b[^\n]*--by")
+        self.assertNotIn("ontology.py approve", msg)
+
     def test_broken_ontology_fails_closed_for_pages(self):
         write(self.v.root / "wiki/_schema/ontology.yaml", "types: {broken\n")
         code, msg = self.v.pre("Write", "wiki/clients/acme/gaps/new.md", content=self.NEW_GAP.format(sev="high"))
@@ -687,6 +701,26 @@ class TestInitInstall(unittest.TestCase):
 
     def tearDown(self):
         self.v.close()
+
+    def test_installed_text_offers_agents_only_invocable_commands(self):
+        """Agent-facing text may name a manual-only /ontology: command only on a line that hands it to a person.
+
+        The harness refuses a Skill call on a manual-only command, so a table row that points the
+        agent at /ontology:apply fails at the moment the agent follows it.
+        """
+        import re
+        policy = json.loads((HERE.parents[2] / "scripts" / "invocation-policy.json").read_text())
+        invocable = {c.split(":", 1)[1] for c in policy["model_invocable_commands"] if c.startswith("ontology:")}
+        self.v.init()
+        texts = {"ONTOLOGY.md": (self.v.root / "wiki/_schema/ONTOLOGY.md").read_text()}
+        for name in ("claude-md-block.wiki.md", "claude-md-block.standalone.md"):
+            texts[name] = (HERE.parent / "templates" / name).read_text()
+        for name, text in texts.items():
+            for line in text.splitlines():
+                for cmd in re.findall(r"/ontology:([a-z][a-z-]*)", line):
+                    if cmd not in invocable:
+                        self.assertRegex(line, r"\b(human|user|person)\b",
+                                         f"{name}: /ontology:{cmd} offered to the agent: {line.strip()}")
 
     def test_init_classifies_every_observed_value(self):
         """Acceptance: every observed value classified (approved or proposed), zero unknowns."""

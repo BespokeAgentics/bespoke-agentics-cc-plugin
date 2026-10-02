@@ -45,7 +45,7 @@ the ffmpeg error and stop — never hand a broken MP4 to the reel.
 
 ## Phase 4 — Present, then hand off (or stop)
 
-Present `{MP4_PATH}` to the user with `present_files`, and report: duration, what was recorded, and
+Present `{MP4_PATH}` to the user (its absolute path; use `present_files` only when the surface provides it), and report: duration, what was recorded, and
 the `OUT_DIR` layout (GIF + MP4 + `capture-plan.md`).
 
 Then branch on `HANDOFF`:
@@ -57,8 +57,9 @@ Then branch on `HANDOFF`:
 
 ### The handoff
 
-Hand off by **invoking the `screencast-highlight-reel` skill** (a bundled sibling) with a `$ARGUMENTS`
-string whose **first token is the absolute MP4 path**. That skill's entire input contract is "a local,
+Hand off by **loading the `screencast-highlight-reel` skill** (a bundled sibling): read
+`${CLAUDE_PLUGIN_ROOT}/skills/screencast-highlight-reel/SKILL.md` and follow it — it is manual-only, so the
+Skill tool refuses it — with an arguments string whose **first token is the absolute MP4 path**. That skill's entire input contract is "a local,
 time-seekable video path as positional-1," and it runs its own confirm-before-render interview — so
 handing off does not render anything without a second gate.
 

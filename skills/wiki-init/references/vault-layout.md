@@ -11,7 +11,7 @@ Create the skeleton based on interview answers:
 │  └─ templates/           # 7 page-type templates
 ├─ {top-level-1}/          # e.g. clients/ or projects/ or domains/
 ├─ {top-level-2}/          # e.g. platforms/ (only if platforms were selected)
-├─ {org-name}/             # e.g. verndale/ or acme/ (only if not skipped)
+├─ {org-slug}/             # e.g. acme/ — the Q5 org section (only if not skipped)
 │  └─ processes/
 ```
 

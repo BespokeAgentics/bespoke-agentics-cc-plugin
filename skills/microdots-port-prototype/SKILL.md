@@ -18,6 +18,7 @@ description: >
   particular framework): this one starts from a prototype that only pretends to work, and lands
   on MicroDots specifically.
 argument-hint: "<artifact.html|dir|zip> [--target <path>] [--mode plan|scaffold|full] [--slug <name>] [--out <dir>] [--serve] [--no-handoff] [--extract-only]"
+disable-model-invocation: true
 ---
 
 Turn a Claude Design prototype into a MicroDots build plan.
@@ -154,7 +155,10 @@ one unforgivable failure of this phase.
 
 ## Phase 8 -- Hand off to microdots-port-app
 
-Invoke the `microdots-port-app` skill with the dossier path as `--out`, `_src/` as the
+Load the `microdots-port-app` skill — read
+`${CLAUDE_PLUGIN_ROOT}/skills/microdots-port-app/SKILL.md` and follow it (the skill is manual-only, so do not call it through the
+Skill tool; paths inside it are relative to its own directory) —
+with the dossier path as `--out`, `_src/` as the
 source app, the resolved target and slug, `--no-browser` (unless `--serve` ran), and the
 resolved `--mode`. State in the invocation that the dossier is pre-populated and that
 `dossier-manifest.json` declares which phases to skip and which to re-verify. It then

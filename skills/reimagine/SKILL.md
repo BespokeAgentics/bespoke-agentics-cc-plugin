@@ -1,6 +1,7 @@
 ---
 name: reimagine
 description: "Point it at an existing component or page and get a live, code-grounded HTML variant gallery — the Current design recreated as a baseline plus reimagined versions spanning Restyle (same structure, new treatment), Restructure (same content, new layout/IA), and Rethink (new interaction model) — explored in a browser, settled via interview, ending in a spec with a divergence-from-current inventory. Use this whenever someone says 'reimagine X', 'redesign this page', 'explore some bolder takes', 'what else could this screen look like', 'give me a few directions for the dashboard', 'this component looks dated', 'modernize this table', 'show me alternatives to our current layout', or 'rethink this flow' — even when they never say 'reimagine'. All variants are brand-faithful: built from THIS repo's real tokens, typography, and labels, each cited to a path — reimagined, not off-brand. Emits ONE self-contained HTML file (inline CSS + JS, no build step) with a variant switcher, grid/split comparison views, shared state axes that hit every variant at once, in-page measurement, and browser commenting. The upstream sibling of interactive-wireframe: reimagine explores WHICH design, interactive-wireframe settles THE design, wireframe-parity checks the build. Not for settling an already-chosen change (use interactive-wireframe), not for auditing an existing UI (use a UX audit), and it writes NO production code (unlike impeccable/design-taste skills)."
+disable-model-invocation: true
 ---
 
 # Reimagine
@@ -216,7 +217,8 @@ fragments. Decision rows AND rejected-direction rows append to
 
 Close by offering — never auto-running — the handoffs: `interactive-wireframe`
 for fine-grained settlement of the winner, orchestrate/workstream-orchestrate
-for the build.
+for the build. These skills are manual-only, so do not call them through the Skill tool: on a yes, read
+`${CLAUDE_PLUGIN_ROOT}/skills/<skill>/SKILL.md` and follow it.
 
 ## Artifacts
 

@@ -25,6 +25,7 @@ args:
   - name: path
     description: "Optional path to scope the work (a component, a directory, a route). Defaults to the surfaces discovered in Phase 0.5."
     required: false
+disable-model-invocation: true
 ---
 
 <role>
@@ -135,8 +136,7 @@ the invocation). If ambiguous, ask via AskUserQuestion.
    findings.
 4. Also collect **Opportunities** — good patterns already present worth amplifying, and high-value
    low-effort wins.
-5. Write the report. Per the user's earlier choice this skill defaults to **both** formats — read
-   `references/report-format.md` and emit:
+5. Write the report in **both** formats — read `references/report-format.md` and emit:
    - `./data-ui-craft-audit.md` — the in-repo, diff-friendly markdown report.
    - `./data-ui-craft-audit.html` — the self-contained, shareable, color-coded HTML report.
 6. Print a compact chat summary: counts by severity, the single highest-impact finding, the single
@@ -146,8 +146,8 @@ the invocation). If ambiguous, ask via AskUserQuestion.
 
 ## Mode: implement
 
-**Goal:** fix the accepted findings in the real codebase, and (by the user's earlier choice) make
-the reusable pieces available as a small headless **primitives kit** they can carry between apps.
+**Goal:** fix the accepted findings in the real codebase, and offer the reusable pieces as a small
+headless **primitives kit** they can carry between apps (Phase 2b).
 
 ### Phase 2a — Decide scope of changes
 
@@ -226,7 +226,7 @@ After implementing, run (or instruct the user to run):
 
 - `npx tsc --noEmit` — type-check generated/edited code. Classify any failure: generated-code bug
   (fix the template) vs. integration point (tell the user where to wire).
-- The project's linter (`npx eslint` / `biome check` / `npx next lint`).
+- The project's own lint script (e.g. `npm run lint`, or `npx eslint` / `biome check` directly).
 - A **layout sanity pass**: the most common regression from these fixes is truncation and alignment
   interacting badly with narrow viewports. Eyeball (or screenshot, if browser tools are available)
   the edited surface at a narrow and a wide width and confirm: numbers still align, truncation shows

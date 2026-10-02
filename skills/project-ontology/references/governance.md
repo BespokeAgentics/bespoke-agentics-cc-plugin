@@ -27,8 +27,8 @@ by the engine; history stays in the file and in `wiki/_log.md`.
 |---|---|---|---|
 | `propose` a term or an alias | ✓ | ✓ | — |
 | edit a *proposed* term in `ontology.yaml` | ✓ | ✓ | write guard allows it |
-| `approve` (term or its proposed aliases) | only when the user said so | ✓ | `AskUserQuestion` · Bash `ask` · write guard · `--by` required |
-| `deprecate` | only when the user said so | ✓ | same |
+| `approve` (term or its proposed aliases) | only inside a `/ontology:approve` the user started — otherwise ask them to run it | ✓ | manual-only command · `AskUserQuestion` · Bash `ask` · write guard · `--by` required |
+| `deprecate` | only inside a `/ontology:deprecate` the user started — otherwise ask them to run it | ✓ | same |
 | remove / re-spell a non-proposed term, change policy | ✗ | ✓ (edit the file) | write guard |
 | `apply` rewrites | after the user confirms the dry run | ✓ | skill procedure · `wiki/_log.md` |
 | `init --write` (declares approved terms) | after the interview | ✓ | Bash `ask` · decisions recorded with `--by` |
@@ -36,7 +36,13 @@ by the engine; history stays in the file and in `wiki/_log.md`.
 "Human" means a person, identified by name in `--by`. Hooks only see Claude's tool calls, so a human
 editing `ontology.yaml` in their editor is never blocked — that is how a person changes policy.
 
-## The approval procedure (what the agent does)
+## The approval procedure (inside `/ontology:approve` / `/ontology:deprecate`)
+
+Approval and deprecation are run by a human. The procedure below runs only inside one of those two
+commands, which are manual-only (`disable-model-invocation: true`), so a person has to start them.
+Anywhere else — including when the user answers "yes, approve it" in conversation — the agent does not
+run `approve` or `deprecate`; it asks the user to run `/ontology:approve <id>` or
+`/ontology:deprecate <id> --replaced-by <id>`. This matches rule 3 of the installed CLAUDE.md block.
 
 1. Show what is pending: `python3 .claude/ontology/ontology.py status` (pending ids) and
    `ls --status proposed`, grouped by parent, with page counts from `check --all --format json` or
@@ -44,8 +50,11 @@ editing `ontology.yaml` in their editor is never blocked — that is how a perso
 2. Ask with `AskUserQuestion`: one question per group (≤4 per call), each option carrying the definition
    and where the value is used. Options: approve · deprecate in favour of an approved value · leave
    proposed.
-3. Run exactly what was chosen: `approve <id>… --by "<name>"` / `deprecate <id> --replaced-by <id>
-   --reason "…" --by "<name>"`. Accept the permission prompt the Bash guard raises only if it matches.
+3. Run exactly what was chosen, and only the running command's own action: `approve <id>… --by "<name>"`
+   inside `/ontology:approve`, `deprecate <id> --replaced-by <id> --reason "…" --by "<name>"` inside
+   `/ontology:deprecate`. A deprecation chosen during `/ontology:approve` is handed back: ask the user to
+   run `/ontology:deprecate <id> --replaced-by <id>`. Accept the permission prompt the Bash guard raises
+   only if it matches.
 4. If anything was deprecated with a replacement: `apply --dry-run`, show it, `apply` on a yes, then
    `/db:sync` when project-db is installed.
 5. Report: terms moved, who approved, pages affected, violations remaining.
