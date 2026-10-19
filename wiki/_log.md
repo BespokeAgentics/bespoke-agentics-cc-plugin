@@ -622,3 +622,58 @@ One commit on `feat/plugin-context-reduction` carries Phase A (2026-09-21), the 
 (2026-09-28) and the agent fixes (2026-10-02); they touch the same files. All 10 gates green. Not pushed
 or merged yet; an installed copy stays on v2.8.0 until it is updated.
 Details: `docs/plans/plugin-context-reduction.md`.
+
+## 2026-10-19 — skill added — micro-interactions (v2.10.0, uncommitted)
+
+New skill `skills/micro-interactions/`, made from a Harness-SPG (worklens) session in which the user
+asked for micro-interaction ideas for the board, prototyped before building. The skill reads an app
+(a running URL or its code, DESIGN.md, the motion already in its CSS) and writes **one playable HTML
+prototype**:
+
+- a motion vocabulary of 4–6 motions, the shipped ones first, with one signature motion taken from
+  the app's own rules;
+- 25–40 grounded ideas, each with its trigger, what moves, a reduced-motion path, the code location
+  it changes, impact and effort;
+- a step-through walkthrough of one journey;
+- an impact/effort matrix with an ordered first batch.
+
+How it is built:
+
+- **Shared runtime:** `assets/runtime/` holds the page and motion code that every project uses
+  unchanged.
+- **Per-project files:** the agent writes `page.json`, `tokens.css`, `stage.css`, `data.js`,
+  `demos-*.js` and `walk.js`.
+- **`scripts/build.py`** (stdlib only) copies the runtime, fills the page template and checks the
+  contract. It catches 10 of 10 planted defects and also flags template text left in `page.json`.
+- **Worked example:** `examples/worklens/`, with 37 ideas, 6 flows and 5 motions. It rebuilds clean
+  and matches the original prototype: every demo plays, the walkthrough jump works, and the console
+  shows no errors.
+- **Second test:** a fresh 2-idea project built clean and played in the browser.
+
+Release:
+
+- Branch `feat/micro-interactions` from `origin/main` (cddd244).
+- Manual-only: `disable-model-invocation: true`, with no command wrapper, per the invocation policy.
+- Version is 2.10.0 in `.claude-plugin/plugin.json` and `marketplace.json`. CLAUDE.md and README.md
+  have entries.
+- CI gates: invocation policy, its tamper tests, the marketplace validation and its tamper tests, and
+  hook timeouts with self-test all pass.
+- **Cold review** (skill-reviewer subagent): 17 findings (2 high, 6 medium, 9 low), all fixed.
+  - High: the progress fill used a 0–1 number as a width, so it always drew full; it now scales
+    with `transform:scaleX`. The `.m-arrow` styles lived only in the example; they moved to the
+    runtime.
+  - Medium:
+    - the motion row fits the motion count;
+    - `B.hud` labels are parameters;
+    - SKILL.md paths use `<skill>`, `--no-serve` is honored and the server runs in the background;
+    - `MI.firstOrder` is checked and set in the example;
+    - a `data.js` starter ships with its required first line.
+  - Low:
+    - the template-text check catches `≈` and runs before a build;
+    - raw `<` is checked in motions and flows, and motion demos with no motion are flagged;
+    - colors come from tokens;
+    - shapes only the example uses moved out of the runtime;
+    - discovery doc fixes, a cross-platform JPEG step, and the rule for runtime defects found
+      outside the plugin repo.
+  - The example rebuilt clean and was checked at 1440 and 390 px. All CI gates pass again.
+- **Not verified:** a full run of the skill by a fresh agent on a third app.

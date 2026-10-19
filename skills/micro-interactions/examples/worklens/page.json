@@ -1,0 +1,37 @@
+{
+  "title": "worklens board",
+  "product": "worklens",
+  "plan_href": "https://github.com/BespokeAgentics/worklens",
+  "brand_mark_html": "<span class=\"brandmark\" aria-hidden=\"true\"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></span>",
+  "h1": "Micro-interactions for the board",
+  "lede": "37 small motions for the flows on the board, built from its own rules. Each one plays below. None of them is implemented yet.",
+  "estimate": "≈ 3 days",
+  "read_from": ":1479 · 2026-10-19",
+  "vocab_h2": "Five motions",
+  "vocab_p": "The board already has two: the <b>latch</b> and the <b>gauge tick</b>. Three more cover every other flow. <b>Settle</b> is the new signature: the Dashed Inference Rule, made to move. A dashed mark closes into a solid one at the moment something becomes final.",
+  "walk_h2": "One task, start to finish",
+  "walk_p": "Six steps on a mock board. Each step names the ideas it fires. Use Step to go one at a time.",
+  "start_p": "Impact against effort. The first batch is the top-left corner. Settle is one shared CSS rule, so building it once serves six ideas.",
+  "guard_p": "Every idea above passes these. They come from DESIGN.md, not from taste.",
+  "guard_never": [
+    "<b>Loop.</b> A settled board runs zero animations. <code>pnpm test:web</code> already asserts it.",
+    "<b>Count up a number.</b> A readout rolls once from the direction of change. Counting from zero fakes work.",
+    "<b>Shake, bounce or wobble.</b> Errors are a Fault Red line with the recovery, never a jolt.",
+    "<b>Celebrate a click.</b> The accept burst stays the only celebration.",
+    "<b>Hide the state.</b> Flair never covers a status light. Offline stays a still red dot.",
+    "<b>Animate on the first snapshot, a filter or a decision this browser just saved.</b> The person already sees the result."
+  ],
+  "guard_always": [
+    "<b>Reduced motion keeps the meaning.</b> Movement goes; color, words and the dashed-to-solid change stay. Switch to Reduced above to check each card.",
+    "<b>Exits are faster than entrances.</b> 0.15 s out, 0.24 s in, 0.44 s for a glide.",
+    "<b>One easing.</b> <code>cubic-bezier(.16,1,.3,1)</code>, the board's ease-out-expo.",
+    "<b>Words with the motion.</b> Each Echo is a short sentence a screen reader also hears through the existing <code>role=\"status\"</code> regions.",
+    "<b>A state hue means a state.</b> Cobalt in flight, amber waiting, green proven, red failed. Flair inks only at the edge of attention."
+  ],
+  "footer": "Worked example for the micro-interactions skill: the worklens board (an Effect + pi-durable work board). Screens are real captures. Function names cite <code>assets/board/board.js</code>, <code>hud.js</code> and <code>requests.js</code>.",
+  "demo_files": [
+    "demos-1.js",
+    "demos-2.js"
+  ],
+  "favicon": "assets/favicon.svg"
+}

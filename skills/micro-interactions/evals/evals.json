@@ -1,0 +1,44 @@
+{
+  "skill_name": "micro-interactions",
+  "notes": "Eval 1 rebuilds the bundled worked example and must reproduce it exactly (the runtime contract). Evals 2 and 3 run the skill on a fresh app; their assertions are about grounding, structure and honesty, not taste.",
+  "evals": [
+    {
+      "id": 1,
+      "name": "example-rebuilds-clean",
+      "prompt": "python3 scripts/build.py examples/worklens",
+      "assertions": [
+        "build.py exits 0 and prints 'check: clean'",
+        "the page shows 37 ideas, 5 motions, 6 walkthrough steps, 8 first-batch items",
+        "every .stage[data-demo] plays without 'Demo failed' and the console has zero errors",
+        "jumping to walkthrough step 5 leaves exactly one ticker line and T-5 in Complete",
+        "no horizontal overflow at 390 px in light and dark"
+      ]
+    },
+    {
+      "id": 2,
+      "name": "running-app-with-url",
+      "prompt": "/bespoke-agentics:micro-interactions http://localhost:3000 — come up with micro-interactions for the flows in this app",
+      "assertions": [
+        "discovery.md lists 4-7 flows with who causes each state change and where its outcome lands",
+        "motions already shipping in the app's CSS appear with status 'ships'",
+        "the vocabulary has 4-6 motions and names one signature with the app rule it comes from",
+        "every idea's 'where' names a function that exists in the repo (grep finds it)",
+        "every idea's 'reduced' field is non-empty and is not 'nothing'",
+        "no form was submitted and no app source file changed (git status clean outside the output folder)",
+        "behavior changes are listed separately in the final report",
+        "build.py check is clean and the page opens with no console errors"
+      ]
+    },
+    {
+      "id": 3,
+      "name": "code-only-small-app",
+      "prompt": "/bespoke-agentics:micro-interactions --no-serve — ideas for the checkout flow, the app isn't running",
+      "assertions": [
+        "discovery.md says 'from code, not seen running' and page.json read_from says 'code only'",
+        "ideas are scoped to the checkout flow only and are not padded (fewer than 25 is acceptable)",
+        "tokens.css values all trace to a file in the repo (no invented hex values)",
+        "no server is started"
+      ]
+    }
+  ]
+}

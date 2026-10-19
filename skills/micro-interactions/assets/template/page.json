@@ -1,0 +1,21 @@
+{
+  "title": "<Product> <surface>",
+  "product": "<Product>",
+  "plan_href": "<relative link to the plan page, or the repo URL>",
+  "brand_mark_html": "<span class=\"brandmark\" aria-hidden=\"true\"></span>",
+  "favicon": "",
+  "h1": "Micro-interactions for <the surface, in the app's words>",
+  "lede": "<N> small motions for the flows in <product>, built from its own rules. Each one plays below. None of them is implemented yet.",
+  "estimate": "<≈ N days for the first batch>",
+  "read_from": "<:port or URL · YYYY-MM-DD, or code only · YYYY-MM-DD>",
+  "vocab_h2": "<N> motions",
+  "vocab_p": "<Which motions already ship. Which are new. Which one is the signature, and the app rule it comes from.>",
+  "walk_h2": "<One journey, start to finish>",
+  "walk_p": "<N> steps on a mock <app>. Each step names the ideas it fires. Use Step to go one at a time.",
+  "start_p": "Impact against effort. The first batch is the top-left corner. <What shared work the first item builds.>",
+  "guard_p": "Every idea above passes these. They come from <DESIGN.md / the design system>, not from taste.",
+  "guard_never": ["<b>Loop.</b> A settled page runs zero animations."],
+  "guard_always": ["<b>Reduced motion keeps the meaning.</b> Movement goes; color, words and state changes stay."],
+  "footer": "Prototype for <plan link>. Screens are real captures from <where>. Function names cite <files>.",
+  "demo_files": ["demos-1.js", "demos-2.js"]
+}
