@@ -1,0 +1,144 @@
+/* micro-interactions runtime · primitives the demos are built from. Do not edit per project;
+   project-specific shapes go in the project's stage.css. Reads the variables listed in mi.css. */
+.stage{position:relative;overflow:hidden;background:var(--bg);font-size:12px;line-height:1.4;color:var(--ink);isolation:isolate}
+.stage-pad{position:absolute;inset:0;padding:16px;display:flex;flex-direction:column;justify-content:center;gap:8px}
+.stage.no-anim *,.stage.no-anim *::before,.stage.no-anim *::after{transition:none!important;animation:none!important}
+
+.m-panel{background:var(--panel);border:1px solid var(--line);border-radius:10px}
+.m-row{display:flex;align-items:center;gap:8px;min-width:0}
+.m-col{display:flex;flex-direction:column;gap:6px;min-width:0}
+.m-grow{flex:1;min-width:0}
+.m-mono{font-family:var(--mono);font-size:11px;font-variant-numeric:tabular-nums}
+.m-muted{color:var(--muted)}
+.m-strong{font-weight:600}
+.m-title{font-weight:600;font-size:13px;line-height:1.3}
+.m-small{font-size:11px}
+.m-clip{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.m-bar{height:6px;border-radius:3px;background:var(--line)}
+.m-rule{height:1px;background:var(--line)}
+
+/* Cards and pills */
+.m-arrow{display:inline-block;width:12px;height:12px;flex:none}
+.m-arrow path{fill:none;stroke:currentColor;stroke-width:1.5;stroke-linecap:round;stroke-linejoin:round}
+.m-card{background:var(--panel);border:1px solid var(--line);border-radius:9px;padding:8px 10px;box-shadow:var(--shadow);min-width:0}
+.m-card .m-mono{color:var(--muted)}
+.m-pill{display:inline-block;font-size:11px;line-height:1.45;padding:1px 6px;border-radius:5px;background:var(--tint);color:var(--muted);white-space:nowrap}
+.m-pill.ok{color:var(--green)}.m-pill.warn{color:var(--amber)}.m-pill.bad{color:var(--red)}.m-pill.go{color:var(--accent)}
+.m-btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;min-height:26px;padding:3px 10px;border:1px solid var(--line);border-radius:7px;background:var(--panel);color:var(--ink);font-size:11.5px;white-space:nowrap;position:relative}
+.m-btn.fill{background:var(--accent);border-color:var(--accent);color:var(--panel);font-weight:650}
+.m-btn.hot{border-color:var(--accent)}
+.m-btn.wait{opacity:.65}
+.m-link{color:var(--muted);text-decoration:underline;text-underline-offset:3px;font-size:11px}
+.m-field{border:1px solid var(--line);border-radius:7px;background:var(--panel);padding:6px 8px;min-height:44px;font-size:11.5px;color:var(--ink)}
+.m-field.focus{outline:2px solid var(--accent);outline-offset:1px}
+.m-field .ph{color:var(--muted)}
+.m-caret{display:inline-block;width:1px;height:1.1em;background:var(--accent);vertical-align:-2px;margin-inline-start:1px}
+.m-err{color:var(--red);font-size:11px;border:1px solid var(--red);border-radius:6px;padding:4px 7px;overflow:hidden}
+.m-notice{background:var(--tint);color:var(--muted);border-inline-start:2px solid var(--amber);border-radius:4px;padding:5px 8px;font-size:11px}
+.m-agent{border:1px dashed var(--line);border-radius:7px;padding:6px 8px;font-size:11px;color:var(--muted)}
+.m-agent .m-mono{color:var(--ink);font-size:10.5px}
+
+/* Status mark: a 10px dashed ring that settles into an 8px solid dot. */
+.mk{width:12px;height:12px;flex:none;overflow:visible;display:inline-block;vertical-align:-1px}
+.mk .ring{fill:none;stroke:var(--accent);stroke-width:1.3;stroke-dasharray:2.6 2.1;transform-box:fill-box;transform-origin:center;
+  transition:stroke-dasharray .32s var(--ease),stroke .2s,opacity .18s .2s,transform .32s var(--ease)}
+.mk .core{fill:var(--accent);transform-box:fill-box;transform-origin:center;transform:scale(0);transition:transform .26s var(--ease) .14s,fill .2s}
+.mk:not([data-s=flight]):not([data-s=retry]) .ring{stroke-dasharray:28.3 0;opacity:0;transform:scale(.8)}
+.mk:not([data-s=flight]):not([data-s=retry]) .core{transform:scale(1)}
+.mk[data-s=retry] .ring{stroke:var(--amber)}
+.mk[data-s=ok] .ring,.mk[data-s=ok] .core{stroke:var(--green);fill:var(--green)}
+.mk[data-s=warn] .ring,.mk[data-s=warn] .core{stroke:var(--amber);fill:var(--amber)}
+.mk[data-s=bad] .ring,.mk[data-s=bad] .core{stroke:var(--red);fill:var(--red)}
+.mk[data-s=idle] .ring,.mk[data-s=idle] .core{stroke:var(--line);fill:var(--line)}
+.mk .ring{fill:none!important}
+.mk-label{color:var(--muted)}
+.mk-label.ink{color:var(--ink)}
+.mk-label.bad{color:var(--red)}
+
+/* Metric tile */
+.m-tile{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:9px 11px;display:flex;flex-direction:column;gap:2px;min-width:0}
+.m-tile .lab{font-size:11px;color:var(--muted)}
+.m-tile .num{font-size:22px;font-weight:650;letter-spacing:-.032em;line-height:1.2;font-variant-numeric:tabular-nums;display:block;overflow:hidden}
+.m-tile .foot{font-size:10.5px;color:var(--muted);min-height:1.4em;overflow:hidden;white-space:nowrap;text-overflow:ellipsis}
+.m-prog{height:4px;border-radius:4px;background:var(--line);overflow:hidden;margin:3px 0 1px}
+.m-prog i{display:block;height:100%;width:100%;background:var(--green);border-radius:4px;transform:scaleX(var(--w,0));transform-origin:left center}
+
+/* Columns */
+.m-cols{display:grid;gap:8px;align-items:start}
+.m-colhead{display:flex;justify-content:space-between;border-top:2px solid var(--line);padding:6px 2px;font-weight:650;font-size:11.5px}
+.m-colhead .m-mono{color:var(--muted)}
+.m-colhead.go{border-color:var(--accent)}.m-colhead.warn{border-color:var(--amber)}.m-colhead.ok{border-color:var(--green)}.m-colhead.bad{border-color:var(--red)}
+.m-colbody{display:flex;flex-direction:column;gap:6px;min-height:40px}
+
+/* HUD bar and drawer */
+.m-hud{position:absolute;left:0;right:0;bottom:0;height:30px;background:var(--panel);border-top:1px solid var(--line);display:flex;align-items:center;gap:8px;padding:0 8px;font-size:11px;z-index:4}
+.m-hudtab{background:var(--tint);border-radius:5px;padding:2px 7px;font-weight:650;white-space:nowrap}
+.m-ticker{position:relative;flex:1;height:18px;overflow:hidden;min-width:0}
+.m-ticker>span{position:absolute;inset:0;display:flex;align-items:center;gap:6px;white-space:nowrap;color:var(--muted)}
+.m-ticker .type{font:11px var(--mono);color:var(--accent)}
+.m-ticker .warn{color:var(--amber)}
+.m-chip{display:inline-flex;align-items:center;gap:5px;border:1px solid var(--line);border-radius:6px;padding:1px 7px;background:var(--panel);font-size:11px;white-space:nowrap}
+.m-log{display:flex;flex-direction:column}
+.m-logrow{display:flex;gap:7px;align-items:baseline;padding:4px 8px;border-top:1px solid var(--line);border-inline-start:2px solid transparent;font-size:11px;white-space:nowrap;overflow:hidden}
+.m-logrow .t{font:10.5px var(--mono);color:var(--muted)}
+.m-logrow .k{font:10.5px var(--mono);color:var(--accent)}
+.m-logrow.live{border-inline-start:2px dashed var(--accent);color:var(--muted)}
+.m-logrow.live .k{color:var(--muted)}
+
+.m-scrim{position:absolute;inset:0;background:color-mix(in srgb,var(--ink) 42%,transparent);backdrop-filter:blur(2px);z-index:6}
+.m-drawer{position:absolute;top:0;bottom:0;right:0;width:64%;background:var(--panel);border-inline-start:1px solid var(--line);padding:12px 14px;display:flex;flex-direction:column;gap:8px;z-index:7;overflow:hidden}
+.m-drawer-head{display:flex;justify-content:space-between;align-items:start;gap:8px;border-bottom:1px solid var(--line);padding-bottom:8px}
+.m-eyebrow{font:10px var(--mono);letter-spacing:1.2px;color:var(--accent)}
+
+/* Steps (receipt, Get Status) */
+.m-steps{display:flex;align-items:center;gap:0;font-size:11px}
+.m-step{display:flex;align-items:center;gap:5px;color:var(--muted);white-space:nowrap}
+.m-step.on{color:var(--ink)}
+.m-step-line{flex:1;min-width:14px;height:1px;background:var(--line);margin:0 6px;position:relative;overflow:hidden}
+.m-step-line i{position:absolute;inset:0;background:var(--muted);transform:scaleX(0);transform-origin:left;transition:transform .32s var(--ease)}
+.m-step-line.on i{transform:scaleX(1)}
+
+/* Live dots, burst */
+.m-live{display:inline-flex;gap:3px;align-items:center}
+.m-live i{width:6px;height:6px;border-radius:50%}
+.m-live i:nth-child(1){background:var(--flair-1,var(--accent))}.m-live i:nth-child(2){background:var(--flair-2,var(--green))}.m-live i:nth-child(3){background:var(--flair-3,var(--accent))}
+.m-conn-dot{display:inline-block;width:7px;height:7px;border-radius:50%;background:var(--amber)}
+.m-conn-dot.bad{background:var(--red)}
+.m-burst{position:absolute;width:7px;height:7px;border-radius:50%;pointer-events:none;z-index:9}
+.m-burst.ring{background:none;border:1.5px solid currentColor}
+
+/* Motion: Tick (0.28 s, 0.32 em, 2 px blur) and Latch (2.4 s color hold) */
+@keyframes m-tick-up{from{opacity:0;transform:translateY(.32em);filter:blur(2px)}}
+@keyframes m-tick-down{from{opacity:0;transform:translateY(-.32em);filter:blur(2px)}}
+.m-tick{display:inline-block}
+.m-tick.up{animation:m-tick-up .28s var(--ease)}
+.m-tick.down{animation:m-tick-down .28s var(--ease)}
+@keyframes m-latch{0%,40%{border-color:var(--latch);background-color:color-mix(in srgb,var(--latch) 9%,var(--panel))}100%{border-color:var(--line);background-color:var(--panel)}}
+.m-latch{animation:m-latch 2.4s ease-out}
+@keyframes m-wash{0%,40%{background-color:color-mix(in srgb,var(--latch) 10%,transparent)}100%{background-color:transparent}}
+.m-wash{animation:m-wash 2.4s ease-out}
+
+/* Reduced: movement goes, meaning stays (color latch and the dashed-to-solid change remain). */
+:root[data-motion=reduced] .mk .ring,:root[data-motion=reduced] .mk .core,:root[data-motion=reduced] .m-step-line i{transition:none}
+:root[data-motion=reduced] .m-tick.up,:root[data-motion=reduced] .m-tick.down{animation:none}
+
+/* Teaching aids and the handoff ghost (positioned by translate from the stage's top-left). */
+.m-ghost{position:absolute;left:0;top:0;z-index:12;pointer-events:none;display:inline-flex;align-items:center;gap:5px;padding:3px 8px;border:1px dashed var(--accent);border-radius:6px;background:var(--panel);color:var(--accent);font:11px var(--mono);white-space:nowrap;box-shadow:0 4px 14px color-mix(in srgb,var(--ink) 8%,transparent)}
+.m-press{position:absolute;left:0;top:0;width:22px;height:22px;border-radius:50%;border:2px solid var(--accent);pointer-events:none;z-index:13}
+.m-mark{background:color-mix(in srgb,var(--accent) 16%,var(--tint));color:var(--ink);border-radius:3px;padding:0 1px}
+.m-pillnew{display:inline-flex;align-items:center;gap:5px;border:1px solid var(--accent);color:var(--accent);background:var(--panel);border-radius:999px;padding:1px 8px;font-size:11px;white-space:nowrap}
+
+/* Lists, rows and boxes used by the demos */
+.m-list{display:flex;flex-direction:column;background:var(--panel);border:1px solid var(--line);border-radius:9px;overflow:hidden}
+.m-listrow{display:flex;align-items:center;gap:9px;padding:6px 10px;border-top:1px solid var(--line);min-width:0;flex-wrap:wrap}
+.m-listrow:first-child{border-top:0}
+.m-oneline{min-height:30px;display:flex;align-items:center}
+.m-check{width:14px;height:14px;flex:none;border:1px solid var(--line);border-radius:4px;background:var(--panel);display:inline-flex;align-items:center;justify-content:center}
+.m-check svg{width:10px;height:10px;opacity:0}
+.m-check path{fill:none;stroke:var(--panel);stroke-width:1.6;stroke-linecap:round;stroke-linejoin:round}
+.m-check.on{background:var(--green);border-color:var(--green)}
+.m-check.on svg{opacity:1}
+.m-box{padding:10px 12px;display:flex;flex-direction:column;gap:8px;align-items:flex-start;min-width:0}
+.m-box>.m-row{align-self:stretch}
+.m-slot:empty{display:none}
+

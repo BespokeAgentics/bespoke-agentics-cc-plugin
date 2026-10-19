@@ -215,6 +215,14 @@ Post-build companion to `interactive-wireframe`; read-only — the implementatio
 
 Upstream of `interactive-wireframe`: explores which design an existing surface could become; writes no production code.
 
+### When to Use the Micro-Interactions Command
+
+| Situation                                                                                                   | Command                                                                                                  |
+| ----------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------- |
+| Propose micro-interactions for an existing app's flows and see every idea play before anything is built     | `/bespoke-agentics:micro-interactions [<url>] [--flows "a, b"] [--out <dir>] [--ideas N] [--no-serve]` |
+
+Builds one playable HTML prototype from a shared runtime (`skills/micro-interactions/assets/runtime/`) and a tested contract (`scripts/build.py`); read-only on the app, writes no production code.
+
 ### When to Use the Dead-Code-Sweep Command
 
 | Situation                                                                                                                                  | Command                                                                                                         |
@@ -381,6 +389,7 @@ Evidence, the probes that settled the undocumented mechanics, and what is not ve
     │  ├─ screencast-capture/         # Browser flow → MP4 (gif tab-capture or --engine screen native-res) → hands to screencast-highlight-reel
     │  ├─ interactive-wireframe/      # Undecided UI → code-grounded interactive HTML wireframe → interview → spec
     │  ├─ reimagine/                  # Existing component/page → brand-faithful variant gallery (Restyle/Restructure/Rethink) → winner spec with Δ inventory
+    │  ├─ micro-interactions/         # App flows → motion vocabulary + 25–40 grounded micro-interaction ideas → one playable HTML prototype (shared runtime, walkthrough, impact/effort)
     │  ├─ wireframe-parity/           # Built UI vs the wireframe that specified it → read-only parity report (structural + measured)
     │  ├─ plan-review/                # Plan/spec/issue → read-only, code-grounded gap review
     │  ├─ data-ui-craft/              # Data-dense UI audit + fixes + React/Tailwind primitives kit

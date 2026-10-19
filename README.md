@@ -38,6 +38,7 @@ claude --plugin-dir ./bespoke-agentics-plugin
 | **glean-agent-toolkit** | Scaffold/extend Glean Agent Toolkit (Python) projects across OpenAI SDK / LangChain / Google ADK. |
 | **ai-waiting-ux** | Audit/scaffold real-time AI waiting UX in Next.js + claude-agent-sdk projects. |
 | **codex-prompt-builder** | Convert session context, bug reports, or feature notes into a Codex prompt. |
+| **micro-interactions** | Read an app's flows, choose a small motion vocabulary, and generate 25–40 grounded micro-interaction ideas as one playable HTML prototype (a demo per idea, a walkthrough, an impact/effort first batch). |
 
 ### Pi Assistant
 
@@ -389,6 +390,29 @@ wireframe-parity-consumable format), and offers — never auto-runs — the `int
 (`wireframes/_library/`, `_index.md` runs typed `wireframe`|`reimagine`); rejected variants' styles
 never harvest. Distinct from `ux-audit` (what's wrong) and `impeccable`/design skills (write real
 code): this shows **what it could become**, and **writes no production code.**
+
+### When to Use the Micro-Interactions Command
+
+The Micro-Interactions command answers "what should this app feel like?" with a page instead of a
+list. Point it at an existing app (a running URL, its code, or both) and it reads the design
+authority (DESIGN.md, the motion already in the CSS, any test that asserts on animation), the
+tokens, and 4–7 user flows, recording for every state change **who caused it and where its outcome
+lands** (that is where micro-interactions live). It then fixes a **motion vocabulary of 4–6
+motions** before writing a single idea: the motions that already ship, plus new ones only for jobs
+none of them does (notice a change you did not make, read a number's direction, resolve a wait,
+route a request to where it is tracked, acknowledge a press), with **one signature motion derived
+from a rule the app already has**. Every idea (25–40, never padded) names its trigger, what moves,
+what survives `prefers-reduced-motion`, the function it would change, impact and effort, and is
+flagged when it hides a behavior change (an Undo, a filter) that needs a product decision. The
+output is **one playable HTML prototype** built from a shared, tested runtime: a replayable demo per
+motion and per idea in the app's real tokens and labels, a step-through walkthrough of one realistic
+journey (play, step, jump), filters by flow and motion, an impact/effort matrix with an ordered first
+batch (shared work first), and Never/Always guardrails. `scripts/build.py` fills the page and checks
+the contract (every idea has a demo, ids resolve, no template text left), then a bounded browser pass
+checks desktop and 390 px in both themes. Read-only on the app; **writes no production code.** A
+worked example (`examples/worklens/`, 37 ideas) ships with the skill. Distinct from `reimagine`
+(which design) and `interactive-wireframe` (settle one screen): this explores how the existing flows
+move and respond.
 
 ### When to Use the Dead-Code-Sweep Command
 
