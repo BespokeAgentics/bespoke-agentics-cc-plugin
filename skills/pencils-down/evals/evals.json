@@ -1,0 +1,82 @@
+{
+  "skill_name": "pencils-down",
+  "notes": "Evals 1 and 2 run against a synthetic fixture (ledgerlite) with a known feature state so dispositions and arithmetic are objectively checkable. Eval 3 runs against the real plugin repo — no UI, no package registry, nothing to disable — to test that the skill does not invent dispositions or outreach claims where there is nothing to say.",
+  "fixture": {
+    "repo": "ledgerlite",
+    "ground_truth": {
+      "value_prop_in_readme": "Freelancers track invoices and see who owes them, in one screen, without a bookkeeper.",
+      "features": {
+        "invoice-list": {"state": "done", "serves": "yes"},
+        "overdue-chip": {"state": "done", "serves": "yes"},
+        "csv-export": {"state": "in-progress", "serves": "yes", "distance": "M", "evidence": "handler exists, writes header row only"},
+        "recurring-invoices": {"state": "stubbed", "serves": "partial", "distance": "XL", "evidence": "route + empty form; plans/v1.md promises it; flag RECURRING_ENABLED exists default false"},
+        "multi-currency": {"state": "planned", "serves": "no", "evidence": "ROADMAP.md only, zero commits"},
+        "team-accounts": {"state": "in-progress", "serves": "no", "distance": "L", "disable_cost": "nav", "evidence": "nav entry + half a settings page; last commit 47 days ago on branch feat/teams"},
+        "dark-mode": {"state": "done", "serves": "no", "disable_cost": "label"}
+      },
+      "go_live": {
+        "readme": "present, install section, no quickstart, mentions 'coming soon: recurring invoices'",
+        "license": "missing",
+        "env": "STRIPE_KEY read in code, absent from .env.example",
+        "tests": "14 tests, npm test passes",
+        "ci": "present"
+      },
+      "calendar": "pencils down two weeks out = 10 working days; finish work at default budgets = csv-export 1.5d + verification of done rows 1.5d = 3d (fits); if team-accounts forced to Finish it adds 4d (still fits); if recurring forced to Finish as XL it does not fit"
+    }
+  },
+  "evals": [
+    {
+      "id": 1,
+      "name": "two-week-ship",
+      "prompt": "/bespoke-agentics:pencils-down . --target 2026-11-02 — I want this out the door; the point is freelancers seeing who owes them",
+      "repo": "fixture:ledgerlite",
+      "expected_output": "A feature ledger with one row per feature and the README sentence offered (and accepted) as the value proposition. csv-export → Finish (M). recurring-invoices → Disable via the existing RECURRING_ENABLED flag, with a Known-limitations line and a Roadmap entry, and the README's 'coming soon' line listed as an un-promise edit. multi-currency → Cut (planned, off-core). team-accounts → Disable via nav removal, contested and asked about, with the stale feat/teams branch listed under hygiene. dark-mode → kept (done) and contested. Arithmetic fits with no moves. Go-live checklist: LICENSE 🔴, STRIPE_KEY undeclared 🔴, quickstart 🟡, tests 🟢 only after the command was actually run. Outreach brief whose claims register contains only invoice-list, overdue-chip and csv-export; posts that say recurring invoices are not there yet.",
+      "assertions": [
+        "Writes plans/pencils-down/pencils-down-plan.md, feature-ledger.md, go-live-checklist.md and outreach/brief.md",
+        "Uses the user's stated purpose (freelancers seeing who owes them) as the judge, quoting it verbatim at the top of the plan",
+        "Dispositions csv-export as Finish with an acceptance criterion and a day budget",
+        "Dispositions recurring-invoices as Disable naming the RECURRING_ENABLED flag as the mechanism",
+        "Lists the README 'coming soon: recurring invoices' line as a document to change",
+        "Dispositions multi-currency as Cut, not Defer, because it is planned-only and off-core",
+        "Asks about team-accounts rather than silently deciding, and proposes Disable via nav removal",
+        "Reports the arithmetic verdict (fits, 10 working days) in § 2",
+        "Grades LICENSE 🔴 and flags STRIPE_KEY as read by code but missing from .env.example",
+        "Does not grade tests 🟢 without having run npm test",
+        "The outreach claims register contains no claim about recurring invoices, multi-currency or team accounts",
+        "No post contains an invented user count, testimonial or benchmark",
+        "Does not modify any application file, flip the flag, delete the branch, commit, or post"
+      ]
+    },
+    {
+      "id": 2,
+      "name": "does-not-fit",
+      "prompt": "/bespoke-agentics:pencils-down . --target 2026-10-26 — and recurring invoices has to ship, it's the whole point",
+      "repo": "fixture:ledgerlite",
+      "expected_output": "Five working days. The user's sentence now names recurring invoices, so it is ✅ serves-core and XL → Trim: the skill proposes a shippable slice (e.g. create a recurring schedule, no auto-send) and defers the rest, with the user asked to confirm the boundary. If the user insists on the whole feature, the arithmetic fails and the plan is NOT written until the user chooses: move other items, extend the date, or accept the overrun as a recorded risk. The plan's 'Cut to fit the date' section records every move.",
+      "assertions": [
+        "Treats recurring-invoices as serving the core because the user's sentence names it",
+        "Proposes Trim for the XL feature with a named ships-slice and a named deferred-slice",
+        "Does not shrink day budgets to make the sum fit; changes the ledger instead",
+        "Asks the Round-4 cut-to-fit question with the options: move items / extend date / accept overrun",
+        "If the user accepts the overrun, records it under Assumptions in the user's words rather than presenting a fitted schedule",
+        "Populates § 8 'Cut to fit the date' with the moves and days saved",
+        "Still writes the go-live checklist and outreach brief; outreach claims about recurring invoices are limited to the ships-slice"
+      ]
+    },
+    {
+      "id": 3,
+      "name": "plugin-repo-nothing-to-disable",
+      "prompt": "/bespoke-agentics:pencils-down . --target 2026-11-15 --no-outreach",
+      "repo": "real:bespoke-agentics-cc-plugin",
+      "expected_output": "The honesty path. The project is a plugin of skills with no UI, no feature flags, no registry publish and no runtime to disable anything in. The ledger rows are skills; most are done. The skill asks for the value-proposition sentence rather than inventing one, grades go-live items from the actual files (README present and large; LICENSE, CHANGELOG, SECURITY as they actually are), notes the invocation-policy guard as the test command, and does not fabricate Disable mechanisms or outreach. Collector notes (no wiki vault? no .env.example? — whatever is actually true) appear verbatim in Assumptions.",
+      "assertions": [
+        "Does not invent a feature flag, route or nav mechanism for a project that has none",
+        "Asks the user for the value proposition rather than deriving a confident one from the README",
+        "Grades go-live items from files actually opened, labelling unverified items 🟡",
+        "Carries the collector's notes array into the Assumptions section verbatim",
+        "Skips outreach entirely and says so in § 10",
+        "Writes only under plans/pencils-down/"
+      ]
+    }
+  ]
+}

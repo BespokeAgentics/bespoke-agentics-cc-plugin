@@ -247,6 +247,14 @@ User-invoked only; dispositions one known defect (`repo-audit`/`dead-code-sweep`
 
 User-invoked only; corrects a wrong inference and the source that seeded it. Never commits.
 
+### When to Use the Pencils-Down Command
+
+| Situation                                                                                                                                                                  | Command                                                                                                                                                        |
+| -------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| A project needs a fixed date after which building stops and shipping starts — decide what to finish, disable, cut or defer, prepare the repo and docs for go-live, and draft the launch outreach | `/bespoke-agentics:pencils-down ['<project-path>'] [--target <date>] [--ship <date>] [--out <dir>] [--window <n>d] [--channels <a,b>] [--no-outreach] [--resume]` |
+
+Writes only under `./plans/pencils-down/`; `orchestrate`/`workstream-orchestrate` execute the plan, `delivery-recap` reports the ship. Never commits, never posts.
+
 ### When to Use the Delivery-Recap Command
 
 | Situation                                                                                                                       | Command                                                                                                       |
@@ -397,6 +405,7 @@ Evidence, the probes that settled the undocumented mechanics, and what is not ve
     │  ├─ dead-code-sweep/            # Post-session dead-code cleanup: diff-seeded, gated waves, tiered confirmation, regression-proofed
     │  ├─ defect-intake/              # Known defect → verify, classify by blast radius, failing-test-first fix, document, resume (user-invoked)
     │  ├─ delivery-recap/            # Time window → PM/tech-lead delivery recap: deliverables, UI routes to click, backend/DB effects, confidence labels
+    │  ├─ pencils-down/              # Project → fixed pencils-down date: feature ledger, Finish/Trim/Disable/Cut/Defer dispositions, calendar arithmetic, go-live checklist, outreach brief → community-outreach agent
     │  ├─ misunderstanding/           # Wrong inference → source-quoted inference ledger → targeted interview → source correction + work disposition (user-invoked)
     │  ├─ skill-reverse-engineer/     # Target skill → determinism audit (DS/TP/CT/VF/AM/RB/KM + host grounding) → gated refactor or hardened new version
     │  ├─ orchestrate/                # Plan/task → gated multi-agent implementation (session model orchestrates, Opus/Sonnet implement)
@@ -481,6 +490,7 @@ Evidence, the probes that settled the undocumented mechanics, and what is not ve
     ├─ agents/                        # Subagent definitions (`ls agents/` is the full inventory; highlights below)
     │  ├─ ui-frame-analyst.md         # UI screencast frame + narration analyst
     │  ├─ prototype-screen-analyst.md # Claude Design prototype module → screen profile + theater findings
+    │  ├─ community-outreach.md       # Outreach brief → channel sequence + drafted posts, claims-register-bound (drafts only, never posts)
     │  └─ wiki-pipeline.md            # Wiki orchestration agent (3 workflows)
     ├─ channels/
     │  └─ wireframe-feedback/         # Claude Code channel: wireframe browser comments → session (+ reply tool)

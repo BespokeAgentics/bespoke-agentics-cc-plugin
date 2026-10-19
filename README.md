@@ -39,6 +39,7 @@ claude --plugin-dir ./bespoke-agentics-plugin
 | **ai-waiting-ux** | Audit/scaffold real-time AI waiting UX in Next.js + claude-agent-sdk projects. |
 | **codex-prompt-builder** | Convert session context, bug reports, or feature notes into a Codex prompt. |
 | **micro-interactions** | Read an app's flows, choose a small motion vocabulary, and generate 25–40 grounded micro-interaction ideas as one playable HTML prototype (a demo per idea, a walkthrough, an impact/effort first batch). |
+| **pencils-down** | Set a fixed date after which building stops and shipping starts: feature ledger from plans + commits + wiki, intent interview, Finish/Trim/Disable/Cut/Defer dispositions checked against the calendar, go-live checklist, and a launch outreach plan with drafted posts via the `community-outreach` agent. |
 
 ### Pi Assistant
 
@@ -491,6 +492,36 @@ revert per item — never auto-reverting, because plenty of work survives its ba
 proportionally via `defect-intake`'s documentation routing, feeds a knowledge store when one exists
 (silently skipped when not), and resumes with a corrected restatement in its own words. A verified
 non-misunderstanding is a successful run. **Never commits.**
+
+### When to Use the Pencils-Down Command
+
+The Pencils-Down command installs the one thing an unfinished project is missing: **a date after
+which adding things is no longer allowed**. Pointed at a repository, it runs a stdlib-only collector
+(`scripts/collect_state.py`) over the last 90 days — commits with WIP markers, stale branches,
+uncommitted work, every plan-shaped document, the wiki, `TODO`/`not implemented` markers with
+`file:line`, feature-flag sites, tests, CI, the public-repo file inventory, and env vars read by code
+versus declared in `.env.example` — with a `notes` array of everything it could not read, so blind
+spots survive into the plan. From that it builds a **feature ledger**: one row per user-recognisable
+feature with its state (`done` · `in-progress` · `stubbed` · `planned` · `abandoned`), evidence,
+distance-to-done and how cheaply it can be switched off — and an **ambiguity register** of every place
+the sources disagree (a roadmap that promises what no commit touched, a "done" commit against a
+handler that throws). The interview then asks only what the evidence cannot answer: the **value
+proposition in one sentence** (the judge for every row), the pencils-down date, what "shipped"
+means, the audience, and one source-quoted question per ambiguity. A fixed rubric dispositions each
+row — **Finish / Trim / Disable / Cut / Defer** — where *Disable* is a first-class outcome that must
+name an existing mechanism (flag, route, nav entry, label) and *Cut* is complete only when every
+document that promised the feature is edited too. Then the arithmetic: Finish days against working
+days at stated capacity; if it does not fit, **the ledger changes, never the day budgets**, and every
+move is recorded under "Cut to fit the date". Output under `./plans/pencils-down/`: the plan (twelve
+fixed sections, including "The line" — what is and is not permitted after the date), the ledger as
+its own diffable file, a **go-live checklist** graded 🟢/🟡/🔴/⚪ only after opening the file or
+running the command (Known limitations written from the Disable rows, Roadmap from the Defer rows),
+and an **outreach brief** whose claims register is the only thing the `community-outreach` agent may
+say — it drafts a channel sequence keyed to ship day and one post per channel, checks each community's
+self-promotion rule, and publishes nothing. Distinct from `plan-review` (audits a plan you wrote) and
+`delivery-recap` (reports what shipped): this one decides **what will not be built**. Writes only
+under its output directory — never edits application code, never flips a flag, never commits, never
+posts.
 
 ### When to Use the Delivery-Recap Command
 
