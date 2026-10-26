@@ -1,0 +1,30 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://bespokeagentics.dev/graph-harness/event.schema.json",
+  "title": "Harness event (append-only history entry)",
+  "description": "One line of events.jsonl. Current state is a projection of these; nothing else is the system of record.",
+  "type": "object",
+  "required": ["seq", "ts", "run_id", "type", "data"],
+  "additionalProperties": false,
+  "properties": {
+    "seq": { "type": "integer", "minimum": 1 },
+    "ts": { "type": "string", "minLength": 20 },
+    "run_id": { "type": "string", "minLength": 1 },
+    "type": {
+      "type": "string",
+      "enum": [
+        "run.started", "contract.accepted", "contract.rejected", "context.loaded",
+        "node.entered", "node.exited",
+        "tool.requested", "policy.decided", "tool.executed",
+        "sensor.ran", "artifact.produced",
+        "retry.scheduled", "retry.exhausted", "escalated", "human.decided",
+        "cost.recorded", "rollback.point",
+        "subgraph.completed",
+        "run.paused", "run.resumed", "run.completed", "run.failed"
+      ]
+    },
+    "node": { "type": "string" },
+    "attempt": { "type": "integer", "minimum": 1 },
+    "data": { "type": "object" }
+  }
+}

@@ -1,0 +1,20 @@
+# Sensors for code artifacts: tests + types + lint. Paste under `sensors:` in harness/graph.yaml
+# and reference by name from the verify node. Commands are placeholders; bootstrap fills the
+# detected ones.
+tests:
+  kind: command
+  cmd: "{{test_cmd}}"
+  applies_to: [code]
+  timeout_ms: 300000
+types:
+  kind: command
+  cmd: "{{types_cmd}}"
+  applies_to: [code]
+lint:
+  kind: command
+  cmd: "{{lint_cmd}}"
+  applies_to: [code]
+output_exists:
+  kind: file_exists
+  path: "{contract.output.path}"
+  applies_to: [code, ui, data]

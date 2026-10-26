@@ -1,0 +1,17 @@
+# Sensors for research artifacts: sources present + contradiction check.
+# A research output is a markdown file; the mechanical checks are weak on purpose and say so.
+sources_present:
+  kind: file_contains
+  path: "{contract.output.path}"
+  pattern: "(?i)^#+\\s*sources|\\[\\d+\\]|https?://"
+  applies_to: [research]
+claims_cited:
+  kind: custom
+  module: "sensors/custom.example.ts"
+  applies_to: [research]
+  todo: "a claim-to-source check needs a second model pass or a human; keep allow_todo false so research runs escalate to review"
+contradictions:
+  kind: custom
+  module: "sensors/custom.example.ts"
+  applies_to: [research]
+  todo: "contradiction detection across sources is not mechanical yet; the verify node routes to human_review"

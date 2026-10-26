@@ -1,0 +1,13 @@
+# Expect: UNSENSED_ACT (act has no sensors and goes straight to the gate on the model's word)
+version: 1
+name: broken
+level: 2
+entry: contract
+budget: { max_steps: 20, max_retries_total: 3 }
+sensors:
+  tests: { kind: command, cmd: "npm test" }
+nodes:
+  contract: { type: contract, sensors: [contract_complete], edges: { ok: act, fail: receipt } }
+  act: { type: act, tools: [write_file], tier: write, edges: { ok: policy_gate, fail: receipt, blocked: receipt } }
+  policy_gate: { type: policy_gate, edges: { allow: receipt, deny: receipt, needs_approval: receipt } }
+  receipt: { type: receipt, terminal: true }

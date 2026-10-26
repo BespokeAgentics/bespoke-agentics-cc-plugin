@@ -1,0 +1,19 @@
+# Sensors for UI artifacts: render + screenshot + inspection.
+# `render` and `screenshot` are commands you wire to your stack (Playwright, Storybook test-runner,
+# agent-browser). `inspection` is a custom sensor stub (see custom.example.ts) until you have an
+# automated accessibility / visual check; it reports pass=false while `todo` is set.
+render:
+  kind: command
+  cmd: "{{ui_render_cmd}}"
+  applies_to: [ui]
+  timeout_ms: 300000
+screenshot:
+  kind: command
+  cmd: "{{ui_screenshot_cmd}}"
+  applies_to: [ui]
+  timeout_ms: 300000
+inspection:
+  kind: custom
+  module: "sensors/custom.example.ts"
+  applies_to: [ui]
+  todo: "no automated inspection yet; wire an a11y/visual-diff check or review the screenshot by hand"

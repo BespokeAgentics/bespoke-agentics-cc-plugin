@@ -1,0 +1,28 @@
+name: graph-harness
+
+# The graph-harness skill ships a reference runtime whose guarantees (validate-graph rejects the
+# broken fixtures, retries cap before escalating, a killed run resumes from the log, policy denials
+# reach the trace) are only true while its tests pass. Zero dependencies, so this is one command.
+on:
+  push:
+    paths:
+      - 'skills/graph-harness/**'
+      - '.github/workflows/graph-harness.yml'
+  pull_request:
+    paths:
+      - 'skills/graph-harness/**'
+  workflow_dispatch:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Runtime tests (schemas, validator vs fixtures, runner, policy, resume, bootstrap, audit, upgrade)
+        working-directory: skills/graph-harness/runtime
+        run: node --test 'tests/*.test.ts'
+      - name: The shipped default graph validates against the shipped policy
+        run: skills/graph-harness/scripts/validate-graph

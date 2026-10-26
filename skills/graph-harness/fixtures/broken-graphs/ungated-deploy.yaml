@@ -1,0 +1,14 @@
+# Expect: UNGATED_RISK (an act node using the approve-tier "deploy" tool is entered straight from verify)
+version: 1
+name: broken
+level: 2
+entry: contract
+budget: { max_steps: 20, max_retries_total: 3 }
+sensors:
+  tests: { kind: command, cmd: "npm test" }
+nodes:
+  contract: { type: contract, sensors: [contract_complete], edges: { ok: act, fail: receipt } }
+  act: { type: act, tools: [write_file], tier: write, edges: { ok: verify, fail: receipt, blocked: receipt } }
+  verify: { type: verify, sensors: [tests], edges: { pass: ship, fail: receipt } }
+  ship: { type: act, tools: [deploy], tier: approve, sensors: [tests], edges: { ok: receipt, fail: receipt, blocked: receipt } }
+  receipt: { type: receipt, terminal: true }

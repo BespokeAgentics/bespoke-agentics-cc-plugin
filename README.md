@@ -40,6 +40,7 @@ claude --plugin-dir ./bespoke-agentics-plugin
 | **codex-prompt-builder** | Convert session context, bug reports, or feature notes into a Codex prompt. |
 | **micro-interactions** | Read an app's flows, choose a small motion vocabulary, and generate 25–40 grounded micro-interaction ideas as one playable HTML prototype (a demo per idea, a walkthrough, an impact/effort first batch). |
 | **pencils-down** | Set a fixed date after which building stops and shipping starts: feature ledger from plans + commits + wiki, intent interview, Finish/Trim/Disable/Cut/Defer dispositions checked against the calendar, go-live checklist, and a launch outreach plan with drafted posts via the `community-outreach` agent. |
+| **graph-harness** | Bootstrap, audit or harden a graph-based agent harness: contract-first tasks, a root map (`AGENTS.md`), tools with permission tiers enforced outside the model, an append-only event log with resume-after-kill, sensors per artifact type, capped repair loops with human escalation, a change receipt per run, a 12-question audit, and failure → Guide + Check proposals. Deterministic TypeScript scripts, zero dependencies. |
 
 ### Pi Assistant
 
@@ -522,6 +523,32 @@ self-promotion rule, and publishes nothing. Distinct from `plan-review` (audits 
 `delivery-recap` (reports what shipped): this one decides **what will not be built**. Writes only
 under its output directory — never edits application code, never flips a flag, never commits, never
 posts.
+
+### When to Use the Graph-Harness Command
+
+The Graph-Harness command installs the operating system around a model: **the harness decides what
+the model sees, what it can touch, what survives between sessions, what counts as evidence, and when
+a run must stop** — and when an agent fails, the fix goes there, not into the prompt. It elicits the
+task class and risk profile, recommends the smallest maturity level that closes the loop (L1 guide +
+tools · L2 structured state + sensors + bounded loop · L3 permissions + traces + recovery + human
+gates) and says why, then helps write the first **contract** (`goal / inputs / output / constraints /
+done_when`, with vague `done_when` entries mechanically rejected). `bootstrap` inspects the repo and
+generates only what the level needs: an `AGENTS.md` **map** that links to the real docs and commands,
+`harness/policy.yaml` (every tool with purpose / output / failure / boundary and a tier: read allowed,
+tests sandboxed, writes workspace-only, network scoped, deploy / delete by approval record), and from
+L2 a declarative **graph** — `contract → load_context → plan → act → verify → policy_gate → receipt`
+with `repair` as the only capped loop and `human_review` as the escalation — plus a vendored
+reference runner (TypeScript, Node ≥ 22.18, no install). Edges are chosen by the harness from
+evidence, never from the model's self-assessment; every transition is an event in an append-only
+`events.jsonl`, and state is a projection of it, so a killed run resumes from the log.
+`validate-graph` refuses unreachable nodes, uncapped loops, ungated risky edges and unsensed outputs
+(seven broken fixtures pin the rules); the smoke test pushes a toy task through with one forced
+failure (retry → repair → cap → escalation) and one kill (resume); `receipt` emits the change receipt;
+`audit` scores the 12-question checklist with a fix per gap and the smallest next upgrade; and
+`upgrade-from-failure` turns a trace into a **Guide + Check** pair so the class of failure is repaired,
+not the one output. Model and storage are adapters (`stub`, `command:<cli>`, file store; the seam for
+XState / DBOS / Restate is documented, not built). Never commits, never deploys, never writes an
+approval record.
 
 ### When to Use the Delivery-Recap Command
 

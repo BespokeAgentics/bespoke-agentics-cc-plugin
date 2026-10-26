@@ -1,0 +1,95 @@
+# Default harness graph: contract -> load_context -> plan -> act -> verify -> policy_gate -> receipt
+# with repair (capped) and human_review (escalation) as the only loops.
+#
+# Edges are chosen by the harness from evidence (sensor results, policy decisions, budget), never
+# by the model. Every outcome a node type can produce must have an edge; validate-graph enforces it.
+# Semantics: references/graph-spec.md. Outcomes per node type are fixed by the runtime.
+version: 1
+name: default
+level: 2
+entry: contract
+
+budget:
+  max_steps: 40          # hard stop on node executions per run
+  max_retries_total: 6   # across all repair loops
+  max_cost_usd: 2.0
+
+# Sensors are evidence producers. Declare them here; nodes reference them by name.
+# kinds: command (pass on exit 0) | file_exists | file_contains | json_schema | contract_complete | custom
+sensors:
+  tests:
+    kind: command
+    cmd: "npm test --silent"
+    applies_to: [code]
+    timeout_ms: 300000
+  lint:
+    kind: command
+    cmd: "npm run -s lint"
+    applies_to: [code]
+  types:
+    kind: command
+    cmd: "npx tsc --noEmit"
+    applies_to: [code]
+  output_exists:
+    kind: file_exists
+    path: "{contract.output.path}"
+    applies_to: [code, ui, research, data]
+
+nodes:
+  contract:
+    type: contract
+    description: Turn the request into a bounded object; reject vague done_when entries.
+    sensors: [contract_complete]
+    edges: { ok: load_context, fail: receipt }
+
+  load_context:
+    type: load_context
+    description: Load the root map and the guides it points at for this task class.
+    guides: [AGENTS.md]
+    tools: [read_file, list_files]
+    tier: read
+    edges: { ok: plan }
+
+  plan:
+    type: plan
+    description: Ordered steps that satisfy done_when; no side effects.
+    guides: [AGENTS.md]
+    tier: read
+    edges: { ok: act }
+
+  act:
+    type: act
+    description: Execute the plan through tools; every call passes the policy engine.
+    tools: [read_file, list_files, write_file, run_command]
+    tier: write
+    edges: { ok: verify, fail: repair, blocked: human_review }
+
+  verify:
+    type: verify
+    description: Run the sensors for this task class in parallel; the model never grades itself.
+    sensors: [output_exists, tests]
+    parallel: true
+    edges: { pass: policy_gate, fail: repair }
+
+  repair:
+    type: repair
+    description: Model proposes a fix from concrete sensor evidence; harness decides whether another attempt is allowed.
+    tools: [read_file]
+    tier: read
+    retry: { max: 3, on_exhausted: human_review }
+    edges: { ok: act }
+
+  policy_gate:
+    type: policy_gate
+    description: Risk decision for the accepted artifact (irreversible outputs require approval).
+    edges: { allow: receipt, deny: human_review, needs_approval: human_review }
+
+  human_review:
+    type: human_review
+    description: Escalation. The run pauses; resume --decision approved|rejected continues it.
+    edges: { approved: receipt, rejected: repair }
+
+  receipt:
+    type: receipt
+    description: Emit the change receipt and close the run.
+    terminal: true

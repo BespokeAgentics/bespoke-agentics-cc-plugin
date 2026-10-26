@@ -1,0 +1,65 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://bespokeagentics.dev/graph-harness/state.schema.json",
+  "title": "Harness run state (projection of the event log)",
+  "type": "object",
+  "required": ["run_id", "graph", "level", "status", "current_node", "step", "attempts", "retries_total", "decisions", "artifacts", "failures", "pending", "cost", "last_seq"],
+  "additionalProperties": false,
+  "properties": {
+    "run_id": { "type": "string", "minLength": 1 },
+    "graph": { "type": "string" },
+    "level": { "type": "integer", "minimum": 0, "maximum": 3 },
+    "status": { "type": "string", "enum": ["running", "paused", "completed", "failed"] },
+    "current_node": { "type": "string" },
+    "step": { "type": "integer", "minimum": 0 },
+    "attempts": { "type": "object", "additionalProperties": { "type": "integer", "minimum": 0 } },
+    "retries_total": { "type": "integer", "minimum": 0 },
+    "contract": { "type": "object" },
+    "decisions": { "type": "array", "items": { "$ref": "#/$defs/decision" } },
+    "artifacts": { "type": "array", "items": { "$ref": "#/$defs/artifact" } },
+    "failures": { "type": "array", "items": { "$ref": "#/$defs/failure" } },
+    "pending": { "type": "array", "items": { "$ref": "#/$defs/pending" } },
+    "cost": { "$ref": "#/$defs/cost" },
+    "rollback_point": { "type": "object" },
+    "last_seq": { "type": "integer", "minimum": 0 },
+    "outcome": { "type": "string" },
+    "last_outcome": { "type": "string" }
+  },
+  "$defs": {
+    "decision": {
+      "type": "object",
+      "required": ["seq", "kind", "summary"],
+      "properties": {
+        "seq": { "type": "integer" },
+        "kind": { "type": "string", "enum": ["policy", "human", "harness"] },
+        "summary": { "type": "string" },
+        "node": { "type": "string" }
+      }
+    },
+    "artifact": {
+      "type": "object",
+      "required": ["seq", "path"],
+      "properties": { "seq": { "type": "integer" }, "path": { "type": "string" }, "kind": { "type": "string" }, "node": { "type": "string" } }
+    },
+    "failure": {
+      "type": "object",
+      "required": ["seq", "node", "summary"],
+      "properties": { "seq": { "type": "integer" }, "node": { "type": "string" }, "summary": { "type": "string" }, "sensor": { "type": "string" }, "tool": { "type": "string" } }
+    },
+    "pending": {
+      "type": "object",
+      "required": ["seq", "kind", "summary"],
+      "properties": { "seq": { "type": "integer" }, "kind": { "type": "string", "enum": ["approval", "review", "input"] }, "summary": { "type": "string" }, "node": { "type": "string" }, "tool": { "type": "string" } }
+    },
+    "cost": {
+      "type": "object",
+      "required": ["input_tokens", "output_tokens", "usd"],
+      "properties": {
+        "input_tokens": { "type": "integer", "minimum": 0 },
+        "output_tokens": { "type": "integer", "minimum": 0 },
+        "usd": { "type": "number", "minimum": 0 },
+        "model_calls": { "type": "integer", "minimum": 0 }
+      }
+    }
+  }
+}

@@ -1,0 +1,4 @@
+#!/bin/sh
+# receipt: see runtime/cli/receipt.ts for arguments. Structured JSON on stdout.
+HERE="$(cd "$(dirname "$0")" && pwd)"
+exec node --no-warnings "$HERE/../runtime/cli/receipt.ts" "$@"

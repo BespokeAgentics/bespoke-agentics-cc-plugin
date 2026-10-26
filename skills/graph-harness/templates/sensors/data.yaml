@@ -1,0 +1,14 @@
+# Sensors for data artifacts: schema + range + freshness.
+schema:
+  kind: json_schema
+  path: "{contract.output.path}"
+  schema: "schemas/output.schema.json"   # relative to harness/
+  applies_to: [data]
+ranges:
+  kind: command
+  cmd: "{{data_range_cmd}}"              # e.g. python3 scripts/check_ranges.py {contract.output.path}
+  applies_to: [data]
+freshness:
+  kind: command
+  cmd: "test $(( $(date +%s) - $(stat -f %m {contract.output.path} 2>/dev/null || stat -c %Y {contract.output.path}) )) -lt 86400"
+  applies_to: [data]
