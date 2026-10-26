@@ -1,0 +1,4 @@
+#!/bin/sh
+# validate-graph: schema + reachability + capped loops + gated risk + sensed outputs. JSON out, exit 1 on failure.
+HERE="$(cd "$(dirname "$0")" && pwd)"
+exec node --no-warnings "$HERE/../runtime/cli/validate-graph.ts" "$@"

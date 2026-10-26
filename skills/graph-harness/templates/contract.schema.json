@@ -1,0 +1,57 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://bespokeagentics.dev/graph-harness/contract.schema.json",
+  "title": "Harness task contract",
+  "description": "A request becomes this bounded object before any action. Blocks silent redefinition of the task.",
+  "type": "object",
+  "required": ["id", "goal", "inputs", "output", "constraints", "done_when", "task_class", "risk"],
+  "additionalProperties": false,
+  "properties": {
+    "id": { "type": "string", "minLength": 1, "pattern": "^[a-z0-9][a-z0-9._-]*$" },
+    "goal": { "type": "string", "minLength": 12, "description": "One sentence. What is true when this is done." },
+    "inputs": {
+      "type": "array",
+      "items": { "type": "string", "minLength": 1 },
+      "description": "Files, URLs, data or prior artifacts the task may use. Empty is allowed for greenfield."
+    },
+    "output": {
+      "type": "object",
+      "required": ["kind", "description"],
+      "additionalProperties": false,
+      "properties": {
+        "kind": { "type": "string", "enum": ["code", "ui", "research", "data", "document", "mixed"] },
+        "path": { "type": "string" },
+        "description": { "type": "string", "minLength": 1 }
+      }
+    },
+    "constraints": {
+      "type": "array",
+      "items": { "type": "string", "minLength": 1 },
+      "description": "Hard limits: files not to touch, APIs not to call, budgets, style."
+    },
+    "done_when": {
+      "type": "array",
+      "minItems": 1,
+      "items": { "$ref": "#/$defs/doneWhen" }
+    },
+    "task_class": { "type": "string", "enum": ["code", "ui", "research", "data", "mixed"] },
+    "risk": {
+      "type": "string",
+      "enum": ["reversible", "shared", "irreversible"],
+      "description": "reversible = only the workspace changes; shared = other people see it; irreversible = cannot be undone (deploy, delete, send)."
+    },
+    "requested_by": { "type": "string" },
+    "created_at": { "type": "string" }
+  },
+  "$defs": {
+    "doneWhen": {
+      "type": "object",
+      "required": ["check"],
+      "additionalProperties": false,
+      "properties": {
+        "check": { "type": "string", "minLength": 8, "description": "A verifiable statement. Rejected when vague and no sensor is named." },
+        "sensor": { "type": "string", "description": "Name of a sensor declared in the graph that proves this check." }
+      }
+    }
+  }
+}

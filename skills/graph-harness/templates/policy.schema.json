@@ -1,0 +1,45 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://bespokeagentics.dev/graph-harness/policy.schema.json",
+  "title": "Harness tool policy",
+  "type": "object",
+  "required": ["version", "tiers", "tools", "workspace"],
+  "additionalProperties": false,
+  "properties": {
+    "version": { "type": "string", "minLength": 1 },
+    "tiers": {
+      "type": "object",
+      "required": ["read", "sandbox", "write", "network", "approve"],
+      "additionalProperties": false,
+      "properties": {
+        "read": { "$ref": "#/$defs/tierRule" },
+        "sandbox": { "$ref": "#/$defs/tierRule" },
+        "write": { "$ref": "#/$defs/tierRule" },
+        "network": { "$ref": "#/$defs/tierRule" },
+        "approve": { "$ref": "#/$defs/tierRule" }
+      }
+    },
+    "tools": {
+      "type": "object",
+      "additionalProperties": {
+        "type": "object",
+        "required": ["tier", "purpose"],
+        "properties": {
+          "tier": { "type": "string", "enum": ["read", "sandbox", "write", "network", "approve"] },
+          "purpose": { "type": "string", "minLength": 1 },
+          "output": { "type": "string" },
+          "failure": { "type": "string" },
+          "boundary": { "type": "string" }
+        }
+      }
+    },
+    "workspace": { "type": "string", "minLength": 1 },
+    "deny_paths": { "type": "array", "items": { "type": "string" } },
+    "network_allow": { "type": "array", "items": { "type": "string" } },
+    "sandbox_allow": { "type": "array", "items": { "type": "string" } },
+    "approvals_file": { "type": "string" }
+  },
+  "$defs": {
+    "tierRule": { "type": "string", "enum": ["allow", "allow_in_workspace", "allow_listed", "require_approval", "deny"] }
+  }
+}

@@ -1,0 +1,14 @@
+# Expect: UNCAPPED_LOOP + REPAIR_NO_RETRY (verify -> repair -> act -> verify has no retry.max)
+version: 1
+name: broken
+level: 2
+entry: contract
+budget: { max_steps: 20, max_retries_total: 3 }
+sensors:
+  tests: { kind: command, cmd: "npm test" }
+nodes:
+  contract: { type: contract, sensors: [contract_complete], edges: { ok: act, fail: receipt } }
+  act: { type: act, tools: [write_file], tier: write, edges: { ok: verify, fail: repair, blocked: receipt } }
+  verify: { type: verify, sensors: [tests], edges: { pass: receipt, fail: repair } }
+  repair: { type: repair, edges: { ok: act } }
+  receipt: { type: receipt, terminal: true }

@@ -1,0 +1,4 @@
+#!/bin/sh
+# run: see runtime/cli/run.ts for arguments. Structured JSON on stdout.
+HERE="$(cd "$(dirname "$0")" && pwd)"
+exec node --no-warnings "$HERE/../runtime/cli/run.ts" "$@"

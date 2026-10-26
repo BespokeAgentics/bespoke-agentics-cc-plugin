@@ -1,0 +1,42 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://bespokeagentics.dev/graph-harness/receipt.schema.json",
+  "title": "Change receipt for one harness run",
+  "type": "object",
+  "required": ["run_id", "contract_id", "graph", "policy_version", "model_route", "outcome", "context_sources", "tools_used", "sensors", "test_results", "human_corrections", "retries", "cost", "accepted_artifact", "rollback_point", "started_at", "finished_at", "events"],
+  "additionalProperties": false,
+  "properties": {
+    "run_id": { "type": "string", "minLength": 1 },
+    "contract_id": { "type": "string" },
+    "graph": { "type": "string" },
+    "policy_version": { "type": "string" },
+    "model_route": { "type": "string" },
+    "outcome": { "type": "string", "enum": ["completed", "failed", "paused", "running"] },
+    "context_sources": { "type": "array", "items": { "type": "string" } },
+    "tools_used": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["name", "calls", "denied"],
+        "properties": { "name": { "type": "string" }, "calls": { "type": "integer", "minimum": 0 }, "denied": { "type": "integer", "minimum": 0 }, "needs_approval": { "type": "integer", "minimum": 0 } }
+      }
+    },
+    "sensors": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["name", "runs", "passed", "last"],
+        "properties": { "name": { "type": "string" }, "runs": { "type": "integer" }, "passed": { "type": "integer" }, "last": { "type": "string", "enum": ["pass", "fail", "error"] } }
+      }
+    },
+    "test_results": { "type": "object", "required": ["ran", "passed"], "properties": { "ran": { "type": "integer" }, "passed": { "type": "integer" }, "summary": { "type": "string" } } },
+    "human_corrections": { "type": "array", "items": { "type": "object", "required": ["seq", "decision"], "properties": { "seq": { "type": "integer" }, "decision": { "type": "string" }, "note": { "type": "string" } } } },
+    "retries": { "type": "object", "required": ["total", "by_node"], "properties": { "total": { "type": "integer" }, "by_node": { "type": "object" }, "exhausted": { "type": "boolean" } } },
+    "cost": { "type": "object", "required": ["input_tokens", "output_tokens", "usd"], "properties": { "input_tokens": { "type": "integer" }, "output_tokens": { "type": "integer" }, "usd": { "type": "number" }, "model_calls": { "type": "integer" } } },
+    "accepted_artifact": { "oneOf": [ { "type": "null" }, { "type": "object", "required": ["path"], "properties": { "path": { "type": "string" }, "kind": { "type": "string" } } } ] },
+    "rollback_point": { "oneOf": [ { "type": "null" }, { "type": "object" } ] },
+    "started_at": { "type": "string" },
+    "finished_at": { "oneOf": [ { "type": "null" }, { "type": "string" } ] },
+    "events": { "type": "integer", "minimum": 1 }
+  }
+}

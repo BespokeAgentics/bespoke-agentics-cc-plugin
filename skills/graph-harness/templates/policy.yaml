@@ -1,0 +1,65 @@
+# Tool policy. Enforced by the harness, outside the model: MODEL SUGGESTS -> POLICY CHECKS -> TOOL EXECUTES.
+# Every tool has a contract (purpose, output, failure, boundary) and a tier. Tier rules:
+#   allow               always allowed
+#   allow_in_workspace  allowed when every path argument stays inside `workspace` and off `deny_paths`
+#   allow_listed        allowed when the target matches an entry in the matching *_allow list
+#   require_approval    needs a record in approvals_file (tool + granted_by); otherwise the run pauses
+#   deny                never
+version: "1"
+
+tiers:
+  read: allow
+  sandbox: allow_listed
+  write: allow_in_workspace
+  network: allow_listed
+  approve: require_approval
+
+workspace: "."
+deny_paths: [".git", ".env", "node_modules", "harness/runs"]
+sandbox_allow: ["npm test", "npm run", "npx tsc", "npx vitest", "pytest", "ruff", "node --test", "bun test"]
+network_allow: []
+approvals_file: "harness/approvals.json"
+
+tools:
+  read_file:
+    tier: read
+    purpose: Read one file inside the workspace.
+    output: "{ content: string }"
+    failure: "{ ok: false, error: 'not found' | 'outside workspace' }"
+    boundary: Workspace only; never follows symlinks out of it.
+  list_files:
+    tier: read
+    purpose: List files under a directory inside the workspace.
+    output: "{ files: string[] }"
+    failure: "{ ok: false, error }"
+    boundary: Workspace only; skips deny_paths.
+  run_command:
+    tier: sandbox
+    purpose: Run a listed command (tests, lint, types) and capture exit code and output.
+    output: "{ code: number, stdout: string, stderr: string }"
+    failure: "{ ok: false, error: 'not listed' | 'timeout' }"
+    boundary: Only commands whose prefix is in sandbox_allow; cwd is the workspace.
+  write_file:
+    tier: write
+    purpose: Create or overwrite one file inside the workspace.
+    output: "{ path: string, bytes: number }"
+    failure: "{ ok: false, error: 'outside workspace' | 'denied path' }"
+    boundary: Workspace only; deny_paths are refused.
+  fetch:
+    tier: network
+    purpose: HTTP GET a URL on an allowed host.
+    output: "{ status: number, body: string }"
+    failure: "{ ok: false, error: 'host not allowed' | 'timeout' }"
+    boundary: Hosts in network_allow only; the contract may scope the list further.
+  delete_path:
+    tier: approve
+    purpose: Delete a file or directory inside the workspace.
+    output: "{ path: string }"
+    failure: "{ ok: false, error }"
+    boundary: Requires an approval record; refused on deny_paths.
+  deploy:
+    tier: approve
+    purpose: Trigger a deployment (wired to your deploy script).
+    output: "{ target: string, ref: string }"
+    failure: "{ ok: false, error }"
+    boundary: Requires an approval record per run.

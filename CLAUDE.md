@@ -255,6 +255,14 @@ User-invoked only; corrects a wrong inference and the source that seeded it. Nev
 
 Writes only under `./plans/pencils-down/`; `orchestrate`/`workstream-orchestrate` execute the plan, `delivery-recap` reports the ship. Never commits, never posts.
 
+### When to Use the Graph-Harness Command
+
+| Situation                                                                                                                                                    | Command                                                                                                          |
+| ------------------------------------------------------------------------------------------------------------------------------------------------------------ | ---------------------------------------------------------------------------------------------------------------- |
+| Bootstrap, audit or harden the harness around an agent — contract-first tasks, a root map, tools with permission tiers, an event log, sensors, capped loops, gates | `/bespoke-agentics:graph-harness [<target>] [--level 1\|2\|3] [--task-class code\|ui\|research\|data\|mixed] [--audit-only] [--force]` |
+
+The harness is the operating system around the model; `agent-loop-audit` audits one integration's event loop, `orchestrate` runs a plan through subagents. Scripts are deterministic TypeScript (Node ≥ 22.18, zero deps); model and storage are adapters.
+
 ### When to Use the Delivery-Recap Command
 
 | Situation                                                                                                                       | Command                                                                                                       |
@@ -421,6 +429,7 @@ Evidence, the probes that settled the undocumented mechanics, and what is not ve
     │  ├─ microdots-brand-recap/      # BespokeAgentics/MicroDots brand shell + tokens + design rules for any explainer page
     │  ├─ microdots-design/           # Router to the impeccable-microdots plugin: visual refinement of real MicroDot views
     │  ├─ agent-loop-audit/           # AI API/SDK integration → event-loop defect audit + gated fixes (silent hangs, stop_reason, deadlocks)
+    │  ├─ graph-harness/              # Graph-based agent harness: contract → map → policy tiers → event log → sensors → capped loop → gates → receipt (L1–L3 bootstrap, validate-graph, run/resume, audit, upgrade-from-failure)
     │  ├─ ai-native-sdlc/             # AI-Native SDLC playbook: assess 16-play maturity, scaffold controls, drive the intent→spec→plan artifact chain
     │  ├─ fast-ci/                    # CI → native-tool swaps (TS7, oxc, uv) + fast/slow lane split
     │  ├─ issue-to-agent/             # Triage labels → auto-dispatched repro/PoC coding agents

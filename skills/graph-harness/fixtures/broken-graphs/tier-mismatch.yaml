@@ -1,0 +1,13 @@
+# Expect: TIER_MISMATCH (node tier read grants write_file, a write-tier tool) and SENSOR_UNDECLARED
+version: 1
+name: broken
+level: 2
+entry: contract
+budget: { max_steps: 20, max_retries_total: 3 }
+sensors:
+  tests: { kind: command, cmd: "npm test" }
+nodes:
+  contract: { type: contract, sensors: [contract_complete], edges: { ok: act, fail: receipt } }
+  act: { type: act, tools: [write_file], tier: read, edges: { ok: verify, fail: receipt, blocked: receipt } }
+  verify: { type: verify, sensors: [screenshot], edges: { pass: receipt, fail: receipt } }
+  receipt: { type: receipt, terminal: true }

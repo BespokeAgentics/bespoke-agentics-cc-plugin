@@ -1,0 +1,12 @@
+# Expect: SCHEMA (budget is required at graph level; schema failures stop validation before the structural checks)
+version: 1
+name: broken
+level: 2
+entry: contract
+sensors:
+  tests: { kind: command, cmd: "npm test" }
+nodes:
+  contract: { type: contract, sensors: [contract_complete], edges: { ok: act, fail: receipt } }
+  act: { type: act, tools: [write_file], tier: read, edges: { ok: verify, fail: receipt, blocked: receipt } }
+  verify: { type: verify, sensors: [tests], edges: { pass: receipt, fail: receipt } }
+  receipt: { type: receipt, terminal: true }
