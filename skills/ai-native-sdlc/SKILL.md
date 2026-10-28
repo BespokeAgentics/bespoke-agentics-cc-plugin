@@ -183,9 +183,9 @@ from the playbook:
   the test.
 - When implementation departs from the plan, update `plan.md` in the same change — the review
   gate checks the diff against it, so a stale plan turns the audit trail into fiction.
-- Where the `orchestrate` or `workstream-orchestrate` skills are available and the plan is large,
-  offer them as the execution engine instead of building inline.
-- The sibling skills offered at these gates (`spec-elicitation`, `plan-review`, `orchestrate`,
+- Where the `workstream-orchestrate` skill is available and the plan is large, offer it as the
+  execution engine instead of building inline.
+- The sibling skills offered at these gates (`spec-elicitation`, `plan-review`,
   `workstream-orchestrate`) are manual-only, so do not call them through the Skill tool: on a yes, read
   `${CLAUDE_PLUGIN_ROOT}/skills/<skill>/SKILL.md` and follow it.
 

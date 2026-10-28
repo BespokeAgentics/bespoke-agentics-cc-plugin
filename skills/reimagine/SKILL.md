@@ -216,8 +216,8 @@ fragments. Decision rows AND rejected-direction rows append to
 `_library/decisions.md`; the `_index.md` run row is typed `reimagine`.
 
 Close by offering — never auto-running — the handoffs: `interactive-wireframe`
-for fine-grained settlement of the winner, orchestrate/workstream-orchestrate
-for the build. These skills are manual-only, so do not call them through the Skill tool: on a yes, read
+for fine-grained settlement of the winner, workstream-orchestrate for the
+build. These skills are manual-only, so do not call them through the Skill tool: on a yes, read
 `${CLAUDE_PLUGIN_ROOT}/skills/<skill>/SKILL.md` and follow it.
 
 ## Artifacts

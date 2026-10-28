@@ -1,0 +1,149 @@
+{
+  "skill": "edge-cases",
+  "_note": "House-style eval cases (matches plan-review / dead-code-sweep). Each prompt becomes an eval prompt and each `expect` line an assertion. Fixtures: evals/fixtures/gift-card-brief.md (a product brief, no code) and evals/fixtures/coupon-service/ — run `setup.sh <dir>` to get a git repo whose HEAD is the baseline with an uncommitted fixed-amount-coupon change; setup.sh lists the seven planted edge cases, each verified to reproduce under node 20+ with TZ=America/New_York. Run code-target cases from inside the fixture directory. scripts/test_scripts.py covers the two scripts.",
+  "cases": [
+    {
+      "id": "brief-standard",
+      "prompt": "/bespoke-agentics:edge-cases skills/edge-cases/evals/fixtures/gift-card-brief.md",
+      "files": [
+        "skills/edge-cases/evals/fixtures/gift-card-brief.md"
+      ],
+      "expect": [
+        "resolve_target.py resolves kind=plan (rule 5) and the pre-flight block states it",
+        "surface.md quotes the brief's requirements as the 'What the document states' section",
+        "every case is a concrete Given/When/Then scenario, not a category heading",
+        "finds the $10 and $500 amount boundaries (and $9, $501, $10.50 as invalid inputs) from requirement 1",
+        "finds that the scheduled-delivery date has no stated time zone (requirement 3)",
+        "finds the interaction between partial redemption (req 5) and cancellation/refund (req 6): can support cancel a partly used card, and what is refunded",
+        "labels expected behaviors spec (with a brief quote) vs proposed; the 200-character limit is spec, the refund-after-partial-use behavior is proposed with decision needed",
+        "current_status is N/A for every case (no code) and check_cases.py passes",
+        "asks AskUserQuestion only about decision-needed cases, at most 4 per call, recommendation first",
+        "writes reviews/edge-cases/fixtures-gift-card-brief-edge-cases.md and fixtures-gift-card-brief-cases.json (slug = last two path parts); the brief is unchanged"
+      ]
+    },
+    {
+      "id": "brief-quick",
+      "prompt": "/bespoke-agentics:edge-cases skills/edge-cases/evals/fixtures/gift-card-brief.md --level quick",
+      "files": [
+        "skills/edge-cases/evals/fixtures/gift-card-brief.md"
+      ],
+      "expect": [
+        "launches no subagents",
+        "uses 3-4 lenses and lists the skipped lenses with reasons in Coverage",
+        "reports at most 12 cases; if more were found, Coverage states how many check_cases.py --fill trimmed",
+        "runs no interview; decision-needed cases appear as DECISION NEEDED, never as requirements"
+      ]
+    },
+    {
+      "id": "feature-standard-finds-planted",
+      "prompt": "(cwd = a fresh coupon-service fixture, after `git stash -u` so the tree is the baseline) /bespoke-agentics:edge-cases src/coupons.js",
+      "files": [
+        "skills/edge-cases/evals/fixtures/coupon-service/setup.sh"
+      ],
+      "expect": [
+        "resolves kind=feature, built=true (rule 6); surface.md cites src/coupons.js:21 for the comparison",
+        "surface.md records the exact operator `subtotal > coupon.minSubtotal` with file:line under Rules and thresholds",
+        "finds the exactly-$50 case as UNHANDLED citing src/coupons.js:21, expected_source spec quoting the code comment at src/coupons.js:2 ('Orders of $50 or more')",
+        "finds the case-sensitive / untrimmed code lookup as UNHANDLED against the 'case-insensitive' comment",
+        "finds the date-only expiry parsed as UTC midnight (coupon dies early in US time zones)",
+        "finds the unrounded percent discount (fractional cents)",
+        "every HANDLED/PARTIAL/UNHANDLED status cites a real file:line in the fixture; none are fabricated",
+        "does not invent network/database failure cases for applyCoupon, which has no I/O"
+      ]
+    },
+    {
+      "id": "changes-auto-detect",
+      "prompt": "(cwd = a fresh coupon-service fixture) /bespoke-agentics:edge-cases",
+      "files": [
+        "skills/edge-cases/evals/fixtures/coupon-service/setup.sh"
+      ],
+      "expect": [
+        "with no target and a dirty tree, resolve_target.py returns kind=changes, scope=uncommitted (rule 1) and the reason is stated",
+        "applies the `change` lens and maps callers of applyCoupon and COUPONS (src/receipt.js, src/redemptions.js)",
+        "finds FIVEOFF on a cart under $5 producing a negative total, as UNHANDLED at src/coupons.js",
+        "finds src/receipt.js printing 'saved undefined%' for an amount coupon, although receipt.js is not in the diff",
+        "marks the FIVEOFF negative total and the receipt 'undefined%' cases origin=introduced, and the exactly-$50 and case-sensitive lookup cases origin=pre-existing; introduced cases lead the top risks and pre-existing P0/P1 defects are still listed",
+        "tree_state.py compare against tree-before.json reports the tree unchanged, even though src/coupons.js was already dirty before the run"
+      ]
+    },
+    {
+      "id": "deep-verifies",
+      "prompt": "(cwd = a fresh coupon-service fixture) /bespoke-agentics:edge-cases uncommitted --level deep",
+      "files": [
+        "skills/edge-cases/evals/fixtures/coupon-service/setup.sh"
+      ],
+      "expect": [
+        "runs the Phase 3 interview before any skeptic is launched, then attacks every P0/P1 code status in waves of at most 8 skeptics (5 cases each) until none is as-read",
+        "applies verdicts: verification becomes upheld or overturned; check_cases.py --final passes",
+        "adds at most 5 interaction cases, each with related: [two parent ids] and a stated outcome neither parent produces alone",
+        "writes 3-5 scenario walkthroughs citing case ids",
+        "writes node:test skeletons matching test/coupons.test.js style into the report appendix, not into the repo"
+      ]
+    },
+    {
+      "id": "prove-confirms-and-cleans-up",
+      "prompt": "(cwd = a fresh coupon-service fixture, after `git stash -u`) /bespoke-agentics:edge-cases src/coupons.js --level prove",
+      "files": [
+        "skills/edge-cases/evals/fixtures/coupon-service/setup.sh"
+      ],
+      "expect": [
+        "discovers the runner from package.json (`node --test`) and the single-file command `node --test <file>`",
+        "probes only P0/P1 cases with an agreed expectation (spec, convention, uncontested or decided); a decision-needed case is never probed",
+        "asks the probe gate question (AskUserQuestion) listing the cases, the probe directory and the command, before writing any probe",
+        "records each probe path in .edge-cases/<slug>/probes/manifest.json before creating it",
+        "names probes like test/coupons.edge-probe.test.js",
+        "the exactly-$50 probe fails on its assertion and is marked probe-confirmed",
+        "deletes every probe, and tree_state.py compare reports the tree unchanged",
+        "the final message calls the confirmed P0/P1 cases defects and offers to fix them now (failing test first), without filing them as future work"
+      ]
+    },
+    {
+      "id": "prove-degrades-on-plan",
+      "prompt": "/bespoke-agentics:edge-cases skills/edge-cases/evals/fixtures/gift-card-brief.md --level prove",
+      "files": [
+        "skills/edge-cases/evals/fixtures/gift-card-brief.md"
+      ],
+      "expect": [
+        "states in pre-flight that prove degrades to deep because the target is a plan with no code to probe",
+        "writes no probe files",
+        "the report's header and Coverage section state the degradation"
+      ]
+    },
+    {
+      "id": "unbuilt-feature-description",
+      "prompt": "/bespoke-agentics:edge-cases 'bulk CSV import of customer addresses' --level quick",
+      "files": [],
+      "expect": [
+        "resolve_target.py returns built=null (rule 13); pre-flight step 2 searches the repo, finds nothing, and writes built=false into target.json before any phase runs",
+        "analyzes the description as a brief: current_status N/A everywhere, `file:line` columns empty",
+        "includes CSV-specific input cases (embedded commas/quotes/newlines, BOM, encodings, an empty file, a header-only file)",
+        "states in Coverage that current behavior could not be assessed because the feature is not built"
+      ]
+    },
+    {
+      "id": "own-output-does-not-pollute-next-run",
+      "prompt": "(cwd = a fresh coupon-service fixture, after `git stash -u`) run /bespoke-agentics:edge-cases src/coupons.js --level quick, then run /bespoke-agentics:edge-cases with no target",
+      "files": [
+        "skills/edge-cases/evals/fixtures/coupon-service/setup.sh"
+      ],
+      "expect": [
+        "the first run writes .edge-cases/.gitignore containing *, plus reviews/edge-cases/src-coupons-edge-cases.md",
+        "the second run resolves to kind=ask (rule 3: clean tree) — not to uncommitted changes made of the first run's report",
+        "the ask candidates do not include the first run's report or work files"
+      ]
+    },
+    {
+      "id": "read-only-guarantee",
+      "prompt": "(cwd = a fresh coupon-service fixture) turn 1: /bespoke-agentics:edge-cases uncommitted — turn 2, after the report: fix whatever you found",
+      "files": [
+        "skills/edge-cases/evals/fixtures/coupon-service/setup.sh"
+      ],
+      "expect": [
+        "turn 1 edits nothing under src/ or test/; tree_state.py compare reports the tree unchanged",
+        "does not commit, stage, or stash in either turn",
+        "turn 1 ends by offering the fix follow-up for the verified or as-read defects, not for DECISION NEEDED cases",
+        "turn 2 fixes each defect failing-test-first (a test that fails before the fix and passes after), as a separate step from the analysis"
+      ]
+    }
+  ]
+}

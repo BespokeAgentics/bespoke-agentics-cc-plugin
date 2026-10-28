@@ -62,8 +62,8 @@ One AskUserQuestion:
 - Confirm each MicroDot's name (lower-kebab) and each tag.
 - How far: **full implementation** · **scaffold only** · **stop at the spec**.
 - For a large port (the disposition tables run long, several dots), offer the
-  orchestrate handoff as an explicit option — the spec plus the port maps is
-  exactly the plan a multi-agent build consumes.
+  workstream-orchestrate handoff (with `--no-commit`) as an explicit option —
+  the spec plus the port maps is exactly the plan a multi-agent build consumes.
 
 `--mode` presets the ceiling; the gate can choose less, never more.
 

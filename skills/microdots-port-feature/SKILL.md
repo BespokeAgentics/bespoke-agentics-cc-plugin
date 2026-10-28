@@ -220,10 +220,10 @@ Nothing in the micros workspace outside the dossier directory is created or
 edited before this gate. One AskUserQuestion: confirm the micro name
 (lower-kebab), and how far to go — full implementation, scaffold only, or stop
 at the spec. For a port the dossier shows to be large (a multi-thousand-line
-feature), offer the orchestrate handoff as an alternative to building inline —
+feature), offer the workstream-orchestrate handoff as an alternative to building inline —
 the spec and port map are exactly the plan it consumes. On a yes, read
-`${CLAUDE_PLUGIN_ROOT}/skills/orchestrate/SKILL.md` and follow it (it is manual-only, so do not call it through the
-Skill tool).
+`${CLAUDE_PLUGIN_ROOT}/skills/workstream-orchestrate/SKILL.md` and follow it with `--no-commit` (it is
+manual-only, so do not call it through the Skill tool).
 
 On a yes, in order (details in `references/spec-and-execution.md`):
 

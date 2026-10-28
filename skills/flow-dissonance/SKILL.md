@@ -189,7 +189,7 @@ One paragraph: was the intent delivered, and at what cost.
 
 Close out per project conventions: if a wiki vault exists, ingest the report and add a `_log.md`
 entry. Then **offer** (never assume): open the confirmed P0s as tasks, or hand the report to
-`ui-issue-to-plan`/`orchestrate` for a fix plan.
+`ui-issue-to-plan` for a fix plan.
 
 ## Degradation
 

@@ -97,5 +97,23 @@ results.append(check(
     f'exit {rc}, errors={vm2.errors}',
 ))
 
+# C6: a .pyc committed despite .gitignore ships in every install of a local source.
+vm3 = load_validator()
+plug = Path(tempfile.mkdtemp())
+(plug / '.claude-plugin').mkdir()
+(plug / '.claude-plugin' / 'plugin.json').write_text(json.dumps({'name': 'tamper', 'version': '1.0.0'}))
+(plug / 'pkg' / '__pycache__').mkdir(parents=True)
+(plug / 'pkg' / '__pycache__' / 'mod.cpython-312.pyc').write_bytes(b'\x00')
+genv = {**os.environ, 'GIT_CONFIG_GLOBAL': os.devnull, 'GIT_CONFIG_NOSYSTEM': '1'}
+subprocess.run(['git', 'init', '-q', str(plug)], check=True, env=genv)
+subprocess.run(['git', '-C', str(plug), 'add', '-f', '-A'], check=True, env=genv)
+vm3.REPO = plug
+vm3.check_local('tamper', './', '1.0.0')
+results.append(check(
+    'C6: tracked bytecode in a local source',
+    any('tracked bytecode' in e for e in vm3.errors),
+    f'errors={vm3.errors}',
+))
+
 print(f"\n{sum(results)}/{len(results)} tamper cases caught")
 sys.exit(0 if all(results) else 1)

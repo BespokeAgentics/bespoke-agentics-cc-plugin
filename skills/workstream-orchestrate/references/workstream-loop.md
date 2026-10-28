@@ -26,8 +26,8 @@ verdicts, commit hash + subject, residual risk; wait to proceed to the next work
 ## Rules
 
 - **Sequential, in-tree, no worktree.** The workstream edits the live working tree. Because only one
-  workstream runs at a time and each ends at a commit, there is never a two-writer conflict — the
-  reason `orchestrate` needs worktrees for the code path does not apply here.
+  workstream runs at a time and each ends at a commit, there is never a two-writer conflict, so
+  no worktree is needed.
 - **Gates are re-run by you.** The implementer runs them to fail fast; you re-run them in the main
   session before allowing the commit. A commit never lands on a gate you didn't see pass.
 - **The commit stages only this workstream's files.** Enumerate them from the implementer's `{files}`

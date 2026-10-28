@@ -184,10 +184,10 @@ run.
 Nothing outside the dossier directory is created or edited before this gate.
 One AskUserQuestion: confirm the MicroDot name(s) (lower-kebab) and how far to
 go — full implementation, scaffold only, or stop at the spec. For a port the
-dossier shows to be large, offer the orchestrate handoff as an alternative to
+dossier shows to be large, offer the workstream-orchestrate handoff as an alternative to
 building inline — the spec plus the port maps is exactly the plan it consumes.
-On a yes, read `${CLAUDE_PLUGIN_ROOT}/skills/orchestrate/SKILL.md` and follow it (it is manual-only,
-so do not call it through the Skill tool).
+On a yes, read `${CLAUDE_PLUGIN_ROOT}/skills/workstream-orchestrate/SKILL.md` and follow it with
+`--no-commit` (it is manual-only, so do not call it through the Skill tool).
 
 On a yes (details in `references/spec-and-execution.md`):
 
@@ -254,7 +254,7 @@ actually observed; traps hit; memory rows added or reinforced; what remains
 - **Unverified claims are labeled** — "not visually verified", `assumed` —
   never dressed up as findings.
 - **Compose by loading** — spec-elicitation, microdots-new-micro,
-  microdots-verify, orchestrate — loaded by path, never reimplemented.
+  microdots-verify, workstream-orchestrate — loaded by path, never reimplemented.
 - **Deploy is never run. Nothing is committed** — in the target, the source,
   or the plugin repo.
 

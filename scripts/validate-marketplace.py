@@ -18,6 +18,9 @@ clicking Install, not by anything in this repo:
                        whose declared skills path exists.
   C5  version parity   marketplace.json and plugin.json drifted once already
                        (2.1.0 vs 2.2.0) and nothing noticed.
+  C6  no bytecode      a local source ships every tracked file. Four .pyc files
+                       were committed despite .gitignore and went out in every
+                       install until v2.13.0.
 
 Exit 0 = safe to push. Exit 1 = an install would fail or serve a stale tree.
 """
@@ -106,6 +109,26 @@ def check_local(name: str, rel: str, declared_version: str | None) -> None:
         return
     note(f'{name}: local source "{rel}" at v{declared_version}')
     check_manifest(name, manifest, declared_version, root)
+    check_tracked_bytecode(name, root)
+
+
+def check_tracked_bytecode(name: str, root: Path) -> None:
+    # C6
+    r = subprocess.run(
+        ["git", "-C", str(root), "ls-files", "-z", "--", "*.pyc", "*__pycache__/*"],
+        capture_output=True,
+        text=True,
+    )
+    if r.returncode != 0:
+        note(f"{name}: not a git checkout, tracked-bytecode check skipped")
+        return
+    tracked = sorted(p for p in r.stdout.split("\0") if p)
+    if tracked:
+        fail(
+            name,
+            f"{len(tracked)} tracked bytecode file(s) would ship ({', '.join(tracked[:3])}); "
+            "git rm --cached them -- .gitignore already excludes __pycache__/",
+        )
 
 
 def check_manifest(

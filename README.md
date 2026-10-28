@@ -29,6 +29,7 @@ claude --plugin-dir ./bespoke-agentics-plugin
 | **workflow-analyzer** | Client workflow analysis from video recordings. Produces application inventory, challenge mapping, and AI automation recommendations. |
 | **setup-plugin** | Scaffold, optimize, and package a folder as a well-formed Claude Code plugin. Converts `.claude/` directories into distributable plugins. |
 | **pi-assistant** | Understand the pi.dev coding agent, customize its harness, build Pi skills/extensions/packages, and search for or install Pi packages. |
+| **pi-durable-harness-app** | Bootstrap a minimal pi-durable Harness app (Bun, Effect, FoldKit, optional Cloudflare Durable Objects) where every unit of work is a durable task — or audit a project's durability and its use of pi-durable tasks, tools, hooks and docs. |
 | **spec-elicitation** | Interview-driven spec development that turns vague ideas into complete implementation specifications. Also available as `/bespoke-agentics:spec-elicitation`. |
 | **biome-guardrails** | Install Biome.js + sidecar ESLint as strict AI-code guardrails in a JS/TS project — or audit an existing codebase for weak-typing debt (`--audit`) and install ratchet enforcement that blocks new `any` and oversized files without breaking the build (`--ratchet`). |
 | **bun-workspace** | Convert sibling Node/Bun repos into a Bun workspace monorepo, audit one, or add a package. |
@@ -41,10 +42,29 @@ claude --plugin-dir ./bespoke-agentics-plugin
 | **micro-interactions** | Read an app's flows, choose a small motion vocabulary, and generate 25–40 grounded micro-interaction ideas as one playable HTML prototype (a demo per idea, a walkthrough, an impact/effort first batch). |
 | **pencils-down** | Set a fixed date after which building stops and shipping starts: feature ledger from plans + commits + wiki, intent interview, Finish/Trim/Disable/Cut/Defer dispositions checked against the calendar, go-live checklist, and a launch outreach plan with drafted posts via the `community-outreach` agent. |
 | **graph-harness** | Bootstrap, audit or harden a graph-based agent harness: contract-first tasks, a root map (`AGENTS.md`), tools with permission tiers enforced outside the model, an append-only event log with resume-after-kill, sensors per artifact type, capped repair loops with human escalation, a change receipt per run, a 12-question audit, and failure → Guide + Check proposals. Deterministic TypeScript scripts, zero dependencies. |
+| **edge-cases** | Enumerate the edge cases and scenarios of a feature, a plan or product brief, or recent code changes — each with a concrete trigger, the expected behavior and its source, and (for code) whether it is handled — at four levels: quick, standard, deep (adversarial verification, combined conditions, walkthroughs, test skeletons), and prove (throwaway probe tests run against the real code). |
 
 ### Pi Assistant
 
 All Pi tasks route through the `pi-assistant` skill. Describe the task in natural language ("build a Pi extension that…", "search Pi packages for browser automation", "review my local Pi setup", "install Pi package X globally") and the skill routes to the right surface — harness customization, extension/skill/package authoring, package search, install, or setup review. See `skills/pi-assistant/SKILL.md` and its `references/` for surface-by-surface guidance.
+
+### pi-durable Harness Apps
+
+The `pi-durable-harness-app` skill has two modes and both start by detecting the installed
+pi-durable version, because the package is experimental and its surface moves between releases: it
+reads `node_modules/@earendil-works/pi-durable/dist/**/*.d.ts` and probes for the features this skill
+depends on (`sleepUntil`, `onWake`, `restartLimit`, `retryTask`, `onReport`), then tells you what is
+missing on your version instead of writing code that will not compile.
+**Bootstrap** writes a complete app — Effect Schemas for the wire plus the `actionsFor` state-to-UI
+contract, a durable domain where every unit of work is a task with an effect sandwich, an abort that
+undoes it, and an `Intents` document that makes each user intent exactly-once, a platform-agnostic
+host that projects the task graph into a view, a FoldKit client (Elm Architecture on Effect), an
+optional one-SQLite-Durable-Object-per-session Cloudflare Worker, and tests that include a `kill -9`
+crash-recovery check. It then verifies in order — typecheck, `bun test`, build, crash-test,
+`wrangler deploy --dry-run` — and stops at the first failure.
+**Audit** returns a findings report with checks passed and, explicitly, checks it could not perform.
+The whole tree it generates was built and checked against Bun 1.4.2, pi-durable 1.3.0, effect 4.0.0
+and foldkit 0.168.0.
 
 ### UX Audit Variants
 
@@ -162,6 +182,40 @@ The Highlight Reel command is the **creation** companion to the video-_analysis_
 
 The Plan-Review command takes a **local** plan, spec, design doc, or issue/bug-report markdown and reviews it as a skeptical principal engineer would before any code is written. It is the read-only **document** reviewer that complements the others: `repo-audit` audits the codebase, `ux-audit` audits a UI, and `funcspec`/`ui-issue-to-plan` _produce_ plans — `plan-review` is the only one that **audits a written plan or issue against the code**. It decomposes the artifact into tasks, **claims about the codebase**, assumptions, and acceptance criteria; **grounds** every referenced (and _implied_) component in this repo's real source via parallel `Explore` agents (`file:line`) — verifying each checkable claim and surfacing what the plan likely _missed_ (other callers of a changed API, a second implementation, an implied-but-absent migration or error state); then reviews across five lenses (**completeness, feasibility, risk, clarity, scope**), separating **gaps** (missing & needed) from **improvements** (better-with) from **errors** (code contradicts the plan), each severity-rated with an artifact quote _and_ a `file:line`. On `--depth deep` it adversarially refutes each finding before it survives. An **AskUserQuestion** interview then validates which gaps are real and in-scope and sets priority — so the report reflects your intent, not raw model suspicion. It writes a **read-only** review to `./reviews/` with a readiness verdict (🟢/🟡/🔴), a strengths section, severity-grouped findings, a color-coded gap & ambiguity register, open questions, and a "definition of ready" checklist — **never modifying the original**. It then _offers_ (doesn't assume) to apply the P0 fixes into a revised copy. Calibrated so a tight plan gets a short 🟢 review; degrades gracefully (`--no-ground` → document-only, feasibility findings flagged unconfirmed). Wiki-ingested when a vault exists.
 
+### When to Use the Edge-Cases Command
+
+The Edge-Cases command answers the question most reviews skip: **what happens at the boundaries?**
+Point it at a **plan** (spec, PRD, product brief, issue), a **feature** (a path, a symbol, or a
+description of something not built yet), or a **change set** (uncommitted, staged, a branch vs its
+base, a commit or a range). Run it with no target and it picks your uncommitted work.
+`scripts/resolve_target.py` detects the target deterministically, and a fingerprint stops a stale
+analysis from being resumed. It maps the target's **surface** first: entry points, inputs, the exact
+comparison operators behind every rule, states, persisted data, dependencies, existing tests, and for
+changes the callers of everything the diff touched. Cases come from that map, not from a generic list.
+Twelve **lenses** (input, state, timing, failure, actors, security, scale, environment, ux, domain,
+change, and combined conditions) each turn a checklist into concrete Given/When/Then scenarios. Every
+expected behavior is labeled by source: **spec** (quoted), **convention** (`file:line` where the code
+already does it), or **proposed**. Proposed behaviors that are product decisions go to a short
+AskUserQuestion interview, which runs *before* any verification so code is judged against agreed
+expectations, and they are never presented as requirements. For code, each case carries a
+current status (HANDLED / PARTIAL / UNHANDLED / UNKNOWN) with `file:line`, and for change sets whether
+the diff **introduced** it or it was **pre-existing**. Priority is computed from severity × likelihood
+by `scripts/check_cases.py`, which also enforces the case contract and renders the matrix, so it is
+never chosen by hand. Four **levels**: `quick` (no agents, top 12 cases), `standard` (parallel Explore
+mapping + one analyst per lens + interview), `deep` (skeptics try to refute every P0/P1 status,
+combined-condition cases, scenario walkthroughs, test skeletons in the repo's own idiom), and `prove`
+(after a gate question, the riskiest unhandled cases are run as throwaway probe tests with the repo's
+own runner: confirmed / not reproduced / inconclusive. Every probe is listed in a manifest before it is
+written and deleted before the run ends). Output: a report and a machine-readable case matrix in
+`./reviews/edge-cases/`. It never edits application code or the source document, and never commits.
+`scripts/tree_state.py` proves that with a content-hash snapshot taken before the run and compared
+after it, which also catches edits to files that were already dirty. The skill's own output is
+hidden from every git query, so one run's report never makes the next run's tree look dirty.
+A confirmed P0/P1 defect is named as a defect and offered as a fix-now follow-up, never filed as
+future work. Distinct from `plan-review` (is the plan complete and feasible?) and `ux-audit` (does the
+UI follow heuristics?). Ships with eval fixtures: a product brief and a coupon service with seven
+planted, verified edge-case defects.
+
 ### When to Use the Data-UI Craft Command
 
 The Data-UI Craft command operates on data-display surfaces across **three pillars** distilled from a dashboard-design teaching: **(1) data drives the form** (let each field's _type_ choose its representation — categorical → chips, numeric → right-aligned tabular figures with consistent precision/units, long text → truncate **with a reveal**, inactive records → shaded rows, time-sequenced data → a timeline/chart rather than a time-sorted table); **(2) the right things are hidden until needed** — the **spectrum of explicitness** places every control by _frequency × importance_ (always-visible → popover/menu → revealed on hover/swipe) and **progressive disclosure** sequences onboarding into a checklist/contextual tips instead of one feature-dump modal; **(3) invisible UI makes it all function** — tooltips on icon-only controls, click-to-copy chips, comment/annotation indicators, and the complete set of empty/loading/error/hover/focus states, implemented in-place (popover/drawer/inline) rather than as new pages. It is **stack-aware** (detects framework, styling primitive, data-grid library, and existing utilities so fixes match and nothing is duplicated) with **React + Tailwind** worked examples. In `audit` it writes a severity-rated report in **both** markdown and HTML (`./data-ui-craft-audit.{md,html}`), every finding carrying a rule ID (`DF*`/`PD*`/`IU*`), a `file:line`, user-impact phrasing, and a fix pointer. In `audit-and-implement` (default) an **AskUserQuestion** interview frames intent and confirms which findings are real and in-scope before any edit; it then applies in-place fixes (preferring column-def changes when a data layer exists) and offers a reusable **React/Tailwind primitives kit** (`src/components/data-ui/`: NumericCell, Chip, StatusChip, TruncatedText, DataRow, Popover, HoverActions, OnboardingChecklist, Tooltip, CopyChip, CommentIndicator, TableStates). The destructive step is always gated behind your explicit choice. It complements `ux-audit` (Nielsen/Norman heuristics) — this is the data-display craft layer — and pairs with `ui-issue-to-plan` (when the audit is driven by a screen recording). Wiki-logged when a vault exists.
@@ -170,36 +224,10 @@ The Data-UI Craft command operates on data-display surfaces across **three pilla
 
 The XState Refactor command takes a pointer at a slice of the app (file, directory, component name, or a description like "the checkout flow") whose state logic has outgrown its implementation — boolean-flag soup, `useEffect` orchestration, impossible-but-representable states — and migrates it onto **XState v5**. Its premise: the statechart already exists _implicitly_, so Phase 1 is archaeology, not invention — parallel `Explore` agents inventory every state variable and flag combination, every event/effect, and **every UI dependency** (conditional renders, disabled props, consumers outside the target) into a `file:line`-cited behavior map, honestly enumerating the impossible states the types allow. Phase 2 designs the statechart (flat machine vs hierarchical/parallel statechart vs actor system per a decision guide — including the credibility-preserving "don't use XState, use a reducer" recommendation for trivial targets), with a mermaid diagram, an impossible-states-eliminated table, and a draft **state↔UI coverage matrix** where every machine state must end up with a _decided_ visual answer (mapped UI, user-approved "intentionally invisible", or an explicit deferred gap). An **AskUserQuestion** interview validates every inferred state, behavioral divergence ("the code allows loading+error simultaneously — bug or intended?"), and UI-gap resolution, plus the deprecation appetite (delete / deprecate-then-delete / flag). The validated, self-contained migration plan goes to `./plans/`; **no application code is edited before the explicit approval gate**. On approval it implements in behavior-preserving order — XState v5 installed if missing, machine written in isolation with `setup()`, **deterministic tests green before UI wiring** (model-based path coverage via `createTestModel` from `xstate/graph` + guard-boundary unit tests + per-state UI coverage tests mirroring the matrix), UI swapped onto `useMachine`/`useSelector`/`state.matches`/`state.can` one touchpoint at a time — then retires the old state code behind a **grep-verified deprecation checklist** and runs the project's own typecheck/lint/tests. Complements the others: `ui-issue-to-plan` starts from a video, `plan-review` audits a document, `data-ui-craft` fixes display craft — this one restructures state **logic**. Wiki-ingested when a vault exists.
 
-### When to Use the Orchestrate Command
-
-The Orchestrate command turns the session model into a **hands-off
-engineering orchestrator** that never writes production code itself. Given a plan file it first
-**grounds** every `file:line` anchor and claim against current source via read-only agents (anchors
-are hints, not gospel), synthesizes a **work order** — waves of work items, each with an assigned
-model (Opus for contract-shaped/high-risk work and adversarial review, Sonnet for well-specified
-mechanical work and browser smoke-driving) and **exact file ownership** (one owner per file per
-wave; parallelism only when file sets are disjoint and no unpublished interface dependency exists)
-— and confirms it in one AskUserQuestion gate alongside the plan's open questions. Implementers
-receive verbatim packets (plan slice, corrected anchors, guardrails, structured return contract);
-after each wave the **orchestrator runs the gates itself** (typecheck/lint/tests discovered from
-the repo's own conventions) and routes exact failure output back to the owning agent (max 2
-round-trips, then it stops and reports). A Sonnet smoke agent then drives the running app
-(claude-in-chrome for UI) with evidence-backed pass/fail — including the **default-path
-compatibility invariant** when the plan introduces opt-in behavior — and a read-only Opus reviewer
-pressure-tests the diff's invariants (`--depth deep` adversarially verifies findings before they
-route back). Given a **raw prompt** instead of a plan, it drafts a plan, saves it per the project's
-plans convention, and gets confirmation first. Runs are **resumable**: state, work order, and
-verbatim agent reports persist under `.orchestrate/<slug>/`. It closes out per project conventions
-(wiki log when a vault exists) and reports faithfully — deviations, residual risks, failures
-included — without ever committing or pushing unprompted. Complements the others: `plan-review`
-critiques a plan without building it, `funcspec` produces one from a UI — `orchestrate` **executes**
-one through subagents.
-
 ### When to Use the Workstream-Orchestrate Command
 
-The Workstream-Orchestrate command is the **sequential, commit-as-you-go** sibling of `orchestrate`.
-Where `orchestrate` runs parallel implementation waves in one Agent-driven loop and never commits,
-this one drives a plan **one workstream at a time** through a bounded `code → validate → commit`
+The Workstream-Orchestrate command executes an implementation plan **sequentially, committing as it
+goes**. It drives a plan **one workstream at a time** through a bounded `code → validate → commit`
 **Workflow** (one Workflow invocation per workstream), and it **generates a first-class kickoff
 contract** — a 10-section, human-confirmed document (Mission, Reading list, Branch, Orchestration
 shape, Gates, Guardrails, Workstreams, Workflow skeleton, Stop-and-ask, Definition of done), derived
@@ -218,8 +246,8 @@ faithfully. Given a **raw task** instead of a plan, it drafts and confirms a pla
 **resumable** under `.workstream/<slug>/` (contract, per-agent reports, state); committed workstreams
 are skipped on resume. Degrades gracefully: no Workflow tool → the identical loop via direct Agent
 calls (`--engine agent`); no project `/commit` skill → a plain Conventional Commit via git;
-`--dry-run` → contract only. Complements the others: `orchestrate` executes a plan in parallel without
-committing, `plan-review` critiques a plan without building it — this one **generates a contract AND
+`--dry-run` → contract only. Complements the others: `plan-review` critiques a plan without building
+it, `funcspec` produces one from a UI — this one **generates a contract AND
 executes it sequentially, committing each validated workstream**. Wiki-ingested when a vault exists.
 
 ### When to Use the Agent-Loop Audit Command
@@ -388,7 +416,7 @@ measurement battery **in single view** (grid/split are for looking, not measurin
 the **divergence-from-current inventory** (Δ rows: Current at `path:line` → becomes → change class —
 the implementer's worklist), rejected directions, two verification tables (the winner's in
 wireframe-parity-consumable format), and offers — never auto-runs — the `interactive-wireframe`
-(fine-grained settlement) and orchestrate (build) handoffs. Shares the wireframe **reuse library**
+(fine-grained settlement) and workstream-orchestrate (build) handoffs. Shares the wireframe **reuse library**
 (`wireframes/_library/`, `_index.md` runs typed `wireframe`|`reimagine`); rejected variants' styles
 never harvest. Distinct from `ux-audit` (what's wrong) and `impeccable`/design skills (write real
 code): this shows **what it could become**, and **writes no production code.**
@@ -659,7 +687,7 @@ the chain gate by gate — brainstormed intent, skill-constrained spec with flag
 an uninvolved engineer could implement alone, failing-test-first builds with the plan kept in sync,
 and a review-ready close — where a rejected intent is a successful (cheap) outcome. Composes with
 the rest of the plugin: `spec-elicitation` can power the spec gate, `plan-review` the plan gate,
-`orchestrate`/`workstream-orchestrate` the build. Distinct from `/agentnative:suite`, which makes
+`workstream-orchestrate` the build. Distinct from `/agentnative:suite`, which makes
 the repo a good place for agents to **work** (fast CI, hermetic deploys, evidence) — this one
 transforms the **process**: who approves what, which artifact fires which stage, where human
 judgment concentrates. Wiki-ingested when a vault exists.

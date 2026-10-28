@@ -1,6 +1,6 @@
 {
   "name": "bespoke-agentics",
-  "version": "2.12.0",
+  "version": "2.13.0",
   "description": "AI transparency auditing, agent architecture generation, progressive-disclosure context layering for large codebases, UX evaluation, code-grounded interactive wireframing, Pi harness customization, video-to-deliverables pipelines, workflow analysis, Biome AI guardrails with brownfield type-debt ratchets, the Agent-Native Engineering suite (fast CI, label-triggered agents, chore crons, agent evidence, hermetic deploys, simulation data), a queryable project database (SQLite + Cloudflare D1) that gives agents guarded SQL over the wiki, and an enforceable dot-notated ontology (controlled vocabulary with a write-hook ratchet and a human approval gate) over the wiki, the database and the agent context — for Claude Code",
   "author": {
     "name": "Bespoke Agentics"
@@ -63,14 +63,7 @@
     "state-refactor",
     "model-based-testing",
     "ui-state-coverage",
-    "orchestrator",
     "multi-agent",
-    "plan-execution",
-    "model-routing",
-    "subagent-delegation",
-    "verification-gates",
-    "smoke-testing",
-    "fable",
     "agent-loop-audit",
     "event-loop",
     "managed-agents",
@@ -271,5 +264,21 @@
     "change-receipt",
     "maturity-levels",
     "guide-and-check"
+,
+    "edge-cases",
+    "edge-case-analysis",
+    "boundary-conditions",
+    "scenario-analysis",
+    "expected-behavior",
+    "failure-modes",
+    "change-impact",
+    "probe-tests",
+    "test-scenarios",
+    "pi-durable",
+    "harness-app",
+    "durable-objects",
+    "crash-recovery",
+    "effect",
+    "cloudflare"
   ]
 }

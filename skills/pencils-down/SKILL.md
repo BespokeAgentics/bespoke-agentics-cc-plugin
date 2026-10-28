@@ -271,8 +271,8 @@ nothing is posted by this skill or by the agent, ever.
 - Point the user at `<out>/pencils-down-plan.md` and list the other files once.
 - Say in one line what the arithmetic concluded: fits / fit after N moves / does not fit at any
   disposition, in which case the date is wrong and the plan says so.
-- Offer, do not perform: execution via `/bespoke-agentics:orchestrate` or
-  `/bespoke-agentics:workstream-orchestrate` with this plan as input;
+- Offer, do not perform: execution via `/bespoke-agentics:workstream-orchestrate` with this
+  plan as input;
   `/bespoke-agentics:dead-code-sweep` after the Cuts land; `/bespoke-agentics:delivery-recap` on
   ship day; wiki ingestion per the project's Wiki-First Mandate when a vault exists.
 - Leave `<out>/state.json` in place for `--resume`.

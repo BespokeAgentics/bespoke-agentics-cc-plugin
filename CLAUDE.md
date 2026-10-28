@@ -145,6 +145,14 @@ Unlike `video-to-deliverables`/`workflow-analyzer`, it grounds each on-screen co
 
 Audits a written plan against the code before build (`repo-audit` audits code, `ux-audit` a UI); never modifies the original.
 
+### When to Use the Edge-Cases Command
+
+| Situation                                                                                                                                                        | Command                                                                                                                                                                                                                    |
+| ---------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Enumerate the edge cases and scenarios of a feature, a plan/brief, or recent code changes — each with its expected behavior and, for code, whether it is handled | `/bespoke-agentics:edge-cases ['<target>'] [--level quick\|standard\|deep\|prove] [--target feature\|plan\|changes\|auto] [--base <ref>] [--lenses <ids>] [--focus '<text>'] [--out <dir>] [--no-ground] [--no-interview]` |
+
+Asks what happens at the boundaries (`plan-review` asks whether the plan is complete); `prove` runs throwaway probe tests and removes them. Read-only, never commits.
+
 ### When to Use the Data-UI Craft Command
 
 | Situation                                                                                                                                     | Command                                                                                |
@@ -159,21 +167,13 @@ The data-display craft layer; `ux-audit` covers general Nielsen/Norman heuristic
 | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | Refactor a feature's ad-hoc state logic + UI into an explicit XState v5 machine, statechart, or actor system — with a validated plan, full state↔UI coverage, deterministic tests, and deprecation of the old code | `/bespoke-agentics:xstate-refactor '<target>' [--mode plan\|implement\|full] [--style machine\|statechart\|actors\|auto] [--out <dir>] [--no-tests] [--force]` |
 
-### When to Use the Orchestrate Command
-
-| Situation                                                                                                                                                                   | Command                                                                                                                                                                              |
-| --------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| Execute an implementation plan (or a raw task) through a managed, gated, multi-agent build — the session model orchestrates, Opus/Sonnet subagents implement and smoke-test | `/bespoke-agentics:orchestrate '<plan-path-or-task>' [--depth quick\|standard\|deep] [--dry-run] [--no-confirm] [--no-smoke] [--no-review] [--single-model <m>] [--resume [<slug>]]` |
-
-Parallel waves, never commits; `workstream-orchestrate` is the sequential, commit-per-workstream sibling.
-
 ### When to Use the Workstream-Orchestrate Command
 
 | Situation                                                                                                                                                                                    | Command                                                                                                                                                                                                     |
 | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | Turn a plan into a kickoff contract, then build it one workstream at a time — each `code → validate → commit`, with a server-side hard-gate proof and a human checkpoint between workstreams | `/bespoke-agentics:workstream-orchestrate '<plan-path-or-task>' [--from WS-n] [--to WS-m] [--engine workflow\|agent] [--attempts N] [--no-commit] [--no-confirm] [--dry-run] [--resume [<slug>]] [--force]` |
 
-Sequential sibling of `orchestrate`: one Conventional Commit per validated workstream, with a human checkpoint between.
+Sequential plan execution: one Conventional Commit per validated workstream (`--no-commit` to skip), with a human checkpoint between.
 
 ### When to Use the Agent-Loop Audit Command
 
@@ -253,7 +253,7 @@ User-invoked only; corrects a wrong inference and the source that seeded it. Nev
 | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | A project needs a fixed date after which building stops and shipping starts — decide what to finish, disable, cut or defer, prepare the repo and docs for go-live, and draft the launch outreach | `/bespoke-agentics:pencils-down ['<project-path>'] [--target <date>] [--ship <date>] [--out <dir>] [--window <n>d] [--channels <a,b>] [--no-outreach] [--resume]` |
 
-Writes only under `./plans/pencils-down/`; `orchestrate`/`workstream-orchestrate` execute the plan, `delivery-recap` reports the ship. Never commits, never posts.
+Writes only under `./plans/pencils-down/`; `workstream-orchestrate` executes the plan, `delivery-recap` reports the ship. Never commits, never posts.
 
 ### When to Use the Graph-Harness Command
 
@@ -408,6 +408,7 @@ Evidence, the probes that settled the undocumented mechanics, and what is not ve
     │  ├─ micro-interactions/         # App flows → motion vocabulary + 25–40 grounded micro-interaction ideas → one playable HTML prototype (shared runtime, walkthrough, impact/effort)
     │  ├─ wireframe-parity/           # Built UI vs the wireframe that specified it → read-only parity report (structural + measured)
     │  ├─ plan-review/                # Plan/spec/issue → read-only, code-grounded gap review
+    │  ├─ edge-cases/                 # Feature / plan / change set → lens-based edge-case matrix with expected behavior; levels quick|standard|deep|prove (probe tests)
     │  ├─ data-ui-craft/              # Data-dense UI audit + fixes + React/Tailwind primitives kit
     │  ├─ xstate-refactor/            # Feature state logic + UI → XState v5 machine/statechart/actors
     │  ├─ dead-code-sweep/            # Post-session dead-code cleanup: diff-seeded, gated waves, tiered confirmation, regression-proofed
@@ -416,7 +417,6 @@ Evidence, the probes that settled the undocumented mechanics, and what is not ve
     │  ├─ pencils-down/              # Project → fixed pencils-down date: feature ledger, Finish/Trim/Disable/Cut/Defer dispositions, calendar arithmetic, go-live checklist, outreach brief → community-outreach agent
     │  ├─ misunderstanding/           # Wrong inference → source-quoted inference ledger → targeted interview → source correction + work disposition (user-invoked)
     │  ├─ skill-reverse-engineer/     # Target skill → determinism audit (DS/TP/CT/VF/AM/RB/KM + host grounding) → gated refactor or hardened new version
-    │  ├─ orchestrate/                # Plan/task → gated multi-agent implementation (session model orchestrates, Opus/Sonnet implement)
     │  ├─ workstream-orchestrate/     # Plan → kickoff contract → sequential per-WS code→validate→commit (Workflow) + hard-gate proofs
     │  ├─ microdots-port-prototype/   # Claude Design prototype → extracted source → inferred + validated MicroDots build plan
     │  ├─ microdots-port-app/         # Whole app → MicroDots framework port (composition proposal, gated waves)

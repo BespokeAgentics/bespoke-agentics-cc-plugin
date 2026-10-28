@@ -1,0 +1,319 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "edge-cases/1",
+  "title": "Edge-case matrix",
+  "description": "Contract for cases.json. scripts/check_cases.py enforces this plus the cross-field rules it cannot express (priority matrix, evidence by status, level limits). Keep the two in step.",
+  "type": "object",
+  "required": [
+    "schema",
+    "target",
+    "lenses",
+    "cases"
+  ],
+  "properties": {
+    "schema": {
+      "const": "edge-cases/1"
+    },
+    "target": {
+      "type": "object",
+      "required": [
+        "kind",
+        "spec",
+        "slug",
+        "level",
+        "grounded",
+        "built"
+      ],
+      "properties": {
+        "kind": {
+          "enum": [
+            "plan",
+            "feature",
+            "changes"
+          ]
+        },
+        "spec": {
+          "type": "string",
+          "minLength": 1
+        },
+        "slug": {
+          "type": "string",
+          "pattern": "^[a-z0-9][a-z0-9-]*$"
+        },
+        "level": {
+          "enum": [
+            "quick",
+            "standard",
+            "deep",
+            "prove"
+          ]
+        },
+        "grounded": {
+          "type": "boolean"
+        },
+        "built": {
+          "type": [
+            "boolean",
+            "null"
+          ]
+        },
+        "degraded_from": {
+          "const": "prove"
+        },
+        "degraded_reason": {
+          "type": "string",
+          "minLength": 1
+        }
+      }
+    },
+    "lenses": {
+      "type": "object",
+      "required": [
+        "applied",
+        "skipped"
+      ],
+      "properties": {
+        "applied": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/firstPassLens"
+          }
+        },
+        "skipped": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": [
+              "id",
+              "reason"
+            ],
+            "properties": {
+              "id": {
+                "$ref": "#/$defs/lens"
+              },
+              "reason": {
+                "type": "string",
+                "minLength": 1
+              }
+            }
+          }
+        }
+      }
+    },
+    "trimmed": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "cases": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/case"
+      }
+    },
+    "dismissed": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "id",
+          "title",
+          "reason"
+        ],
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "title": {
+            "type": "string"
+          },
+          "reason": {
+            "type": "string",
+            "minLength": 1
+          }
+        }
+      }
+    },
+    "dropped": {
+      "type": "integer",
+      "minimum": 0,
+      "description": "cases dropped as filler in consolidation"
+    }
+  },
+  "$defs": {
+    "lens": {
+      "enum": [
+        "input",
+        "state",
+        "timing",
+        "failure",
+        "actors",
+        "security",
+        "scale",
+        "environment",
+        "ux",
+        "domain",
+        "change",
+        "interaction"
+      ]
+    },
+    "case": {
+      "type": "object",
+      "required": [
+        "id",
+        "lens",
+        "title",
+        "given",
+        "when",
+        "then",
+        "expected_source",
+        "expected_evidence",
+        "current_status",
+        "current_evidence",
+        "verification",
+        "severity",
+        "likelihood",
+        "stems_from",
+        "test_idea"
+      ],
+      "properties": {
+        "id": {
+          "type": "string",
+          "pattern": "^EC-[0-9]{2,}$"
+        },
+        "lens": {
+          "$ref": "#/$defs/lens"
+        },
+        "title": {
+          "type": "string",
+          "minLength": 1
+        },
+        "given": {
+          "type": "string",
+          "minLength": 1
+        },
+        "when": {
+          "type": "string",
+          "minLength": 1
+        },
+        "then": {
+          "type": "string",
+          "minLength": 1
+        },
+        "expected_source": {
+          "enum": [
+            "spec",
+            "convention",
+            "proposed"
+          ]
+        },
+        "expected_evidence": {
+          "type": "string",
+          "minLength": 1
+        },
+        "decision": {
+          "enum": [
+            null,
+            "uncontested",
+            "needed",
+            "decided",
+            "open"
+          ]
+        },
+        "decision_note": {
+          "type": "string"
+        },
+        "current_status": {
+          "enum": [
+            "HANDLED",
+            "PARTIAL",
+            "UNHANDLED",
+            "UNKNOWN",
+            "N/A"
+          ]
+        },
+        "current_evidence": {
+          "type": "string"
+        },
+        "verification": {
+          "enum": [
+            "as-read",
+            "upheld",
+            "overturned",
+            "probe-confirmed",
+            "probe-not-reproduced",
+            "probe-inconclusive",
+            "n/a"
+          ]
+        },
+        "severity": {
+          "enum": [
+            "critical",
+            "high",
+            "medium",
+            "low"
+          ]
+        },
+        "likelihood": {
+          "enum": [
+            "likely",
+            "possible",
+            "rare"
+          ]
+        },
+        "priority": {
+          "enum": [
+            null,
+            "P0",
+            "P1",
+            "P2",
+            "P3"
+          ]
+        },
+        "stems_from": {
+          "type": "string",
+          "minLength": 1
+        },
+        "test_idea": {
+          "type": "string",
+          "minLength": 1
+        },
+        "origin": {
+          "enum": [
+            null,
+            "introduced",
+            "pre-existing"
+          ]
+        },
+        "related": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "alternatives": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          },
+          "description": "other behaviors a product could choose; for proposed cases"
+        }
+      }
+    },
+    "firstPassLens": {
+      "enum": [
+        "input",
+        "state",
+        "timing",
+        "failure",
+        "actors",
+        "security",
+        "scale",
+        "environment",
+        "ux",
+        "domain",
+        "change"
+      ]
+    }
+  }
+}

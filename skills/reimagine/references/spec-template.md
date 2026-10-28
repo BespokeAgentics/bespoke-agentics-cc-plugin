@@ -115,8 +115,8 @@ spot-check result on the winner.>
 - **Fine-grained settlement:** `/bespoke-agentics:interactive-wireframe
   '<surface>' --slug <slug>` — the winner becomes the surface under discussion;
   this spec's Decisions carry in via the ledger. Offer, don't assume.
-- **Build:** `/bespoke-agentics:orchestrate` or workstream-orchestrate, with
-  this spec (the Δ inventory is the work breakdown).
+- **Build:** `/bespoke-agentics:workstream-orchestrate`, with this spec (the
+  Δ inventory is the work breakdown).
 
 ## References
 

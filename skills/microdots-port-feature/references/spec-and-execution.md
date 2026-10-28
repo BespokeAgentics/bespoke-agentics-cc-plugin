@@ -61,8 +61,9 @@ One AskUserQuestion:
 - Confirm the micro name (lower-kebab; the generator rejects anything else).
 - How far: **full implementation** · **scaffold only** · **stop at the spec**.
 - For a large port (the disposition table runs long, the source feature is
-  thousands of lines), offer the orchestrate handoff as an explicit option —
-  the spec plus the port map is exactly the plan a multi-agent build consumes,
+  thousands of lines), offer the workstream-orchestrate handoff (with
+  `--no-commit`) as an explicit option — the spec plus the port map is exactly
+  the plan a multi-agent build consumes,
   and grinding a huge port inline is a worse use of the session than
   orchestrating it.
 

@@ -1,6 +1,6 @@
 ---
 name: workstream-orchestrate
-description: "Generate a per-project kickoff/orchestration contract from an implementation plan, then drive its execution as a strictly-sequential, per-workstream `code → validate → commit` loop using the Workflow tool (one bounded Workflow per workstream) — with an independent adversarial validator that must prove the plan's declared server-side 'hard gates', a Conventional Commit per green workstream, and a human checkpoint between workstreams. Use whenever the user says 'orchestrate this plan workstream by workstream', 'build WS-0 through WS-6 one at a time', 'run the code→validate→commit loop for this plan', 'generate a kickoff contract from this plan', 'commit each workstream as it passes', 'drive this plan with one Workflow per workstream', 'gated sequential multi-agent build', or hands over a plan carrying numbered workstreams / locked decisions / a hard gate and asks for a managed, commit-as-you-go implementation. Given a raw task instead of a plan, it drafts and confirms a plan first. The driver NEVER writes production code — it grounds the plan, authors the contract, delegates each workstream's code/validate/commit to subagents, runs the gates itself, and reports faithfully. Distinct from `orchestrate` (which runs PARALLEL waves in one Agent-driven loop and never commits), `plan-review` (which critiques a plan without building it), and `funcspec` (which produces a plan from a UI): this one generates a kickoff contract AND executes it sequentially, committing each validated workstream."
+description: "Generate a per-project kickoff/orchestration contract from an implementation plan, then drive its execution as a strictly-sequential, per-workstream `code → validate → commit` loop using the Workflow tool (one bounded Workflow per workstream) — with an independent adversarial validator that must prove the plan's declared server-side 'hard gates', a Conventional Commit per green workstream, and a human checkpoint between workstreams. Use whenever the user says 'orchestrate this plan workstream by workstream', 'build WS-0 through WS-6 one at a time', 'run the code→validate→commit loop for this plan', 'generate a kickoff contract from this plan', 'commit each workstream as it passes', 'drive this plan with one Workflow per workstream', 'gated sequential multi-agent build', or hands over a plan carrying numbered workstreams / locked decisions / a hard gate and asks for a managed, commit-as-you-go implementation. Given a raw task instead of a plan, it drafts and confirms a plan first. The driver NEVER writes production code — it grounds the plan, authors the contract, delegates each workstream's code/validate/commit to subagents, runs the gates itself, and reports faithfully. Distinct from `plan-review` (which critiques a plan without building it), and `funcspec` (which produces a plan from a UI): this one generates a kickoff contract AND executes it sequentially, committing each validated workstream."
 argument-hint: "'<plan-path-or-task>' [--from WS-n] [--to WS-m] [--engine workflow|agent] [--attempts N] [--no-commit] [--no-confirm] [--dry-run] [--resume [<slug>]] [--force]"
 disable-model-invocation: true
 ---
@@ -20,17 +20,16 @@ Four things make this skill valuable:
   drift starts.
 - **Sequential and gated.** Workstreams are strictly ordered: WS-(n+1) begins only after WS-n is
   committed and green. No parallel waves, no worktrees — each workstream builds on the previous one in
-  the same working tree, so the ground never shifts under a running agent. This is the deliberate
-  inverse of `orchestrate`'s parallelism: you trade throughput for a clean, bisectable history and a
-  human checkpoint between steps.
+  the same working tree, so the ground never shifts under a running agent. You trade throughput
+  for a clean, bisectable history and a human checkpoint between steps.
 - **Adversarial validation + hard-gate proofs.** After the code phase, a separate read-only agent
   re-runs the gates and actively tries to break the change. Above all it must **prove or refute the
   plan's declared "hard gates"** — invariants that must hold at the authoritative layer (server-side
   resolution, not client CSS). A refuted hard gate fails the workstream. Attacking your own
   conclusion before committing is the point, not a formality.
 - **A commit per validated workstream.** Each green workstream earns exactly one Conventional Commit,
-  staging only its files. This is the single place you depart from `orchestrate`'s never-commit
-  stance — and it is authorized by the contract the human confirmed, nothing more.
+  staging only its files. The commit is authorized by the contract the human confirmed, nothing
+  more.
 
 You are a disciplined build lead, not a cowboy and not a bureaucrat: you don't skip the validate
 phase because the change "looks fine", and you don't manufacture workstreams or ceremony that a

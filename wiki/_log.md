@@ -677,3 +677,105 @@ Release:
       outside the plugin repo.
   - The example rebuilt clean and was checked at 1440 and 390 px. All CI gates pass again.
 - **Not verified:** a full run of the skill by a fresh agent on a third app.
+
+## 2026-10-19 — skill removed — orchestrate (shipped in v2.13.0 / Codex v2.2.0)
+
+Removed `skills/orchestrate/` (SKILL.md + `references/`) at the user's request. Claude Code and
+Codex both load from the one `skills/` directory (`.codex-plugin/plugin.json` → `"skills":
+"./skills/"`), so the one deletion removes it from both.
+
+- **Handoffs repointed** to `workstream-orchestrate`, the remaining plan executor:
+  - `microdots-port-app` and `microdots-port-feature` (SKILL.md + `spec-and-execution.md`) load it
+    with `--no-commit`, because both promise that nothing is committed.
+  - `ai-native-sdlc`, `reimagine` (+ spec template) and `pencils-down` offer only it.
+  - `flow-dissonance` offers only `ui-issue-to-plan`.
+- **`workstream-orchestrate`** no longer defines itself against `orchestrate` (description,
+  principles, `workstream-loop.md`). The trigger eval that says parallel waves should not trigger it
+  is still correct and stays.
+- **Docs**: CLAUDE.md (command table, plugin tree, pencils-down line) and README (section and three
+  cross-references).
+- **Manifests**: seven keywords only orchestrate used were removed from `.claude-plugin`. The
+  Claude version landed at 2.13.0 and Codex at 2.2.0 (Codex caches by version, and its 2.0.0 cache
+  was stale: 71 skills vs 77). `graph-harness` shipped from a separate branch as 2.12.0 in the same
+  window, so this removal rode the next release rather than taking that number.
+- **Installed caches**: deleted `skills/orchestrate/` from the Codex 2.0.0 cache and the Claude
+  2.9.0/2.10.0/2.11.0 caches.
+- **Left as-is**: references in `reviews/`, `docs/plans/` and earlier log entries are history.
+- **CI gates**: invocation policy (74 skills at removal time) + tamper tests, marketplace validation
+  + tamper tests, and hook timeouts all pass.
+- **Not verified**: a fresh Codex or Claude session listing skills after reinstall.
+
+## 2026-10-20 — skill added — edge-cases (v2.13.0 / Codex v2.2.0, uncommitted)
+
+New skill `skills/edge-cases/`, invoked as `/bespoke-agentics:edge-cases`. It lists the edge cases and
+scenarios of a feature, a plan or product brief, or a change set. Each case has a concrete
+Given/When/Then, a source-labeled expected behavior (`spec` / `convention` / `proposed`), and for code
+a current status (HANDLED / PARTIAL / UNHANDLED / UNKNOWN) with `file:line`.
+
+- **Levels**: `quick` (main session only, top 12 cases), `standard` (Explore surface map, one analyst
+  per lens, decision interview), `deep` (skeptics attack every P0/P1 status, combined-condition
+  cases, walkthroughs, test skeletons), `prove` (gated throwaway probe tests run with the repo's own
+  runner, listed in a manifest before writing and deleted before the run ends). `prove` degrades to
+  `deep` for plans, unbuilt features, or no discoverable runner.
+- **Determinism**: `scripts/resolve_target.py` detects the target with a fixed 12-rule order and
+  fingerprints it, so a stale analysis is never resumed. `scripts/check_cases.py` enforces the case
+  contract (`assets/templates/case.schema.json`), computes priority from severity × likelihood, trims
+  `quick` to 12, and renders the matrix. With `--repo`, it rejects any cited `file:line` whose file is
+  missing or whose line is past the end, so "never fabricate a location" is enforced, not just stated.
+  `scripts/test_scripts.py` (count below). Writing them caught resolver bugs before release (`built:
+  null` dropped from output; macOS `/var` → `/private/var` broke relative paths), and the fixture
+  smoke run showed that line ranges were being truncated.
+- **Changes targets** carry `origin: introduced | pre-existing`. Pre-existing defects are still
+  reported in full.
+- **Evals**: 9 cases over two fixtures: a gift-card product brief, and `coupon-service` (git repo +
+  uncommitted fixed-amount-coupon change). The latter has seven planted edge cases; each was
+  reproduced under node with `TZ=America/New_York` before the evals were written.
+- **Docs**: CLAUDE.md (command table, plugin tree) and README (skill table row and section).
+  Manifests: `.claude-plugin` 2.12.0 → 2.13.0 (+9 keywords). `.codex-plugin` 2.1.0 → 2.2.0, because
+  Codex caches by version.
+- **Defect fixed in passing**: four `.pyc` files (`skills/pi-assistant/scripts/__pycache__/`,
+  `skills/session-hooks/templates/__pycache__/`) were tracked despite `.gitignore` and shipped in every
+  install. Untracked with `git rm --cached` (staged). New check C6 in `scripts/validate-marketplace.py`
+  fails a local source that tracks bytecode; its tamper test is case 12 in
+  `scripts/test-validate-marketplace.py`.
+- **Independent review (plugin-dev skill-reviewer) found 30 issues; all fixed:**
+  - *Critical:* the skill's own output (`.edge-cases/`, `reviews/edge-cases/`) made a clean tree look
+    dirty and changed the `uncommitted` fingerprint on every run. Now every git query in
+    `resolve_target.py` excludes it (`--exclude` for custom paths), and pre-flight writes
+    `.edge-cases/.gitignore`.
+  - *Critical:* the interview ran after verification and probes, so decisions rewrote expectations
+    that had already been verified. Phases are now 0 Surface → 1 Generate → 2 Consolidate → 3 Decide
+    → 4 Verify → 5 Probe → 6 Report.
+  - *Read-only proof:* `git status --porcelain` cannot see a second edit to an already-dirty file, so
+    a new `scripts/tree_state.py` compares content hashes.
+  - *Contract and wording:* only agreed expectations can make a "defect" (`defects_p0_p1`,
+    `verified_defects_p0_p1`) or be probed; skeptics run in waves until every P0/P1 status is covered;
+    `built` is settled in pre-flight; the wiki ingest command form is corrected; plan slugs use two path
+    parts; `diff_cmd` uses full shas (the abbreviated empty-tree hash did not resolve); the symbol
+    search skips documents; checker/schema drift is removed.
+  - Tests are now 54.
+- **Not verified**: a full end-to-end run of the skill by a fresh agent on either fixture.
+
+## 2026-10-20 — skill added — pi-durable-harness-app (v2.13.0, uncommitted)
+
+New skill `skills/pi-durable-harness-app/`, invoked as `/bespoke-agentics:pi-durable-harness-app`.
+Two modes over one Step 0: **bootstrap** a minimal pi-durable Harness app (Bun host, Effect domain,
+FoldKit client, optional one-SQLite-Durable-Object-per-session Cloudflare Worker, plus tests that
+include a `kill -9` crash-recovery check), or **audit** a project's durability and its use of
+pi-durable tasks, tools, hooks and docs.
+
+- **Version-first grounding**: pi-durable is experimental, so Step 0 reads the installed
+  `dist/**/*.d.ts` and probes for `sleepUntil`, `onWake`, `restartLimit`, `retryTask` and the
+  `onReport` arity, then names the feature gaps for that version instead of generating code that
+  will not compile. The generated tree was built and checked against Bun 1.4.2, pi-durable 1.3.0,
+  effect 4.0.0, foldkit 0.168.0 (typecheck, `bun test`, `vite build`, `crash-test`,
+  `wrangler deploy --dry-run`, `wrangler dev`).
+- **Bootstrap** carries the whole template inline (`template/` is not read at runtime — the SKILL.md
+  embeds every file), verifies in a fixed order and stops at the first failure.
+- **Audit** reports findings plus an explicit "not checked" section.
+- **Docs added in the same change** because the skill arrived undocumented: README skill-table row,
+  a `### pi-durable Harness Apps` section, and six `.claude-plugin` keywords (`pi-durable`,
+  `harness-app`, `durable-objects`, `crash-recovery`, `effect`, `cloudflare`). No CLAUDE.md edit:
+  its plugin tree is a highlights list (`pi-assistant` is absent from it too).
+- **Not verified**: a full run of either mode by a fresh agent, and the Cloudflare paths against a
+  real account (only `--dry-run` and local `wrangler dev` were exercised upstream).
