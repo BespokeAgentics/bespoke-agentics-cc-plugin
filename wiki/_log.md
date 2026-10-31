@@ -779,3 +779,89 @@ pi-durable tasks, tools, hooks and docs.
   its plugin tree is a highlights list (`pi-assistant` is absent from it too).
 - **Not verified**: a full run of either mode by a fresh agent, and the Cloudflare paths against a
   real account (only `--dry-run` and local `wrangler dev` were exercised upstream).
+
+## 2026-10-30 — fix — MicroDots skills stop misdescribing the npm packages (v2.13.1 / Codex v2.2.1, uncommitted)
+
+Source: the 2026-10-30 review in the MicroDots repo
+(`wiki/plans/active/framework-frictions-agent-inbox.md` § Review, §1, §2, §9). Each claim below was
+checked against the published tarballs (`create-microdots-host@0.3.1-readme.1`,
+`microdots-runtime@0.1.1`, `0.2.0`, `0.2.1-readme.1`) and a scaffold run in a scratch directory.
+
+- **`microdots-port-app/references/standalone-scaffold.md` rewritten.**
+  - Removed: the claim that the `@bespokeagentics` packages are private and that E404/E403 means
+    missing auth. All eight are public; an anonymous registry GET returns 200 for each.
+  - Removed: a hand-typed dependency table. It pinned `^0.1.0`, which resolves to the 0.1.x line
+    whose runtime peers are `effect` rc.108. It also listed TypeScript 5.x (the template uses ^7)
+    and `@effect/platform-browser` (the template has none), set `types: ["node"]` (the template
+    uses `["bun","node","vite/client"]`), and omitted both `@types/bun` and `overrides`.
+  - Step one is now `bunx @bespokeagentics/create-microdots-host <dir> --css <plain|tailwind> --yes`.
+    It is left unversioned so the skill is not a third source of versions.
+  - Added the rule to keep the generated `package.json` verbatim, `overrides` included. Without
+    it, `@effect/platform-node-shared` resolved to 4.1.0: install, `bun run check` and
+    `bun run build` stayed green, and booting a service died with
+    `Cannot find module 'effect/process/ChildProcess' from …/@effect/platform-node-shared/dist/NodeChildProcessSpawner.js`.
+    With `overrides`, the same service listened on :3202.
+  - Added: what the generator does not do; how a target holding only the dossier gets past the
+    generator's empty-directory refusal; and the CORS rule that an explicit `allowedOrigins`
+    replaces `MICRODOT_ORIGINS`. Probed: a :5173 preflight to the :5190-only pulse service
+    returned 204 with no allow-origin header.
+  - The hand-roll layout is replaced by an appendix headed "only if the generator fails". It
+    replays the generator's own `scaffold()` steps from `npm pack`, with no frozen versions.
+- **`microdots-port-app/SKILL.md`**:
+  - The description named an `@microdots` npm scope, which does not exist.
+  - The Phase 0 preflight, the Phase 7 standalone step, the degradation row and the reference
+    row now follow the generator.
+- **`microdots-deploy/SKILL.md`**:
+  - `microAppCors` → `microDotCors`, which the runtime exports (`src/cors.ts:94` in 0.2.0 and
+    0.2.1-readme.1). `microAppCors` was retired upstream with the "MicroApp" name.
+  - The emergency table's `apps/host/dist` → `<host-dir>/dist`, with the generated workspace's
+    bundle location named.
+- **`microdots-debug-blank/SKILL.md`**:
+  - The CORS step grepped `packages/*runtime*/src/cors.ts`, which a generated workspace lacks. It
+    now covers both cases: a per-service `allowedOrigins` (every generated dot, 4 of 24
+    framework dots) and the framework-only default list.
+  - Host, bundle and port lookups and the topology hint work for the framework repo, older
+    checkouts and generated workspaces.
+- **Collateral defect, same class: `apps/host` no longer exists in the MicroDots repo.** The host
+    moved to `apps/pitch-deck-website/host`.
+  - `microdots-new-micro`, `-verify`, `-debug-blank` and `-deploy` now resolve `<host-dir>`.
+  - `microdots-new-micro` also had two stale host claims. Topology is now fetched at runtime,
+    and an unplaced tag shows a notice instead of throwing (`routes.ts` in that host).
+  - `microdots-new-micro` gains two step 0 rows. A generated workspace adds a dot by its README.
+    No workspace at all goes to the generator first.
+- **Left as true**:
+  - `@microdots/element` in the verify and debug-blank detection tables names a real
+    pre-rename workspace package.
+  - `@microdots/<name>/contract` is the framework repo's tsconfig alias.
+  - The `microAppCors` stub in the `microdots-port-feature` eval fixture belongs to that
+    fixture's own `@kit/effect`.
+- **Review of these edits (same day), nine findings, all applied.** Each was re-checked against
+  `create-microdots-host@0.3.1-readme.1` templates and `microdots-runtime@0.2.0` /
+  `0.2.1-readme.1` source before editing.
+  - `standalone-scaffold.md` claimed every version is exact. Only `dependencies`, `overrides` and
+    the `microdots-vite-plugin` devDependency are; the other devDependencies are caret ranges
+    (`templates/plain/package.json:29-37`). Both are now "keep as generated".
+  - Standalone Phase 0 accepted "any directory (existing or new)", but the generator refuses any
+    non-empty target, dotfiles included (`assertSafeTarget`, `src/index.ts:164-170`), and that
+    surfaced only at Phase 7. The preflight in `port-app/SKILL.md`, `standalone-scaffold.md` and
+    `port-prototype/SKILL.md` now runs `ls -A <target>`: absent, empty or `docs/`-only, else ask for
+    another directory before Phase 1. `port-app` gains a degradation row for it.
+  - CORS: `debug-blank` and `standalone-scaffold.md` described only `allowedOrigins` and
+    `MICRODOT_ORIGINS`. A `makeMicroDotWorker` entry reads the `MICRODOT_ALLOWED_ORIGINS` binding,
+    else `fallbackOrigins`, and with neither denies every origin (runtime 0.2.0 `src/worker.ts`
+    `makeMicroDotWorker`, `src/cors.ts` `readAllowedOrigins`). Added as a third case, the deploy
+    bullet now names it, and "both spellings" is scoped to local origins.
+  - Standalone grounding checked exports "at the published version". The template pins runtime
+    0.2.0 (6 entry points) while `latest` is 0.2.1-readme.1 (13, adding `/llm`, `/rest`, …).
+    `composition-and-port-map.md` §2 and `port-app/SKILL.md` Phase 3 now read the template's pins.
+  - Adding a dot from a worked dot missed two hard-coded literals: the tag in `src/surface.ts`
+    (`bun run build` fails in `assertSurfaceTagsMatch`) and the wire test in
+    `host/src/topology.test.ts` (asserts exactly one scope-to-pulse wire). Both are now steps in
+    `standalone-scaffold.md`, and `new-micro`'s generated-workspace row names them with the
+    `service/main.ts` port and `allowedOrigins`.
+  - The "only `./contract` leaves the directory" invariant, dropped with the old layout block, is
+    restored as checklist item 10.
+- **Not verified**: a fresh agent running `microdots-port-app` in standalone mode end to end. The
+    quickstart URL (https://microdots.cloud/docs/quickstart) returned 404 on 2026-10-30, because
+    the apex still serves the in-build page. The skill says so and falls back to the generator's
+    npm README.

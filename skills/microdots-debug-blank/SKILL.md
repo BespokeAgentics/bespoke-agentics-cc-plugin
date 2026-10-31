@@ -18,17 +18,18 @@ wrong.
 Derive these once; do not carry numbers or paths over from another workspace.
 
 ```bash
-ls -d microdots micros apps/host packages wiki 2>/dev/null
+ls -d microdots micros apps/pitch-deck-website/host apps/host host packages wiki 2>/dev/null
 grep -rn "defineMicroDot\|mountPoint" --include=*.ts . | head
 ```
 
 | What you need    | How to find it                                                                     |
 | ---------------- | ------------------------------------------------------------------------------------ |
 | Dot directory    | `microdots/` (current) or `micros/` (older workspaces)                                |
+| Host directory   | `apps/pitch-deck-website/host/` (the MicroDots framework repo), `apps/host/` (older checkouts), or `host/` (a workspace made by `@bespokeagentics/create-microdots-host`) |
 | Element package  | the import in a dot's `element.ts` — `@bespokeagentics/microdots-element`, `@microdots/element`, or `@kit/element` |
 | Runtime package  | the import in a dot's `app.ts` / `service/main.ts`                                     |
-| Bundle URL path  | the `bundle` field in `apps/host/src/registry.ts` (`/microdots/<tag>.js` or `/micros/<tag>.js`) |
-| Service ports    | the host registry's `localPort` values, or the `dev` output — **never assume a range** |
+| Bundle URL path  | the `bundle` field in `<host-dir>/src/registry.ts` (`/microdots/<tag>.js` or `/micros/<tag>.js`). A generated workspace has no registry file: the URL is `/microdots/` plus `microdot.bundle` from the dot's `package.json` |
+| Service ports    | the host registry's `localPort` values (generated workspace: `microdot.port` in each dot's `package.json`), or the `dev` output — **never assume a range** |
 | Host URL         | the `dev` command's own output                                                         |
 
 ## 1. Confirm it is actually blank
@@ -107,14 +108,39 @@ Then match the message against the known causes, most common first:
 "Could not reach the service" from a page that plainly exists is almost always
 CORS, and it presents as three different lies.
 
-**Origin not allowlisted.** The runtime's origins allowlist (`MICRODOT_ORIGINS`,
-read in the runtime package's `cors.ts`) is **exact-matched against what the
-browser sends**. `http://127.0.0.1:5173` does not match `http://localhost:5173`.
-A new port, a new dev server or a new deploy target needs an entry:
+**Origin not allowlisted.** A service's allowed origins are **exact-matched
+against what the browser sends**. `http://127.0.0.1:5173` does not match
+`http://localhost:5173`. A new port, a new dev server or a new deploy target
+needs an entry, and where it goes depends on the service:
+
+- **The service passes `allowedOrigins`** to `makeRpcService` in its
+  `service/main.ts`. Every dot in a workspace made by
+  `@bespokeagentics/create-microdots-host` does this, and so do a few dots in
+  the framework repo. That list **replaces** the runtime's default. It does not
+  extend it. Add the origin to every such service: a local origin in both
+  spellings (`localhost` and `127.0.0.1`), a deployed `https` origin as its
+  one spelling.
+- **The service omits it** and gets the runtime's default list,
+  `MICRODOT_ORIGINS`. Only the MicroDots framework repo edits that list
+  (`packages/microdots-runtime/src/cors.ts`). In a workspace that installs the
+  runtime from npm, the list is read-only package source, so pass
+  `allowedOrigins` instead.
+- **The service is a Worker** built with `makeMicroDotWorker`
+  (`service/worker.ts`). It uses neither list above. It reads the
+  comma-separated `MICRODOT_ALLOWED_ORIGINS` binding (a wrangler `vars` entry),
+  else the `fallbackOrigins` passed to `makeMicroDotWorker`. **With neither set
+  it denies every origin.** Add the origin to the binding or to
+  `fallbackOrigins`, then redeploy that one Worker. Framework-repo Workers pass
+  `fallbackOrigins: [DEPLOYED_HOST_ORIGIN]` or a similar list.
 
 ```bash
-grep -rn "MICRODOT_ORIGINS" packages/*runtime*/src/cors.ts
+grep -rn "allowedOrigins" <dot-dir>/*/service/main.ts
+grep -rn "fallbackOrigins\|MICRODOT_ALLOWED_ORIGINS" <dot-dir>/*/service/worker.ts <dot-dir>/*/wrangler.json* 2>/dev/null
+grep -n "MICRODOT_ORIGINS" packages/microdots-runtime/src/cors.ts node_modules/@bespokeagentics/microdots-runtime/src/cors.ts 2>/dev/null
 ```
+
+A missing origin still gets a preflight answer, but the answer carries no
+`access-control-allow-origin`, and every RPC fails.
 
 **A crash wearing a CORS costume.** Cloudflare's 1101 error page carries no
 allow-origin header, so a Worker that threw reads in the console as a CORS
@@ -132,13 +158,21 @@ broker — including a foreign host embedding it alone. Confirm the dot polls it
 own service on its own schedule, then treat the broker as the accelerator it is.
 
 If the dot is stale only on one route, check the host topology
-(`apps/host/host-topology.json`): a mount whose `slotId` is not in
-`slotManifest.slots`, or a `sectionIds` entry with no matching `<section id>`,
-renders as a blank page rather than an error. The host's own suites catch both:
+(`<host-dir>/host-topology.json` in the framework repo): a mount whose `slotId`
+is not in `slotManifest.slots`, or a `sectionIds` entry with no matching
+`<section id>`, renders as a blank page rather than an error. The host's own
+suites catch both:
 
 ```bash
-bunx vitest run apps/host/src/topology.test.ts apps/host/src/routes.test.ts
+bunx vitest run <host-dir>/src/topology.test.ts <host-dir>/src/routes.test.ts
 ```
+
+In a workspace made by `@bespokeagentics/create-microdots-host`, the topology
+is `host/topology.json`. Its host throws a named `[host] …` error at startup
+for an undeclared or unused slot and for a registered tag that no route mounts.
+`bun run check` runs `host/src/topology.test.ts`, which catches the unrouted
+tag but not a slot mistake. For a slot, the startup error in the browser
+console is the check.
 
 ## 6. Check the trap index before inventing a theory
 

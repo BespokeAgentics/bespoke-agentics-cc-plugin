@@ -35,9 +35,24 @@ composition may NOT be assumed — stop and say the run needs the user.
   resolves in `@bespokeagentics/microdots-runtime`'s entry points today; verify catalog
   entries per the catalog's own maintenance protocol (`ls` listed paths; on a
   miss grep the Key symbols; fix rot in this run).
-- Standalone mode: verify the published `@bespokeagentics/microdots-*` exports you plan to
-  import exist at the published version — `import-shared` is only real when
-  the export resolves.
+- Standalone mode: verify the `@bespokeagentics/microdots-*` exports you plan to
+  import exist **at the version the generator's template pins**, never at npm
+  `latest`. The generated workspace installs the template's pins, and `latest`
+  can run ahead of them: on 2026-10-30 the template pinned
+  `microdots-runtime` 0.2.0 (`.`, `/d1`, `/secret`, `/service`, `/trace`,
+  `/worker`) while `latest` was 0.2.1-readme.1, which adds `/llm`, `/rest`
+  and five more that the workspace cannot import. Read the pins, then the
+  exports at each pin:
+
+  ```bash
+  npm pack @bespokeagentics/create-microdots-host   # in a scratch directory
+  tar -xzf bespokeagentics-create-microdots-host-*.tgz
+  jq .dependencies package/templates/plain/package.json   # or tailwind/
+  npm view @bespokeagentics/microdots-runtime@<pinned> exports --json
+  ```
+
+  Once the workspace exists, read `node_modules/@bespokeagentics/<pkg>/package.json`
+  instead. `import-shared` is only real when the export resolves there.
 
 ## 3. Per-MicroDot port maps
 

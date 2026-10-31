@@ -14,8 +14,8 @@ application request; do not silently turn it into a repository extension.
 
 ```bash
 jq -r '.scripts | keys[]' package.json
-ls -d microdots micros apps/host packages docs/reuse-catalog.md wiki 2>/dev/null
-ls scripts/microdots-authoring.ts scripts/new-microdot.ts scripts/new-micro.ts 2>/dev/null
+ls -d microdots micros apps/pitch-deck-website/host apps/host host packages docs/reuse-catalog.md wiki 2>/dev/null
+ls scripts/microdots-authoring.ts scripts/new-microdot.ts scripts/new-micro.ts scripts/discover.ts 2>/dev/null
 ```
 
 | Marker                          | What it means                                                              |
@@ -26,6 +26,9 @@ ls scripts/microdots-authoring.ts scripts/new-microdot.ts scripts/new-micro.ts 2
 | `micros/`                       | older workspace layout; bundles live under `/micros/`                       |
 | `docs/reuse-catalog.md`         | the prior-art catalog steps 1, 10 and 14 depend on                          |
 | `wiki/`                         | the knowledge-record obligations in step 13 apply                           |
+| `apps/pitch-deck-website/host/` or `apps/host/` | `<host-dir>` for steps 5–8: the first on the current framework repo, the second on older checkouts |
+| `host/topology.json` + `scripts/discover.ts`, no generator script | **A workspace made by `@bespokeagentics/create-microdots-host`.** Neither mode applies: add the dot by its `README.md` "Add or rename a MicroDot" steps, plus three the README omits: the same port and `allowedOrigins` in `service/main.ts`, the tag in `src/surface.ts`, and the wire test in `host/src/topology.test.ts`. Full steps: `${CLAUDE_PLUGIN_ROOT}/skills/microdots-port-app/references/standalone-scaffold.md` § Add the port's MicroDots |
+| No MicroDots workspace at all   | **Neither mode applies.** Scaffold one first with `bunx @bespokeagentics/create-microdots-host <dir> --css plain --yes` (or `--css tailwind`), then follow the row above |
 
 Where both modes exist, the executable boundary is explicit:
 
@@ -168,7 +171,7 @@ already uses; do not introduce a new one.
 
 ## 5. Register the element with the host
 
-Append to `registry` in `apps/host/src/registry.ts`:
+Append to `registry` in `<host-dir>/src/registry.ts`:
 
 ```ts
 {
@@ -196,7 +199,7 @@ topology placement's `values` (step 7). Check an existing entry before deciding.
 
 ## 6. Add the markup slot
 
-Add to the host's section container in `apps/host/index.html`, alongside the
+Add to the host's section container in `<host-dir>/index.html`, alongside the
 existing sections:
 
 ```html
@@ -216,8 +219,9 @@ existing sections:
 
 ## 7. Add the route to the topology
 
-The host's `routes.ts` decodes `apps/host/host-topology.json` at module scope —
-**the route is DATA, not authored code.** Append to `routes`:
+The host's `routes.ts` decodes `<host-dir>/host-topology.json` (fetched at
+runtime on the current framework repo, imported at module scope on older
+checkouts) — **the route is DATA, not authored code.** Append to `routes`:
 
 ```json
 {
@@ -248,10 +252,11 @@ actually holds — do not invent a grid. Skip this and the host's
 fails in the other direction if the manifest declares a slot the markup has no
 element for.
 
-`apps/host/src/entry.ts` needs nothing. It throws at startup for a registry tag
-no route mounts, and the two suites above fail for a missing section, slot or
-manifest entry — **skipping any of steps 5–8 is a blank page, not a type
-error.** The host must never import the dot's source; the registry entry, the
+`<host-dir>/src/entry.ts` needs nothing. A registry tag that no route mounts
+shows a "Not on any page" notice on the current framework repo (older hosts
+threw at startup), and `routes.test.ts` is the guard that a new dot got a page.
+The two suites above fail for a missing section, slot or manifest entry —
+**skipping any of steps 5–8 is a blank page, not a type error.** The host must never import the dot's source; the registry entry, the
 section, the route and the slot declaration are the whole seam.
 
 ## 9. Register a deployable dot with deploy discovery

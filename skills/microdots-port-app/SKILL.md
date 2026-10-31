@@ -13,11 +13,12 @@ description: >
   state, zod, fetch, express handlers, env, polling) to its target idiom, and a plugin-local port
   memory makes each similar port more deterministic than the last. Lands in either the MicroDots
   monorepo (new:microdot scaffold, host wiring, the repo's own verify) or ANY directory as a
-  standalone runnable workspace built on the published @microdots npm packages with a mini-host
-  always included. A seeded spec drives a spec-elicitation interview; execution is gated, wave-by-
-  wave green, browser-verified. Deploy is never run; the source app is never modified; nothing is
-  committed. Distinct from microdots-port-feature (extracts ONE feature into the older micros
-  workspace): this ports a WHOLE app into the MicroDots framework, anywhere.
+  standalone runnable workspace scaffolded by the public @bespokeagentics/create-microdots-host
+  generator, mini-host always included. A seeded spec drives a spec-elicitation interview;
+  execution is gated, wave-by-wave green, browser-verified. Deploy is never run; the source app
+  is never modified; nothing is committed. Distinct from microdots-port-feature (extracts ONE
+  feature into the older micros workspace): this ports a WHOLE app into the MicroDots framework,
+  anywhere.
 argument-hint: "<app-path> [--target <path>] [--app <url>] [--mode full|scaffold|spec] [--dossier-only] [--no-browser] [--slug <name>] [--out <dir>]"
 disable-model-invocation: true
 ---
@@ -62,12 +63,18 @@ Parse `$ARGUMENTS`. Then resolve, in order:
      `package.json` whose `workspaces` include `microdots/*`,
      `scripts/new-microdot.ts`, and `AGENTS.md`. Verify the markers before
      trusting any path, supplied or detected.
-   - **Standalone directory** — any other directory (existing or new). The
-     port lands as a self-contained Bun workspace on the published
-     `@bespokeagentics/microdots-*` npm packages, mini-host included. Protocol in
-     `references/standalone-scaffold.md`. Preflight NOW: `npm view
-@bespokeagentics/microdots-runtime version` — if the packages are not resolvable, say so
-     and stop before any analysis; standalone mode cannot work without them.
+   - **Standalone directory** — any other directory that is absent, empty, or
+     holds only `docs/`. The generator refuses any other non-empty directory,
+     dotfiles such as `.git` included. The port lands as a self-contained Bun
+     workspace that the public `@bespokeagentics/create-microdots-host`
+     generator scaffolds, mini-host included. Protocol in
+     `references/standalone-scaffold.md`. Preflight NOW: `bun --version`,
+     `npm view @bespokeagentics/create-microdots-host version`, and
+     `ls -A <target>` (must print nothing, or only `docs`). If Bun or the
+     generator fails, report the exact error and stop before any analysis. The
+     packages are public, so a failure is never a missing account or token. If
+     the target holds anything else, ask the user for another directory before
+     Phase 1 writes the dossier there.
 3. **Memory home** — resolve per `references/memory-protocol.md` and read
    `memory/stack-mappings.md` plus any port records whose stack fingerprint
    matches this source app. Matched rows enter Phase 4 as `prior`
@@ -126,8 +133,10 @@ Target law is read **at runtime** — this skill embeds none of it:
   maintenance protocol; fix rotted entries in this run), the trap index in
   `wiki/patterns-and-traps/_index.md`, and the existing MicroDot nearest in
   shape as the working reference.
-- **Standalone mode**: the published `@bespokeagentics/microdots-*` package surface (confirm
-  the exports you plan to import actually resolve) plus the port memory. If a
+- **Standalone mode**: the `@bespokeagentics/microdots-*` package surface **at
+  the versions the generator's template pins**, never npm `latest` (confirm
+  the exports you plan to import resolve there; method in
+  `references/composition-and-port-map.md` §2) plus the port memory. If a
   MicroDots monorepo exists on disk anyway, use it **read-only** for catalog
   matching and as the idiom reference — say so in the dossier.
 
@@ -199,11 +208,12 @@ On a yes (details in `references/spec-and-execution.md`):
      vitest aliases, registry, `index.html` section + slot,
      `host-topology.json` route + slot, and deploy-discovery registration.
      The topology tests are the wiring's own check.
-   - Standalone: build the workspace per `references/standalone-scaffold.md`
-     — Bun workspace, `@bespokeagentics/microdots-*` from npm with effect pinned to the exact
-     peer version, one directory per MicroDot in the confirmed composition,
-     and **always a mini-host** (registry + loader from `@bespokeagentics/microdots-host`,
-     broker from `@bespokeagentics/microdots-bridge` when the composition needs it).
+   - Standalone: follow `references/standalone-scaffold.md`. **Run the
+     generator first.** Keep its `package.json` verbatim, `overrides`
+     included. Add one directory per MicroDot in the confirmed composition,
+     copied from a worked dot. Declare the placements, slots and wires in
+     `host/topology.json`. The generated host is the mini-host: discovery
+     builds its registry, and topology wires broker between dots.
 2. **Implementation waves per MicroDot**, each ending with the workspace's
    check green: contract + client → service + store + migrations + wire tests
    → TEA app + story tests (each observed UI state gets a story test where
@@ -263,7 +273,8 @@ actually observed; traps hit; memory rows added or reinforced; what remains
 | Missing                                        | Behavior                                                                                                                                   |
 | ---------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------ |
 | Browser tools unavailable / no runnable app    | Skip Phase 2; derive the UX inventory from code; label every UX claim "not visually verified"; continue                                    |
-| `@bespokeagentics/microdots-*` not resolvable on npm           | Standalone mode stops at preflight with the publish instructions; monorepo mode is unaffected                                              |
+| Bun or the generator unavailable               | Standalone mode stops at preflight with the exact error (public packages: never ask for a token); monorepo mode is unaffected              |
+| Standalone target holds more than `docs/`      | Ask for another directory at Phase 0, before Phase 1 writes the dossier; never delete or move the user's files                             |
 | No memory home writable                        | Fall back to `~/.claude/bespoke-agentics/port-memory/`; warn that the ledger is outside the plugin repo                                    |
 | No matching memory rows                        | Normal for a new stack — proceed; this port seeds the rows                                                                                 |
 | spec-elicitation unavailable                   | Leave the seeded spec + decision register; state that the interview still needs to run                                                     |
@@ -277,6 +288,6 @@ actually observed; traps hit; memory rows added or reinforced; what remains
 | `references/tracing.md`                  | Phase 1 — the six lanes, agent prompts, `trace.md` format, boundary + seams taxonomy                   |
 | `references/visual-inventory.md`         | Phase 2 — tool loading, tab discipline, login gate, state screenshots, network capture                 |
 | `references/composition-and-port-map.md` | Phase 4 — composition proposal, per-dot port maps, the Effect-optimization register, decision register |
-| `references/standalone-scaffold.md`      | Phases 0 & 7 — target detection, npm dependency set, workspace layout, mini-host wiring, dev harness   |
+| `references/standalone-scaffold.md`      | Phases 0 & 7 — target detection, preflight, running the generator, what to keep, CORS, verify          |
 | `references/spec-and-execution.md`       | Phases 5–7 — spec seeding map, elicitation handoff, execution gate, waves, verify per mode             |
 | `references/memory-protocol.md`          | Phases 0 & 8 — memory home resolution, stack fingerprints, mapping-row lifecycle, port records         |

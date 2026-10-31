@@ -51,12 +51,17 @@ shell or a single already-built bundle, and has confirmed the account.
 
 | Argument       | Artifact                             | Directory                    |
 | -------------- | ------------------------------------ | ---------------------------- |
-| `host`         | host shell + copied MicroDot bundles | `apps/host/dist`             |
+| `host`         | host shell + copied MicroDot bundles | `<host-dir>/dist`            |
 | `micro <name>` | one MicroDot browser bundle          | `<dot-dir>/<name>/dist`      |
-| `all`          | same as `host`                       | `apps/host/dist`             |
+| `all`          | same as `host`                       | `<host-dir>/dist`            |
 
 `<dot-dir>` is `microdots/` on current workspaces, `micros/` on older ones —
 resolve it, and match the bundle URL prefix the host registry actually uses.
+`<host-dir>` is `apps/pitch-deck-website/host` in the MicroDots framework repo,
+`apps/host` in older checkouts, and `host` in a workspace made by
+`@bespokeagentics/create-microdots-host`. That generated workspace builds each
+bundle into `host/public/microdots/`, not `<dot-dir>/<name>/dist`, and ships
+no wrangler config.
 A bundle deployed alone is a CDN artifact: any page can load it with a script
 tag. The host shell is a full site that also serves the bundles.
 
@@ -76,7 +81,8 @@ name and the public URL first.
 A Worker **service** entry is a single call to `makeMicroDotWorker` in
 `service/worker.ts`, imported from the runtime package's `/worker` entry — never
 a module-scope `toWebHandler`, and never the Node `/service` entry. CORS is the
-runtime's `microAppCors`, never a bare `HttpMiddleware.cors()`.
+runtime's `microDotCors`, which `makeMicroDotWorker` already applies. Never use a
+bare `HttpMiddleware.cors()`.
 
 ```bash
 grep -rn "makeMicroDotWorker\|toWebHandler" <dot-dir>/*/service/worker.ts

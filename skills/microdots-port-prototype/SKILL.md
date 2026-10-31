@@ -58,8 +58,9 @@ Parse `$ARGUMENTS`, then resolve in order:
 2. **Target.** `--target <path>`, else detect, else ask. Detection and the standalone
    preflight are target law, not this skill's: follow
    `../microdots-port-app/references/standalone-scaffold.md` (monorepo requires ALL THREE
-   markers; standalone requires the `@bespokeagentics/microdots-*` packages to resolve on
-   npm, and stops the run at preflight when they do not).
+   markers; standalone requires Bun, the public generator and a target that is absent,
+   empty or holds only `docs/`, preflight per the reference, and stops the run at
+   preflight when any of them fails).
 3. **Slug.** `--slug`, else lower-kebab from the artifact's `<title>` (Phase 1 reports it).
 4. **Dossier home.** `<target>/docs/ports/<slug>/` unless `--out`. If it exists already,
    re-verify its anchors rather than re-deriving blind, and say so.
@@ -200,7 +201,7 @@ where the run stopped, and what the handoff decided versus what remains open.
 | Unrecognized export shape (`bundle_shape: "unknown"`, 0 app modules) | The extractor warns and still writes everything. Proceed only with every module `unclassified`, and state the confidence cost before Stage-1 rather than after |
 | Vendored globals unresolvable (an external design-system global) | Record as an external dependency in the seams analysis and a D-scope row; never guess its API |
 | Browser unavailable or `--serve` not passed | Skip the walk; label every UX claim "not visually verified"; continue |
-| `@bespokeagentics/microdots-*` not resolvable and target is standalone | Stop at Phase 0 preflight per the standalone-scaffold reference -- extraction without a viable target wastes the run |
+| Target is standalone and Bun or the public generator is unavailable, or the target holds more than `docs/` | Stop at Phase 0 preflight per the standalone-scaffold reference (public packages: never ask for a token; ask for another directory rather than clearing one) -- extraction without a viable target wastes the run |
 | `microdots-port-app` unavailable | Stop after Phase 7; deliver the dossier; state plainly that composition, spec and execution still need to run |
 | Non-interactive run hits a decision point | Record the recommendation as `assumed -- not confirmed`; continue. Blocking ambiguities may NOT be assumed -- they stop the run |
 

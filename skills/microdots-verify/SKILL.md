@@ -16,7 +16,7 @@ Do not assume script names or paths. Derive them once:
 
 ```bash
 jq -r '.scripts | keys[]' package.json          # available scripts
-ls -d microdots micros apps/host 2>/dev/null     # dot dir + host
+ls -d microdots micros apps/pitch-deck-website/host apps/host host 2>/dev/null   # dot dir + host
 ```
 
 | What you need     | Where it comes from                                                                      |
